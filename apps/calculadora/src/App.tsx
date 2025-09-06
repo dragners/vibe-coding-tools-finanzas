@@ -353,8 +353,11 @@ function simulatePlanWithdrawals(params: {
     lastWithdrawal = w;
     if (w <= 0) break;
   }
-  const fullYears = year - 1 + (lastWithdrawal > 0 ? lastWithdrawal / Math.max(annualWithdrawal, 1) : 0);
-  const months = Math.round(fullYears * 12);
+  let fullYears = 0;
+  if (year > 0) {
+    fullYears = (year - 1) + (lastWithdrawal > 0 ? lastWithdrawal / Math.max(annualWithdrawal, 1) : 0);
+  }
+  const months = Math.max(0, Math.round(fullYears * 12));
   return { yearsFloat: fullYears, months, totalGross, totalTax, totalNet };
 }
 
@@ -380,7 +383,6 @@ function simulateFundWithdrawals(params: {
     const realizedGain = w * gainFraction;
     const tax = savingsTax(realizedGain);
     const net = w - tax;
-    // Base de coste proporcional
     const basisRedeemed = w * (value > 0 ? costBasis / value : 1);
     costBasis = Math.max(0, costBasis - basisRedeemed);
     value -= w;
@@ -390,8 +392,11 @@ function simulateFundWithdrawals(params: {
     lastWithdrawal = w;
     if (w <= 0) break;
   }
-  const fullYears = year - 1 + (lastWithdrawal > 0 ? lastWithdrawal / Math.max(annualWithdrawal, 1) : 0);
-  const months = Math.round(fullYears * 12);
+  let fullYears = 0;
+  if (year > 0) {
+    fullYears = (year - 1) + (lastWithdrawal > 0 ? lastWithdrawal / Math.max(annualWithdrawal, 1) : 0);
+  }
+  const months = Math.max(0, Math.round(fullYears * 12));
   return { yearsFloat: fullYears, months, totalGross, totalTax, totalNet };
 }
 
@@ -454,8 +459,11 @@ function simulateCombinedWithdrawals(params: {
     lastW = targetW;
     if (targetW <= 0) break;
   }
-  const fullYears = year - 1 + (lastW > 0 ? lastW / Math.max(annualWithdrawal, 1) : 0);
-  const months = Math.round(fullYears * 12);
+  let fullYears = 0;
+  if (year > 0) {
+    fullYears = (year - 1) + (lastW > 0 ? lastW / Math.max(annualWithdrawal, 1) : 0);
+  }
+  const months = Math.max(0, Math.round(fullYears * 12));
   return {
     yearsFloat: fullYears,
     months,
@@ -501,6 +509,14 @@ function runTests() {
   const mgEXT_low = generalMarginalRate(10000, "Extremadura");
   const mgCYL_low = generalMarginalRate(10000, "Castilla y León");
   console.assert(mgEXT_low < mgCYL_low, "Extremadura tiene mínimo autonómico más bajo que CyL");
+
+  // === Nuevos tests: capital inicial 0 => meses 0 ===
+  const z1 = simulatePlanWithdrawals({ startCapital: 0, pensionAnnual: 0, annualWithdrawal: 10000, r: 0.05, region: "Cataluña" });
+  console.assert(z1.months === 0, "Plan con 0 capital inicial debe dar 0 meses");
+  const z2 = simulateFundWithdrawals({ startValue: 0, costBasis: 0, annualWithdrawal: 10000, r: 0.05 });
+  console.assert(z2.months === 0, "Fondo con 0 valor inicial debe dar 0 meses");
+  const z3 = simulateCombinedWithdrawals({ startPlanCapital: 0, startReinvValue: 0, reinvCostBasis: 0, pensionAnnual: 0, annualWithdrawal: 10000, r: 0.05, region: "Cataluña" });
+  console.assert(z3.months === 0, "Combinado con 0 capital inicial debe dar 0 meses");
 }
 if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") { runTests(); }
 
@@ -514,7 +530,7 @@ export default function App() {
   const [annualContribution, setAnnualContribution] = useState(1500);
   const [tir, setTir] = useState(5); // %
   const [pension, setPension] = useState(22000);
-  const [reinvestSavings, setReinvestSavings] = useState(true);
+  const [reinvestSavings, setReinvestSavings] = useState(false);
   const [region, setRegion] = useState<RegionKey>("Cataluña");
 
   const r = useMemo(() => Math.max(0, Math.min(0.25, tir / 100)), [tir]);
@@ -682,13 +698,13 @@ export default function App() {
                 max={60}
               />
 
-              <label className="block text-sm">Aportación anual (máx. 10.000€)</label>
+              <label className="block text-sm">Aportación anual (máx. 10.000€)<span className="ml-1 text-gray-500 cursor-help" title="Límites legales de aportación: hasta 1.500€/año en planes individuales (PPI). El tope de 10.000€/año solo aplica cuando existe un plan de empleo (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan.">ⓘ</span></label>
               <div className="relative">
                 <input
                   type="number"
                   className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
                   value={annualContribution}
-                  onChange={(e) => setAnnualContribution(Number(e.target.value) || 0)}
+                  onChange={(e) => setAnnualContribution(Math.min(10000, Math.max(0, Number(e.target.value) || 0)))}
                   min={0}
                   max={10000}
                 />
@@ -719,17 +735,32 @@ export default function App() {
                 <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">€</span>
               </div>
 
-              <div className="flex items-center gap-3">
-                <input
-                  id="reinv"
-                  type="checkbox"
-                  className="h-4 w-4 accent-cyan-600"
-                  checked={reinvestSavings}
-                  onChange={(e) => setReinvestSavings(e.target.checked)}
-                />
-                <label htmlFor="reinv" className="text-sm">
-                  Reinvertir el ahorro anual de IRPF en un fondo
-                </label>
+              <div>
+                <label className="block text-sm mb-2">¿Reinvertir el ahorro anual de IRPF en un fondo de inversión (capitalizar el ahorro)?</label>
+                <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1" role="radiogroup" aria-label="Reinvertir ahorro IRPF">
+                  <label className="cursor-pointer">
+                    <input
+                      type="radio"
+                      name="reinv"
+                      value="no"
+                      className="sr-only peer"
+                      checked={!reinvestSavings}
+                      onChange={() => setReinvestSavings(false)}
+                    />
+                    <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-500">No</span>
+                  </label>
+                  <label className="cursor-pointer">
+                    <input
+                      type="radio"
+                      name="reinv"
+                      value="si"
+                      className="sr-only peer"
+                      checked={reinvestSavings}
+                      onChange={() => setReinvestSavings(true)}
+                    />
+                    <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-500">Sí</span>
+                  </label>
+                </div>
               </div>
 
               <div className="text-xs text-gray-500">
@@ -870,7 +901,7 @@ export default function App() {
                   <li>
                     Límites legales de aportación: hasta <b>1.500€</b>/año en <b>planes individuales (PPI)</b>. El tope de <b>10.000€</b>/año solo aplica cuando existe un <b>plan de empleo</b> (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan. En esta calculadora el campo “Aportación anual” se limita a 10.000€ asumiendo ese escenario.
                   </li>
-                  <li>En retiros parciales, el capital restante sigue creciendo cada año al mismo TIR.</li>
+                  <li>En retiros parciales, cada año primero se aplica la TIR al capital restante y después se descuenta el retiro bruto; el saldo continúa capitalizándose hasta agotarse.</li>
                   <li>
                     IRPF general: suma de <i>escala estatal 2025</i> y <i>escala autonómica 2025</i> de la <b>CCAA seleccionada</b>.
                     Incluidas todas las CCAA de régimen común (sin Navarra ni País Vasco).
