@@ -793,6 +793,7 @@ export default function App() {
               <div className="text-xs text-gray-600 leading-relaxed mt-4">
                 <p className="mb-2">Notas y supuestos:</p>
                 <ul className="list-disc ml-5 space-y-1">
+		  <li>En retiros parciales, el capital restante sigue creciendo cada año antes de cada retirada (plan, fondo y reinversión del ahorro IRPF).</li>
                   <li>
                     IRPF general: suma de <i>escala estatal 2025</i> y <i>escala autonómica 2025</i> de la <b>CCAA seleccionada</b>.
                     Incluidas todas las CCAA de régimen común (sin Navarra ni País Vasco).
@@ -808,8 +809,8 @@ export default function App() {
                   <li>La aportación anual se limita a 10.000€ si es un plan de previsión y 1.500€ anuales para plan individual.</li>
                   <li>
                     Los tipos autonómicos se han parametrizado por tramos oficiales publicados (REAF 2025 y boletines autonómicos).
-                    Si detectas una discrepancia puntual, dímela y la corrijo.
                   </li>
+
                 </ul>
               </div>
             </div>
