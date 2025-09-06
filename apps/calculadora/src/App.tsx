@@ -256,6 +256,23 @@ const AUTON_SCALES_2025: Record<RegionKey, ScaleSegment[]> = {
   "Región de Murcia": MURCIA_AUTON_SCALE_2025,
 };
 
+// Dev-only: validación de escalas (protege contra errores de transcripción)
+function assertValidScale(scale: ScaleSegment[], name: string) {
+  let last = -Infinity;
+  for (const seg of scale) {
+    if (!(seg.upTo > last)) throw new Error(`Escala ${name}: 'upTo' debe ser estrictamente creciente`);
+    last = seg.upTo;
+  }
+  if (scale[scale.length - 1].upTo !== Infinity) throw new Error(`Escala ${name}: el último tramo debe acabar en Infinity`);
+}
+if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") {
+  assertValidScale(SAVINGS_SCALE, "Ahorro 2025");
+  assertValidScale(GENERAL_STATE_SCALE_2025, "General estatal 2025");
+  for (const [ccaa, scale] of Object.entries(AUTON_SCALES_2025)) {
+    assertValidScale(scale as ScaleSegment[], `Autonómica 2025 · ${ccaa}`);
+  }
+}
+
 // =============================================
 // Cálculo de impuestos progresivos
 // =============================================
@@ -280,9 +297,13 @@ function generalTax(base: number, region: RegionKey) {
 }
 
 function generalMarginalRate(base: number, region: RegionKey) {
-  const findRate = (scale: ScaleSegment[]) => scale.find((s) => base <= s.upTo)?.rate ?? scale[scale.length - 1].rate;
-  const auton = AUTON_SCALES_2025[region];
-  return findRate(GENERAL_STATE_SCALE_2025) + (auton.length ? findRate(auton) : 0);
+  return marginalByDiff(base, region, 10); // 10€ para suavizar bordes de tramo
+}
+function marginalByDiff(base: number, region: RegionKey, step = 10) {
+  if (step <= 0) step = 1;
+  const t0 = generalTax(base, region);
+  const t1 = generalTax(base + step, region);
+  return (t1 - t0) / step;
 }
 
 function savingsTax(amount: number) {
@@ -300,6 +321,9 @@ function fvAnnuity(pmt: number, r: number, n: number) {
 
 // =============================================
 // Simulaciones de rescate
+
+// Escenarios de retirada estándar (estable, fuera del componente)
+const WITHDRAWALS = [10000, 15000, 20000, 25000, 35000] as const;
 // =============================================
 // Plan (todo tributa como trabajo)
 function simulatePlanWithdrawals(params: {
@@ -478,7 +502,7 @@ function runTests() {
   const mgCYL_low = generalMarginalRate(10000, "Castilla y León");
   console.assert(mgEXT_low < mgCYL_low, "Extremadura tiene mínimo autonómico más bajo que CyL");
 }
-runTests();
+if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") { runTests(); }
 
 // =============================================
 // Componente principal
@@ -501,8 +525,10 @@ export default function App() {
   const marginalGeneral = useMemo(() => generalMarginalRate(salary, region), [salary, region]);
 
   // Acumulación antes de la jubilación
-  const planFV = useMemo(() => fvAnnuity(contrib, r, N), [contrib, r, N]);
-  const fundFV = useMemo(() => fvAnnuity(contrib, r, N), [contrib, r, N]);
+  const accFV = useMemo(() => fvAnnuity(contrib, r, N), [contrib, r, N]);
+  const planFV = accFV;
+  const fundFV = accFV;
+
   const fundCost = useMemo(() => contrib * N, [contrib, N]);
   const planCost = fundCost;
 
@@ -511,8 +537,14 @@ export default function App() {
   const totalIRPFSaved = useMemo(() => annualIRPFSaving * N, [annualIRPFSaving, N]);
 
   // Fondo por reinversión del ahorro IRPF
-  const reinvestFV = useMemo(() => fvAnnuity(annualIRPFSaving, r, N), [annualIRPFSaving, r, N]);
-  const reinvestCost = useMemo(() => annualIRPFSaving * N, [annualIRPFSaving, N]);
+  const reinvestFV = useMemo(
+    () => (reinvestSavings ? fvAnnuity(annualIRPFSaving, r, N) : 0),
+    [annualIRPFSaving, r, N, reinvestSavings]
+  );
+  const reinvestCost = useMemo(
+    () => (reinvestSavings ? annualIRPFSaving * N : 0),
+    [annualIRPFSaving, N, reinvestSavings]
+  );
 
   // Resúmenes combinados para tarjetas
   const combinedPlanBruto = useMemo(() => (reinvestSavings ? planFV + reinvestFV : planFV), [reinvestSavings, planFV, reinvestFV]);
@@ -543,23 +575,64 @@ export default function App() {
   );
 
   // Retiros estándar
-  const withdrawals = [10000, 15000, 20000, 25000, 35000];
 
   const planSims = useMemo(
-    () => withdrawals.map((w) => ({ w, ...simulatePlanWithdrawals({ startCapital: planFV, pensionAnnual: pension, annualWithdrawal: w, r, region }) })),
+    () => WITHDRAWALS.map((w) => ({ w, ...simulatePlanWithdrawals({ startCapital: planFV, pensionAnnual: pension, annualWithdrawal: w, r, region }) })),
     [planFV, pension, r, region]
   );
   const fundSims = useMemo(
-    () => withdrawals.map((w) => ({ w, ...simulateFundWithdrawals({ startValue: fundFV, costBasis: fundCost, annualWithdrawal: w, r }) })),
+    () => WITHDRAWALS.map((w) => ({ w, ...simulateFundWithdrawals({ startValue: fundFV, costBasis: fundCost, annualWithdrawal: w, r }) })),
     [fundFV, fundCost, r]
   );
   const combinedSims = useMemo(
-    () => withdrawals.map((w) => simulateCombinedWithdrawals({ startPlanCapital: planFV, startReinvValue: reinvestFV, reinvCostBasis: reinvestCost, pensionAnnual: pension, annualWithdrawal: w, r, region })),
-    [planFV, reinvestFV, reinvestCost, pension, r, region]
+    () => (!reinvestSavings
+      ? []
+      : WITHDRAWALS.map((w) =>
+          simulateCombinedWithdrawals({
+            startPlanCapital: planFV,
+            startReinvValue: reinvestFV,
+            reinvCostBasis: reinvestCost,
+            pensionAnnual: pension,
+            annualWithdrawal: w,
+            r,
+            region,
+          })
+        )
+    ),
+    [planFV, reinvestFV, reinvestCost, pension, r, region, reinvestSavings]
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="relative min-h-screen text-gray-900">
+      {/* Fondo estilo landing */}
+      <style>{`
+        .landing-bg{
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          background:
+            radial-gradient(900px 600px at 10% 0%, rgba(14,165,233,.12), transparent 60%),
+            radial-gradient(900px 600px at 90% -10%, rgba(2,132,199,.10), transparent 60%),
+            linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #ffffff 100%),
+            linear-gradient(to bottom, rgba(15,23,42,.04) 1px, transparent 1px),
+            linear-gradient(to right, rgba(15,23,42,.04) 1px, transparent 1px);
+          background-size: auto, auto, 100% 100%, 24px 24px, 24px 24px;
+          background-position: center;
+        }
+      `}</style>
+      <div className="landing-bg" aria-hidden />
+      {/* Top header back to landing */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline"
+          >
+            <span aria-hidden>←</span>
+            Volver a Herramientas
+          </a>
+        </div>
+      </div>
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-3xl md:text-4xl font-extrabold mb-3">Calculadora Plan de Pensiones vs Fondo</h1>
         <p className="text-sm md:text-base text-gray-700 mb-6">
@@ -577,7 +650,7 @@ export default function App() {
 
               <label className="block text-sm">Comunidad Autónoma</label>
               <select
-                className="w-full border rounded-xl p-2"
+                className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
                 value={region}
                 onChange={(e) => setRegion(e.target.value as RegionKey)}
               >
@@ -590,7 +663,7 @@ export default function App() {
               <div className="relative">
                 <input
                   type="number"
-                  className="w-full border rounded-xl p-2 pr-10"
+                  className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
                   value={salary}
                   onChange={(e) => setSalary(Number(e.target.value) || 0)}
                   min={0}
@@ -602,7 +675,7 @@ export default function App() {
               <label className="block text-sm">Años hasta jubilación</label>
               <input
                 type="number"
-                className="w-full border rounded-xl p-2"
+                className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
                 value={years}
                 onChange={(e) => setYears(Number(e.target.value) || 0)}
                 min={0}
@@ -613,7 +686,7 @@ export default function App() {
               <div className="relative">
                 <input
                   type="number"
-                  className="w-full border rounded-xl p-2 pr-10"
+                  className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
                   value={annualContribution}
                   onChange={(e) => setAnnualContribution(Number(e.target.value) || 0)}
                   min={0}
@@ -625,7 +698,7 @@ export default function App() {
               <label className="block text-sm">TIR anual esperada: {tir}%</label>
               <input
                 type="range"
-                className="w-full"
+                className="w-full accent-cyan-600"
                 min={0}
                 max={25}
                 step={0.1}
@@ -637,7 +710,7 @@ export default function App() {
               <div className="relative">
                 <input
                   type="number"
-                  className="w-full border rounded-xl p-2 pr-10"
+                  className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
                   value={pension}
                   onChange={(e) => setPension(Number(e.target.value) || 0)}
                   min={0}
@@ -650,7 +723,7 @@ export default function App() {
                 <input
                   id="reinv"
                   type="checkbox"
-                  className="h-4 w-4"
+                  className="h-4 w-4 accent-cyan-600"
                   checked={reinvestSavings}
                   onChange={(e) => setReinvestSavings(e.target.checked)}
                 />
@@ -721,7 +794,7 @@ export default function App() {
                       </td>
                     </tr>
                     {/* Retiros fijos (Plan + reinversión en misma fila si está activa) */}
-                    {withdrawals.map((w, idx) => {
+                    {WITHDRAWALS.map((w, idx) => {
                       const ps = planSims[idx];
                       const cs = combinedSims[idx];
                       return (
@@ -758,7 +831,7 @@ export default function App() {
                           <span className="text-gray-500 text-xs"> ({fmtEUR(planTaxLump)} + {fmtEUR(reinvTaxLump)})</span>
                         )}
                       </td>
-                      <td className="py-2 pr-3">{formatDuration(0)}</td>
+                      <td className="py-2 pr-3">—</td>
                     </tr>
 
                     {/* ===== Fondo de inversión ===== */}
@@ -767,7 +840,7 @@ export default function App() {
                         Fondo de inversión
                       </td>
                     </tr>
-                    {withdrawals.map((w, idx) => {
+                    {WITHDRAWALS.map((w, idx) => {
                       const fs = fundSims[idx];
                       return (
                         <tr key={`fund-${w}`} className="border-t bg-white">
@@ -783,7 +856,7 @@ export default function App() {
                       <td className="py-2 pr-3 font-medium">Rescate total</td>
                       <td className="py-2 pr-3">{fmtEUR(fundNetLump)}</td>
                       <td className="py-2 pr-3 text-gray-600">{fmtEUR(fundTaxLump)}</td>
-                      <td className="py-2 pr-3">{formatDuration(0)}</td>
+                      <td className="py-2 pr-3">—</td>
                     </tr>
                   </tbody>
                 </table>
@@ -793,7 +866,11 @@ export default function App() {
               <div className="text-xs text-gray-600 leading-relaxed mt-4">
                 <p className="mb-2">Notas y supuestos:</p>
                 <ul className="list-disc ml-5 space-y-1">
-		  <li>En retiros parciales, el capital restante sigue creciendo cada año antes de cada retirada (plan, fondo y reinversión del ahorro IRPF).</li>
+                  <li>Los importes de “Retirar 10.000/15.000/…” son <b>brutos</b> retirados del capital cada año y se suman a la <b>pensión bruta</b>.</li>
+                  <li>
+                    Límites legales de aportación: hasta <b>1.500€</b>/año en <b>planes individuales (PPI)</b>. El tope de <b>10.000€</b>/año solo aplica cuando existe un <b>plan de empleo</b> (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan. En esta calculadora el campo “Aportación anual” se limita a 10.000€ asumiendo ese escenario.
+                  </li>
+                  <li>En retiros parciales, el capital restante sigue creciendo cada año al mismo TIR.</li>
                   <li>
                     IRPF general: suma de <i>escala estatal 2025</i> y <i>escala autonómica 2025</i> de la <b>CCAA seleccionada</b>.
                     Incluidas todas las CCAA de régimen común (sin Navarra ni País Vasco).
@@ -802,15 +879,6 @@ export default function App() {
                     IRPF del ahorro: 19%/21%/23%/27%/30% (España · normativa 2025). Los rescates de fondos tributan solo por la
                     ganancia efectivamente realizada cada año.
                   </li>
-                  <li>
-                    Simulaciones: mismo rendimiento anual antes y después de la jubilación. No se aplican mínimos personales/deducciones.
-                    El impuesto del plan en cada retirada se calcula como <i>cuota(pensión + retiro) − cuota(pensión)</i>.
-                  </li>
-                  <li>La aportación anual se limita a 10.000€ si es un plan de previsión y 1.500€ anuales para plan individual.</li>
-                  <li>
-                    Los tipos autonómicos se han parametrizado por tramos oficiales publicados (REAF 2025 y boletines autonómicos).
-                  </li>
-
                 </ul>
               </div>
             </div>
