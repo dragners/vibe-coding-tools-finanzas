@@ -1,23 +1,55 @@
-import React, { useMemo, useState } from "react";
-
-// =============================================
-// Utilidades
-// =============================================
+import React, { useMemo, useState, useEffect, useRef } from "react";
 const fmtEUR = (n: number) => n.toLocaleString("es-ES", {
   style: "currency",
   currency: "EUR",
   maximumFractionDigits: 0,
 });
-
 const formatDuration = (months: number) => {
   const y = Math.floor(months / 12);
   const m = months % 12;
   return `${y} años ${m} meses`;
 };
-
-// =============================================
-// Catálogo de CCAA (orden alfabético, régimen común; sin Navarra ni País Vasco)
-// =============================================
+const parseNum = (s: string | number): number => {
+  if (typeof s === 'number') return isFinite(s) ? s : 0;
+  if (!s) return 0;
+  const n = parseFloat(s.replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+};
+function InfoTip({ text, className = "" }: { text: string; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onScroll = () => setOpen(false);
+    document.addEventListener('click', onDocClick);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      document.removeEventListener('click', onDocClick);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
+  return (
+    <span ref={ref} className={`relative inline-block ${className}`}>
+      <button
+        type="button"
+        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-gray-600 border border-gray-300 leading-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+        aria-label="Más información"
+        aria-expanded={open}
+        onClick={() => setOpen(o => !o)}
+      >
+        ⓘ
+      </button>
+      {open && (
+        <div role="tooltip" className="absolute z-20 mt-2 w-64 max-w-[80vw] rounded-lg border border-gray-200 bg-white p-2 text-xs text-gray-700 shadow-lg right-0">
+          {text}
+        </div>
+      )}
+    </span>
+  );
+}
 const REGIONS = [
   "Andalucía",
   "Aragón",
@@ -35,16 +67,8 @@ const REGIONS = [
   "La Rioja",
   "Región de Murcia",
 ] as const;
-
 type RegionKey = typeof REGIONS[number];
-
-// Tipos auxiliares
 type ScaleSegment = { upTo: number; rate: number };
-
-// =============================================
-// Escalas IRPF 2025 (ahorro y estatal general)
-// =============================================
-// Ahorro 2025: 19% / 21% / 23% / 27% / 30%
 const SAVINGS_SCALE: ScaleSegment[] = [
   { upTo: 6000, rate: 0.19 },
   { upTo: 50000, rate: 0.21 },
@@ -52,8 +76,6 @@ const SAVINGS_SCALE: ScaleSegment[] = [
   { upTo: 300000, rate: 0.27 },
   { upTo: Infinity, rate: 0.30 },
 ];
-
-// Escala estatal base general 2025 (art. 63 LIRPF)
 const GENERAL_STATE_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.095 },
   { upTo: 20200, rate: 0.12 },
@@ -62,12 +84,6 @@ const GENERAL_STATE_SCALE_2025: ScaleSegment[] = [
   { upTo: 300000, rate: 0.225 },
   { upTo: Infinity, rate: 0.245 },
 ];
-
-// =============================================
-// Escalas autonómicas 2025 (régimen común)
-// Fuentes: REAF 2025 y boletines/portales autonómicos (ver notas en la UI)
-// =============================================
-// Andalucía
 const ANDALUCIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 13000, rate: 0.095 },
   { upTo: 21100, rate: 0.12 },
@@ -75,8 +91,6 @@ const ANDALUCIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 60000, rate: 0.185 },
   { upTo: Infinity, rate: 0.225 },
 ];
-
-// Aragón
 const ARAGON_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 13072.5, rate: 0.095 },
   { upTo: 21210, rate: 0.12 },
@@ -88,8 +102,6 @@ const ARAGON_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 130000, rate: 0.25 },
   { upTo: Infinity, rate: 0.255 },
 ];
-
-// Asturias
 const ASTURIAS_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.10 },
   { upTo: 17707.2, rate: 0.12 },
@@ -100,8 +112,6 @@ const ASTURIAS_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 175000, rate: 0.25 },
   { upTo: Infinity, rate: 0.255 },
 ];
-
-// Baleares
 const BALEARES_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 10000, rate: 0.09 },
   { upTo: 18000, rate: 0.1125 },
@@ -113,8 +123,6 @@ const BALEARES_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 175000, rate: 0.2375 },
   { upTo: Infinity, rate: 0.2475 },
 ];
-
-// Canarias
 const CANARIAS_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.09 },
   { upTo: 17707.2, rate: 0.115 },
@@ -124,8 +132,6 @@ const CANARIAS_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 120000, rate: 0.25 },
   { upTo: Infinity, rate: 0.26 },
 ];
-
-// Cantabria
 const CANTABRIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 13000, rate: 0.085 },
   { upTo: 21000, rate: 0.11 },
@@ -134,8 +140,6 @@ const CANTABRIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 90000, rate: 0.225 },
   { upTo: Infinity, rate: 0.245 },
 ];
-
-// Castilla-La Mancha
 const CASTILLA_LA_MANCHA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.095 },
   { upTo: 20200, rate: 0.12 },
@@ -143,8 +147,6 @@ const CASTILLA_LA_MANCHA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 60000, rate: 0.185 },
   { upTo: Infinity, rate: 0.225 },
 ];
-
-// Castilla y León
 const CASTILLA_Y_LEON_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.09 },
   { upTo: 20200, rate: 0.12 },
@@ -152,8 +154,6 @@ const CASTILLA_Y_LEON_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 60000, rate: 0.185 },
   { upTo: Infinity, rate: 0.215 },
 ];
-
-// Cataluña (8 tramos)
 const CATALONIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.105 },
   { upTo: 17707.2, rate: 0.12 },
@@ -165,8 +165,6 @@ const CATALONIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 175000, rate: 0.245 },
   { upTo: Infinity, rate: 0.255 },
 ];
-
-// Comunidad de Madrid
 const MADRID_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 13362.22, rate: 0.085 },
   { upTo: 19004.63, rate: 0.107 },
@@ -174,8 +172,6 @@ const MADRID_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 57320.4, rate: 0.174 },
   { upTo: Infinity, rate: 0.205 },
 ];
-
-// Comunidad Valenciana
 const VALENCIANA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12000, rate: 0.09 },
   { upTo: 22000, rate: 0.12 },
@@ -189,8 +185,6 @@ const VALENCIANA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 200000, rate: 0.285 },
   { upTo: Infinity, rate: 0.295 },
 ];
-
-// Extremadura
 const EXTREMADURA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.08 },
   { upTo: 20200, rate: 0.10 },
@@ -203,8 +197,6 @@ const EXTREMADURA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 300000, rate: 0.25 },
   { upTo: Infinity, rate: 0.25 },
 ];
-
-// Galicia
 const GALICIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.09 },
   { upTo: 12985, rate: 0.09 },
@@ -215,8 +207,6 @@ const GALICIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 60000, rate: 0.225 },
   { upTo: Infinity, rate: 0.225 },
 ];
-
-// La Rioja
 const LA_RIOJA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.08 },
   { upTo: 20200, rate: 0.106 },
@@ -227,8 +217,6 @@ const LA_RIOJA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 120000, rate: 0.245 },
   { upTo: Infinity, rate: 0.27 },
 ];
-
-// Región de Murcia
 const MURCIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 12450, rate: 0.095 },
   { upTo: 20200, rate: 0.112 },
@@ -237,7 +225,6 @@ const MURCIA_AUTON_SCALE_2025: ScaleSegment[] = [
   { upTo: 60000, rate: 0.179 },
   { upTo: Infinity, rate: 0.225 },
 ];
-
 const AUTON_SCALES_2025: Record<RegionKey, ScaleSegment[]> = {
   "Andalucía": ANDALUCIA_AUTON_SCALE_2025,
   "Aragón": ARAGON_AUTON_SCALE_2025,
@@ -255,8 +242,6 @@ const AUTON_SCALES_2025: Record<RegionKey, ScaleSegment[]> = {
   "La Rioja": LA_RIOJA_AUTON_SCALE_2025,
   "Región de Murcia": MURCIA_AUTON_SCALE_2025,
 };
-
-// Dev-only: validación de escalas (protege contra errores de transcripción)
 function assertValidScale(scale: ScaleSegment[], name: string) {
   let last = -Infinity;
   for (const seg of scale) {
@@ -272,10 +257,6 @@ if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "p
     assertValidScale(scale as ScaleSegment[], `Autonómica 2025 · ${ccaa}`);
   }
 }
-
-// =============================================
-// Cálculo de impuestos progresivos
-// =============================================
 function taxFromScale(base: number, scale: ScaleSegment[]) {
   if (base <= 0) return 0;
   let taxed = 0;
@@ -290,12 +271,10 @@ function taxFromScale(base: number, scale: ScaleSegment[]) {
   }
   return taxed;
 }
-
 function generalTax(base: number, region: RegionKey) {
   const auton = AUTON_SCALES_2025[region];
   return taxFromScale(base, GENERAL_STATE_SCALE_2025) + taxFromScale(base, auton);
 }
-
 function generalMarginalRate(base: number, region: RegionKey) {
   return marginalByDiff(base, region, 10); // 10€ para suavizar bordes de tramo
 }
@@ -305,28 +284,16 @@ function marginalByDiff(base: number, region: RegionKey, step = 10) {
   const t1 = generalTax(base + step, region);
   return (t1 - t0) / step;
 }
-
 function savingsTax(amount: number) {
   return taxFromScale(amount, SAVINGS_SCALE);
 }
-
-// =============================================
-// Finanzas básicas
-// =============================================
 function fvAnnuity(pmt: number, r: number, n: number) {
   if (n <= 0) return 0;
   if (r === 0) return pmt * n;
   return (pmt * (Math.pow(1 + r, n) - 1)) / r;
 }
-
-// =============================================
-// Simulaciones de rescate
-
-// Escenarios de retirada estándar (estable, fuera del componente)
 const WITHDRAWALS = [10000, 15000, 20000, 25000, 35000] as const;
 const MAX_WITHDRAWAL_YEARS = 35 as const;
-// =============================================
-// Plan (todo tributa como trabajo)
 function simulatePlanWithdrawals(params: {
   startCapital: number;
   pensionAnnual: number;
@@ -361,8 +328,6 @@ function simulatePlanWithdrawals(params: {
   const months = Math.min(MAX_WITHDRAWAL_YEARS * 12, Math.max(0, Math.round(fullYears * 12)));
   return { yearsFloat: fullYears, months, totalGross, totalTax, totalNet };
 }
-
-// Fondo (solo tributa la ganancia realizada)
 function simulateFundWithdrawals(params: {
   startValue: number;
   costBasis: number; // suma de aportaciones
@@ -400,8 +365,6 @@ function simulateFundWithdrawals(params: {
   const months = Math.min(MAX_WITHDRAWAL_YEARS * 12, Math.max(0, Math.round(fullYears * 12)));
   return { yearsFloat: fullYears, months, totalGross, totalTax, totalNet };
 }
-
-// Combinado Plan + Reinversión (retiro proporcional al peso de cada parte)
 function simulateCombinedWithdrawals(params: {
   startPlanCapital: number;
   startReinvValue: number;
@@ -433,11 +396,9 @@ function simulateCombinedWithdrawals(params: {
     const targetW = Math.min(annualWithdrawal, avail);
     const wPlan = avail > 0 ? targetW * (planValue / avail) : 0;
     const wReinv = targetW - wPlan;
-
     const taxPlan = Math.max(0, generalTax(pensionAnnual + wPlan, region) - generalTax(pensionAnnual, region));
     const netPlan = wPlan - taxPlan;
     planValue = Math.max(0, planValue - wPlan);
-
     let taxReinv = 0;
     let netReinv = 0;
     if (wReinv > 0 && reinvValue > 0) {
@@ -449,7 +410,6 @@ function simulateCombinedWithdrawals(params: {
       basis = Math.max(0, basis - basisRedeemed);
       reinvValue = Math.max(0, reinvValue - wReinv);
     }
-
     totalGross += targetW;
     totalTax += taxPlan + taxReinv;
     totalNet += netPlan + netReinv;
@@ -477,49 +437,30 @@ function simulateCombinedWithdrawals(params: {
     reinvTax: reinvTaxTot,
   };
 }
-
-// =============================================
-// Tests (no tocar salvo que sean claramente erróneos)
-// =============================================
 function runTests() {
   const approx = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
-
-  // savingsTax básicos
   console.assert(approx(savingsTax(1000), 190), "savingsTax 1000 => 190");
   console.assert(approx(savingsTax(7000), 6000 * 0.19 + 1000 * 0.21), "savingsTax tramos");
   console.assert(approx(savingsTax(51000), 6000 * 0.19 + 44000 * 0.21 + 1000 * 0.23), "savingsTax salto 50k");
-  // UMBRAL exacto 6.000€
   console.assert(approx(savingsTax(6000), 6000 * 0.19), "savingsTax umbral 6k");
-
-  // fvAnnuity
   console.assert(approx(fvAnnuity(1500, 0, 10), 15000), "fvAnnuity r=0");
   console.assert(approx(Math.round(fvAnnuity(1000, 0.05, 1)), 1000), "fvAnnuity 1 año r>0 (aprox)");
-
-  // generalTax base 0
   console.assert(generalTax(0, "Cataluña") === 0, "generalTax 0 => 0");
-
-  // Marginales relativos entre CCAA
   const mgCAT = generalMarginalRate(50000, "Cataluña");
   const mgMAD = generalMarginalRate(50000, "Comunidad de Madrid");
   console.assert(mgMAD < mgCAT, "marginal Madrid < Cataluña (esperado)");
-
   const mgVAL = generalMarginalRate(250000, "Comunidad Valenciana");
   const mgMAD_hi = generalMarginalRate(250000, "Comunidad de Madrid");
   console.assert(mgVAL > mgMAD_hi, "Valenciana debería tener mayor marginal alto que Madrid");
-
   const mgEXT_low = generalMarginalRate(10000, "Extremadura");
   const mgCYL_low = generalMarginalRate(10000, "Castilla y León");
   console.assert(mgEXT_low < mgCYL_low, "Extremadura tiene mínimo autonómico más bajo que CyL");
-
-  // === Nuevos tests: capital inicial 0 => meses 0 ===
   const z1 = simulatePlanWithdrawals({ startCapital: 0, pensionAnnual: 0, annualWithdrawal: 10000, r: 0.05, region: "Cataluña" });
   console.assert(z1.months === 0, "Plan con 0 capital inicial debe dar 0 meses");
   const z2 = simulateFundWithdrawals({ startValue: 0, costBasis: 0, annualWithdrawal: 10000, r: 0.05 });
   console.assert(z2.months === 0, "Fondo con 0 valor inicial debe dar 0 meses");
   const z3 = simulateCombinedWithdrawals({ startPlanCapital: 0, startReinvValue: 0, reinvCostBasis: 0, pensionAnnual: 0, annualWithdrawal: 10000, r: 0.05, region: "Cataluña" });
   console.assert(z3.months === 0, "Combinado con 0 capital inicial debe dar 0 meses");
-
-  // === Cap de duración: 35 años máximo ===
   const capFund = simulateFundWithdrawals({ startValue: 1e9, costBasis: 1e9, annualWithdrawal: 1000, r: 0.1 });
   console.assert(capFund.months === MAX_WITHDRAWAL_YEARS * 12, "Cap duración (fondo): <= 35 años");
   const capPlan = simulatePlanWithdrawals({ startCapital: 1e9, pensionAnnual: 0, annualWithdrawal: 1000, r: 0.1, region: "Cataluña" });
@@ -528,40 +469,29 @@ function runTests() {
   console.assert(capComb.months === MAX_WITHDRAWAL_YEARS * 12, "Cap duración (combinado): <= 35 años");
 }
 if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") { runTests(); }
-
-// =============================================
-// Componente principal
-// =============================================
 export default function App() {
-  // Entradas
-  const [salary, setSalary] = useState(45000);
-  const [years, setYears] = useState(25);
-  const [annualContribution, setAnnualContribution] = useState(1500);
+  const [salaryInput, setSalaryInput] = useState("45000");
+  const [yearsInput, setYearsInput] = useState("25");
+  const [annualContributionInput, setAnnualContributionInput] = useState("1500");
   const [tir, setTir] = useState(5); // %
-  const [pension, setPension] = useState(22000);
+  const [pensionInput, setPensionInput] = useState("22000");
   const [reinvestSavings, setReinvestSavings] = useState(false);
   const [region, setRegion] = useState<RegionKey>("Cataluña");
-
+  const salary = useMemo(() => Math.max(0, parseNum(salaryInput)), [salaryInput]);
+  const years = useMemo(() => Math.max(0, Math.floor(parseNum(yearsInput))), [yearsInput]);
+  const annualContributionRaw = useMemo(() => Math.max(0, parseNum(annualContributionInput)), [annualContributionInput]);
+  const pension = useMemo(() => Math.max(0, parseNum(pensionInput)), [pensionInput]);
   const r = useMemo(() => Math.max(0, Math.min(0.25, tir / 100)), [tir]);
-  const contrib = Math.min(10000, Math.max(0, annualContribution));
-  const N = Math.max(0, Math.floor(years));
-
-  // Tipos
+  const contrib = useMemo(() => Math.min(10000, annualContributionRaw), [annualContributionRaw]);
+  const N = useMemo(() => years, [years]);
   const marginalGeneral = useMemo(() => generalMarginalRate(salary, region), [salary, region]);
-
-  // Acumulación antes de la jubilación
   const accFV = useMemo(() => fvAnnuity(contrib, r, N), [contrib, r, N]);
   const planFV = accFV;
   const fundFV = accFV;
-
   const fundCost = useMemo(() => contrib * N, [contrib, N]);
   const planCost = fundCost;
-
-  // Ahorro IRPF anual estimado (tipo marginal)
   const annualIRPFSaving = useMemo(() => contrib * marginalGeneral, [contrib, marginalGeneral]);
   const totalIRPFSaved = useMemo(() => annualIRPFSaving * N, [annualIRPFSaving, N]);
-
-  // Fondo por reinversión del ahorro IRPF
   const reinvestFV = useMemo(
     () => (reinvestSavings ? fvAnnuity(annualIRPFSaving, r, N) : 0),
     [annualIRPFSaving, r, N, reinvestSavings]
@@ -570,26 +500,19 @@ export default function App() {
     () => (reinvestSavings ? annualIRPFSaving * N : 0),
     [annualIRPFSaving, N, reinvestSavings]
   );
-
-  // Resúmenes combinados para tarjetas
   const combinedPlanBruto = useMemo(() => (reinvestSavings ? planFV + reinvestFV : planFV), [reinvestSavings, planFV, reinvestFV]);
   const combinedPlanInvertido = useMemo(() => (reinvestSavings ? planCost + reinvestCost : planCost), [reinvestSavings, planCost, reinvestCost]);
-
-  // Rescate único (lump sum)
   const planTaxLump = useMemo(
     () => Math.max(0, generalTax(pension + planFV, region) - generalTax(pension, region)),
     [pension, planFV, region]
   );
   const planNetLump = useMemo(() => planFV - planTaxLump, [planFV, planTaxLump]);
-
   const fundGain = useMemo(() => Math.max(0, fundFV - fundCost), [fundFV, fundCost]);
   const fundTaxLump = useMemo(() => savingsTax(fundGain), [fundGain]);
   const fundNetLump = useMemo(() => fundFV - fundTaxLump, [fundFV, fundTaxLump]);
-
   const reinvGain = useMemo(() => Math.max(0, reinvestFV - reinvestCost), [reinvestFV, reinvestCost]);
   const reinvTaxLump = useMemo(() => savingsTax(reinvGain), [reinvGain]);
   const reinvNetLump = useMemo(() => reinvestFV - reinvTaxLump, [reinvestFV, reinvTaxLump]);
-
   const combinedNetLump = useMemo(
     () => (reinvestSavings ? planNetLump + reinvNetLump : planNetLump),
     [reinvestSavings, planNetLump, reinvNetLump]
@@ -598,9 +521,6 @@ export default function App() {
     () => (reinvestSavings ? planTaxLump + reinvTaxLump : planTaxLump),
     [reinvestSavings, planTaxLump, reinvTaxLump]
   );
-
-  // Retiros estándar
-
   const planSims = useMemo(
     () => WITHDRAWALS.map((w) => ({ w, ...simulatePlanWithdrawals({ startCapital: planFV, pensionAnnual: pension, annualWithdrawal: w, r, region }) })),
     [planFV, pension, r, region]
@@ -626,10 +546,9 @@ export default function App() {
     ),
     [planFV, reinvestFV, reinvestCost, pension, r, region, reinvestSavings]
   );
-
   return (
     <div className="relative min-h-screen text-gray-900">
-      {/* Fondo estilo landing */}
+      
       <style>{`
         .landing-bg{
           position: fixed;
@@ -646,7 +565,7 @@ export default function App() {
         }
       `}</style>
       <div className="landing-bg" aria-hidden />
-      {/* Top header back to landing */}
+      
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <a
@@ -666,125 +585,119 @@ export default function App() {
           El ahorro anual por aportar al plan se estima con tu <i>tipo marginal</i> (estatal + autonómico según comunidad seleccionada).
           Al rescatar, el plan tributa por tramos de la <i>base general</i> y los fondos por la <i>tarifa del ahorro</i> sobre la ganancia realizada.
         </p>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Panel de entradas */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow p-4 space-y-4">
-              <h2 className="font-semibold">Entradas</h2>
-
-              <label className="block text-sm">Comunidad Autónoma</label>
-              <select
-                className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
-                value={region}
-                onChange={(e) => setRegion(e.target.value as RegionKey)}
-              >
-                {REGIONS.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
-
-              <label className="block text-sm mt-2">Salario bruto anual actual</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
-                  value={salary}
-                  onChange={(e) => setSalary(Number(e.target.value) || 0)}
-                  min={0}
-                  step={1000}
-                />
-                <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">€</span>
-              </div>
-
-              <label className="block text-sm">Años hasta jubilación</label>
-              <input
-                type="number"
-                className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
-                value={years}
-                onChange={(e) => setYears(Number(e.target.value) || 0)}
-                min={0}
-                max={60}
-              />
-
-              <label className="block text-sm">Aportación anual (máx. 10.000€)<span className="ml-1 text-gray-500 cursor-help" title="Límites legales de aportación: hasta 1.500€/año en planes individuales (PPI). El tope de 10.000€/año solo aplica cuando existe un plan de empleo (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan.">ⓘ</span></label>
-              <div className="relative">
-                <input
-                  type="number"
-                  className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
-                  value={annualContribution}
-                  onChange={(e) => setAnnualContribution(Math.min(10000, Math.max(0, Number(e.target.value) || 0)))}
-                  min={0}
-                  max={10000}
-                />
-                <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">€</span>
-              </div>
-
-              <label className="block text-sm">TIR anual esperada: {tir}%</label>
-              <input
-                type="range"
-                className="w-full accent-cyan-600"
-                min={0}
-                max={25}
-                step={0.1}
-                value={tir}
-                onChange={(e) => setTir(Number(e.target.value))}
-              />
-
-              <label className="block text-sm">Pensión pública prevista (anual)</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
-                  value={pension}
-                  onChange={(e) => setPension(Number(e.target.value) || 0)}
-                  min={0}
-                  step={500}
-                />
-                <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">€</span>
-              </div>
-
-              <div>
-                <label className="block text-sm mb-2">¿Reinvertir el ahorro anual de IRPF en un fondo de inversión (capitalizar el ahorro)?</label>
-                <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1" role="radiogroup" aria-label="Reinvertir ahorro IRPF">
-                  <label className="cursor-pointer">
-                    <input
-                      type="radio"
-                      name="reinv"
-                      value="no"
-                      className="sr-only peer"
-                      checked={!reinvestSavings}
-                      onChange={() => setReinvestSavings(false)}
-                    />
-                    <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-500">No</span>
-                  </label>
-                  <label className="cursor-pointer">
-                    <input
-                      type="radio"
-                      name="reinv"
-                      value="si"
-                      className="sr-only peer"
-                      checked={reinvestSavings}
-                      onChange={() => setReinvestSavings(true)}
-                    />
-                    <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-500">Sí</span>
-                  </label>
+        <div className="grid grid-cols-1 gap-6">
+          
+          <div>
+            <div className="bg-white rounded-2xl shadow p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <label className="block text-sm">Comunidad Autónoma</label>
+                  <select
+                    className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value as RegionKey)}
+                  >
+                    {REGIONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-
-              <div className="text-xs text-gray-500">
-                Tipo marginal estimado (trabajo): <b>{(marginalGeneral * 100).toFixed(1)}%</b>
-                <br />
-                Ahorro IRPF anual por aportar al plan: <b>{fmtEUR(annualIRPFSaving)}</b>
+                <div className="md:col-span-1">
+                  <label className="block text-sm">Salario bruto anual actual</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
+                      value={salaryInput}
+                      onChange={(e) => setSalaryInput(e.target.value)}
+                      min={0}
+                      step={1000}
+                    />
+                    <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">€</span>
+                  </div>
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-sm">Años hasta jubilación</label>
+                  <input
+                    type="number"
+                    className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
+                    value={yearsInput}
+                    onChange={(e) => setYearsInput(e.target.value)}
+                    min={0}
+                    max={60}
+                  />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-sm">Aportación anual (máx. 10.000€) <InfoTip className="ml-1 align-middle" text="Límites legales de aportación: hasta 1.500€/año en planes individuales (PPI). El tope de 10.000€/año solo aplica cuando existe un plan de empleo (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan." /></label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
+                      value={annualContributionInput}
+                      onChange={(e) => setAnnualContributionInput(e.target.value)}
+                      min={0}
+                      max={10000}
+                      onBlur={() => { const n = parseNum(annualContributionInput); const c = Math.min(10000, Math.max(0, n)); setAnnualContributionInput(String(c)); }}
+                    />
+                    <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">€</span>
+                  </div>
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-sm">TIR anual esperada: {tir}%</label>
+                  <input
+                    type="range"
+                    className="w-full accent-cyan-600"
+                    min={0}
+                    max={25}
+                    step={0.1}
+                    value={tir}
+                    onChange={(e) => setTir(Number(e.target.value))}
+                  />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-sm">Pensión pública prevista (anual)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
+                      value={pensionInput}
+                      onChange={(e) => setPensionInput(e.target.value)}
+                      min={0}
+                      step={500}
+                    />
+                    <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">€</span>
+                  </div>
+                </div>
+                <div className="md:col-span-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 md:items-center md:gap-4">
+                    <div>
+                      <label className="block text-sm mb-2">¿Reinvertir el ahorro anual de IRPF en un fondo de inversión? <InfoTip className="ml-1 align-middle" text="Si reinviertes en un fondo el ahorro de IRPF generado por las aportaciones al plan de pensiones, ese ahorro también se invierte y se capitaliza al mismo TIR que el fondo. En rescates parciales, los importes se prorratean entre plan y fondo." /></label>
+                      <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1" role="radiogroup" aria-label="Reinvertir ahorro IRPF">
+                        <label className="cursor-pointer">
+                          <input type="radio" name="reinv" value="no" className="sr-only peer" checked={!reinvestSavings} onChange={() => setReinvestSavings(false)} />
+                          <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">No</span>
+                        </label>
+                        <label className="cursor-pointer">
+                          <input type="radio" name="reinv" value="si" className="sr-only peer" checked={reinvestSavings} onChange={() => setReinvestSavings(true)} />
+                          <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">Sí</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 md:text-right mt-3 md:mt-0">
+                      <div>Tipo marginal estimado (trabajo): <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
+                      <div>Ahorro IRPF anual por aportar al plan: <b>{fmtEUR(annualIRPFSaving)}</b></div>
+                    </div>
+                  </div>
+                </div>
+                
               </div>
             </div>
           </div>
-
-          {/* Resumen sin rescate único */}
-          <div className="lg:col-span-2 space-y-6">
+          
+          <div className="space-y-6">
             <h2 className="text-xl md:text-2xl font-bold">Valor a la jubilación</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Tarjeta Plan de pensiones */}
+              
               <div className="bg-white rounded-2xl shadow p-4">
                 <div className="text-base font-semibold text-gray-700">{reinvestSavings ? 'Plan de pensiones + Fondo (ahorro IRPF)' : 'Plan de pensiones'}</div>
                 <div className="text-xl font-bold">{fmtEUR(combinedPlanBruto)}</div>
@@ -802,8 +715,7 @@ export default function App() {
                   </>
                 )}
               </div>
-
-              {/* Tarjeta Fondo de inversión */}
+              
               <div className="bg-white rounded-2xl shadow p-4">
                 <div className="text-base font-semibold text-gray-700">Fondo de inversión</div>
                 <div className="text-xl font-bold">{fmtEUR(fundFV)}</div>
@@ -812,69 +724,67 @@ export default function App() {
                 <div className="text-xs text-gray-500">Detalle invertido: Fondo {fmtEUR(fundCost)}</div>
               </div>
             </div>
-
-            {/* Tabla rescates */}
+            
             <div className="bg-white rounded-2xl shadow p-4">
-              <h3 className="font-semibold mb-3">Rescates (incluye rescate total) y duración del capital</h3>
+              <h3 className="font-semibold mb-3">Rescates y duración del capital</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="text-left text-gray-600">
                       <th className="py-2 pr-3">Escenario</th>
-                      <th className="py-2 pr-3">Neto a recibir</th>
-                      <th className="py-2 pr-3">Impuestos pagados</th>
-                      <th className="py-2 pr-3">Duración</th>
+                      <th className="py-2 pr-3 text-center">Neto Total <InfoTip className="ml-1 align-middle" text="Importe neto total recibido a partir del capital acumulado (aportaciones + rentabilidad) del plan de pensiones o de los fondos, tras agotar la duración. No incluye los cobros de la pensión pública." /></th>
+                      <th className="py-2 pr-3 text-center">Impuestos Totales <InfoTip className="ml-1 align-middle" text="Total de impuestos satisfechos por las retiradas del capital acumulado del plan de pensiones o de los fondos durante la duración. No incluye los impuestos asociados a la pensión pública." /></th>
+                      <th className="py-2 pr-3 text-center">Duración</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {/* ===== Plan de pensiones (condicional) ===== */}
+                    
                     <tr>
                       <td colSpan={4} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded">
                         {reinvestSavings ? 'Plan de pensiones + Fondo (ahorro IRPF)' : 'Plan de pensiones'}
                       </td>
                     </tr>
-                    {/* Retiros fijos (Plan + reinversión en misma fila si está activa) */}
+                    
                     {WITHDRAWALS.map((w, idx) => {
                       const ps = planSims[idx];
                       const cs = combinedSims[idx];
                       return (
                         <tr key={`plan-${w}`} className="border-t bg-gray-50">
                           <td className="py-2 pr-3 font-medium">Retirar {fmtEUR(w)}/año</td>
-                          <td className="py-2 pr-3">
+                          <td className="py-2 pr-3 text-center">
                             {fmtEUR(reinvestSavings ? cs.totalNet : ps.totalNet)}
                             {reinvestSavings && (
                               <span className="text-gray-500 text-xs"> ({fmtEUR(cs.planNet)} + {fmtEUR(cs.reinvNet)})</span>
                             )}
                           </td>
-                          <td className="py-2 pr-3 text-gray-600">
+                          <td className="py-2 pr-3 text-gray-600 text-center">
                             {fmtEUR(reinvestSavings ? cs.totalTax : ps.totalTax)}
                             {reinvestSavings && (
                               <span className="text-gray-500 text-xs"> ({fmtEUR(cs.planTax)} + {fmtEUR(cs.reinvTax)})</span>
                             )}
                           </td>
-                          <td className="py-2 pr-3">{formatDuration(reinvestSavings ? cs.months : ps.months)}</td>
+                          <td className="py-2 pr-3 text-center">{formatDuration(reinvestSavings ? cs.months : ps.months)}</td>
                         </tr>
                       );
                     })}
-                    {/* Rescate total (al final) */}
+                    
                     <tr className="border-t bg-gray-50">
                       <td className="py-2 pr-3 font-medium">Rescate total</td>
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pr-3 text-center">
                         {fmtEUR(reinvestSavings ? combinedNetLump : planNetLump)}
                         {reinvestSavings && (
                           <span className="text-gray-500 text-xs"> ({fmtEUR(planNetLump)} + {fmtEUR(reinvNetLump)})</span>
                         )}
                       </td>
-                      <td className="py-2 pr-3 text-gray-600">
+                      <td className="py-2 pr-3 text-gray-600 text-center">
                         {fmtEUR(reinvestSavings ? combinedTaxLump : planTaxLump)}
                         {reinvestSavings && (
                           <span className="text-gray-500 text-xs"> ({fmtEUR(planTaxLump)} + {fmtEUR(reinvTaxLump)})</span>
                         )}
                       </td>
-                      <td className="py-2 pr-3">—</td>
+                      <td className="py-2 pr-3 text-center">—</td>
                     </tr>
-
-                    {/* ===== Fondo de inversión ===== */}
+                    
                     <tr>
                       <td colSpan={4} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded mt-2">
                         Fondo de inversión
@@ -885,24 +795,23 @@ export default function App() {
                       return (
                         <tr key={`fund-${w}`} className="border-t bg-white">
                           <td className="py-2 pr-3 font-medium">Retirar {fmtEUR(w)}/año</td>
-                          <td className="py-2 pr-3">{fmtEUR(fs.totalNet)}</td>
-                          <td className="py-2 pr-3 text-gray-600">{fmtEUR(fs.totalTax)}</td>
-                          <td className="py-2 pr-3">{formatDuration(fs.months)}</td>
+                          <td className="py-2 pr-3 text-center">{fmtEUR(fs.totalNet)}</td>
+                          <td className="py-2 pr-3 text-gray-600 text-center">{fmtEUR(fs.totalTax)}</td>
+                          <td className="py-2 pr-3 text-center">{formatDuration(fs.months)}</td>
                         </tr>
                       );
                     })}
-                    {/* Rescate total (al final) */}
+                    
                     <tr className="border-t bg-white">
                       <td className="py-2 pr-3 font-medium">Rescate total</td>
-                      <td className="py-2 pr-3">{fmtEUR(fundNetLump)}</td>
-                      <td className="py-2 pr-3 text-gray-600">{fmtEUR(fundTaxLump)}</td>
-                      <td className="py-2 pr-3">—</td>
+                      <td className="py-2 pr-3 text-center">{fmtEUR(fundNetLump)}</td>
+                      <td className="py-2 pr-3 text-gray-600 text-center">{fmtEUR(fundTaxLump)}</td>
+                      <td className="py-2 pr-3 text-center">—</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-
-              {/* Notas */}
+              
               <div className="text-xs text-gray-600 leading-relaxed mt-4">
                 <p className="mb-2">Notas y supuestos:</p>
                 <ul className="list-disc ml-5 space-y-1">
@@ -922,6 +831,7 @@ export default function App() {
                   </li>
                 </ul>
               </div>
+              <div className="mt-6 text-sm text-gray-600">© David Gonzalez, si quieres saber más sobre mí, visita <a className="text-cyan-700 hover:underline" href="https://dragner.net/" target="_blank" rel="noopener"><strong>dragner.net</strong></a></div>
             </div>
           </div>
         </div>

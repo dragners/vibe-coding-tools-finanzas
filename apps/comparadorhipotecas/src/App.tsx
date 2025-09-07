@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, useId } from "react";
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 const roundStep05 = (n: number) => Math.round(n * 20) / 20;
@@ -168,6 +168,61 @@ const TEXTS = {
 type Lang = keyof typeof TEXTS;
 
 type I18n = { [K in keyof typeof TEXTS['es']]: string };
+
+function InfoTip({ content, label = 'Información', side = 'bottom', className = '' }: { content: React.ReactNode; label?: string; side?: 'top' | 'bottom'; className?: string; }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const popRef = useRef<HTMLDivElement | null>(null);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: Event) => {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t) || popRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onScroll = () => setOpen(false);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('touchstart', onDoc, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('touchstart', onDoc);
+      window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <span className={`relative inline-flex ${className}`}>
+      <button
+        ref={btnRef}
+        type="button"
+        aria-label={label}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen(v => !v)}
+        className={`inline-flex items-center justify-center w-4 h-4 text-[10px] rounded-full border align-middle focus:outline-none focus:ring-2 focus:ring-cyan-500 ${open ? 'border-cyan-400 text-cyan-700 bg-cyan-50' : 'border-gray-300 text-gray-600 bg-white'}`}
+      >
+        i
+      </button>
+      {open && (
+        <div
+          ref={popRef}
+          id={id}
+          role="tooltip"
+          className={`absolute z-50 ${side === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} left-1/2 -translate-x-1/2 max-w-[260px] text-xs p-2 rounded-lg border bg-white shadow-lg text-gray-700`}
+        >
+          {content}
+        </div>
+      )}
+    </span>
+  );
+}
 
 function PercentInput({ value, min, max, onChange, t }: { value: number; min: number; max: number; onChange: (v: number) => void; t: I18n; }) {
   const [text, setText] = useState<string>(toComma2(value));
@@ -390,11 +445,7 @@ export default function App() {
                 <div>
                   <label className="block text-base md:text-lg font-semibold flex items-center gap-1.5">
                     {t.amount}
-                    <span
-                      className="inline-flex items-center justify-center w-4 h-4 text-[10px] rounded-full border border-gray-300 text-gray-600 align-middle cursor-help"
-                      title={t.amountInfo}
-                      aria-label="Info importe a financiar"
-                    >i</span>
+                    <InfoTip className="ml-1" content={t.amountInfo} label="Información: Importe a financiar" />
                   </label>
                   <div className="relative mt-1">
                     <input type="number" className="w-full border rounded-xl p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
@@ -425,19 +476,11 @@ export default function App() {
               <div className="grid grid-cols-10 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
                 <div className="col-span-2">{t.bank}</div>
                 <div className="col-span-1 inline-flex items-center gap-1">{t.tinBase}
-                  <span
-                    className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] rounded-full border border-gray-300 text-gray-600 align-middle cursor-help"
-                    title={t.tinInfo}
-                    aria-label="Info TIN"
-                  >i</span>
+                  <InfoTip className="ml-1" content={t.tinInfo} label="Información: TIN" />
                 </div>
                 <div className="col-span-1">
                   <span>{t.payroll}</span>
-                  <span
-                    className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] rounded-full border border-gray-300 text-gray-600 align-middle cursor-help"
-                    title={t.payrollInfo}
-                    aria-label="Info Nómina"
-                  >i</span>
+                  <InfoTip className="ml-1" content={t.payrollInfo} label="Información: Nómina" />
                   <br/>
                   <span className="font-normal">{t.bonif}</span>
                 </div>
@@ -491,30 +534,20 @@ export default function App() {
                       <th className="py-2 pr-3 text-left border-r-2 border-gray-200">{t.bank}</th>
                       <th className="py-2 pr-3 text-center border-l-2 border-gray-200">{t.monthlyNo}</th>
                       <th className="py-2 pr-3 text-center">{t.taeNo}</th>
-                      <th className="py-2 pr-3 text-center border-r-2 border-gray-200">{t.costTotalHip}</th>
+                      <th className="py-2 pr-3 text-center border-r-2 border-gray-200">{t.costTotalHip}
+                        <InfoTip className="ml-1" content={t.costTotalInfoNoProd} label="Información: Coste Total Hipoteca" />
+                      </th>
 
                       <th className="py-2 pr-3 text-center border-l-2 border-gray-200">{t.productsCol}
-                        <span
-                          className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] rounded-full border border-gray-300 text-gray-600 align-middle cursor-help"
-                          title={t.productsInfo}
-                          aria-label="Información Productos"
-                        >i</span>
+                        <InfoTip className="ml-1" content={t.productsInfo} label="Información: Productos" />
                       </th>
                       <th className="py-2 pr-3 text-center">{t.monthlyYes}</th>
                       <th className="py-2 pr-3 text-center">{t.costAnnualProducts}
-                        <span
-                          className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] rounded-full border border-gray-300 text-gray-600 align-middle cursor-help"
-                          title={t.costAnnualInfo}
-                          aria-label="Información Coste anual con productos"
-                        >i</span>
+                        <InfoTip className="ml-1" content={t.costAnnualInfo} label="Información: Coste anual con productos" />
                       </th>
                       <th className="py-2 pr-3 text-center">{t.taeYes}</th>
                       <th className="py-2 pr-3 text-center">{t.costTotalHip}
-                        <span
-                          className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] rounded-full border border-gray-300 text-gray-600 align-middle cursor-help"
-                          title={t.costTotalInfoNoProd}
-                          aria-label="Información Coste Total Hipoteca"
-                        >i</span>
+                        <InfoTip className="ml-1" content={t.costTotalInfoNoProd} label="Información: Coste Total Hipoteca" />
                       </th>
                     </tr>
                   </thead>
