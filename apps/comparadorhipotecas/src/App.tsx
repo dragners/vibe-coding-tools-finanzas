@@ -1,4 +1,3 @@
-\
 import React, { useMemo, useState, useEffect } from "react";
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
@@ -168,7 +167,9 @@ const TEXTS = {
 
 type Lang = keyof typeof TEXTS;
 
-function PercentInput({ value, min, max, onChange, t }: { value: number; min: number; max: number; onChange: (v: number) => void; t: typeof TEXTS["es"]; }) {
+type I18n = { [K in keyof typeof TEXTS['es']]: string };
+
+function PercentInput({ value, min, max, onChange, t }: { value: number; min: number; max: number; onChange: (v: number) => void; t: I18n; }) {
   const [text, setText] = useState<string>(toComma2(value));
   const [dotError, setDotError] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -256,7 +257,7 @@ function PercentInput({ value, min, max, onChange, t }: { value: number; min: nu
   );
 }
 
-function MoneyInput({ value, onChange, t }: { value: number; onChange: (v: number) => void; t: typeof TEXTS["es"]; }) {
+function MoneyInput({ value, onChange, t }: { value: number; onChange: (v: number) => void; t: I18n; }) {
   const [text, setText] = useState<string>(toComma2(value));
   const [dotError, setDotError] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -301,7 +302,7 @@ function MoneyInput({ value, onChange, t }: { value: number; onChange: (v: numbe
 
 export default function App() {
   const [lang, setLang] = useState<Lang>("es");
-  const t = TEXTS[lang];
+  const t: I18n = TEXTS[lang];
   const locale = lang === "es" ? "es-ES" : "en-GB";
 
   const [amount, setAmount] = useState<number>(250000);
@@ -567,7 +568,7 @@ export default function App() {
                   <li>{t.notes1}</li>
                   <li>{t.notes2}</li>
                   <li>{t.notes3}</li>
-                  <li>{(t as any).notes4}</li>
+                  <li>{t.notes4}</li>
                 </ul>
               </div>
             </div>
@@ -579,11 +580,11 @@ export default function App() {
         </div>
       </div>
 
-      {import.meta.env.DEV && (
+      {((import.meta as any).env?.DEV) && (
         <script dangerouslySetInnerHTML={{__html: `
           try {
             const approx = (a,b,eps=1e-6)=>Math.abs(a-b)<eps;
-            (function(){ const cuota = (${pmt.toString()})(0, 12, 1200); if (!approx(cuota, 100)) console.warn('[TEST] PMT r=0 esperado 100, obtenido', cuota); })();
+            (function(){ const cuota = ${pmt.toString()}(0, 12, 1200); if (!approx(cuota, 100)) console.warn('[TEST] PMT r=0 esperado 100, obtenido', cuota); })();
             (function(){ const f=${taeFromFlows.toString()}; const a=f(100000,500,360,0), b=f(100000,500,360,50); if (!(b>a)) console.warn('[TEST] TAE con coste debería ser mayor que sin coste'); })();
             (function(){ const pm=${pmt.toString()}; const mNo=pm(0.02/12,360,250000), mYes=pm(0.015/12,360,250000); if(!(mYes<mNo)) console.warn('[TEST] Cuota con TIN bonificado debería ser menor'); })();
             (function(){ const pm=${pmt.toString()}; const principal=200000, r=0.02/12, n=360; const m=pm(r,n,principal); const total=m*n; const intereses=total-principal; if(!(intereses>0)) console.warn('[TEST] intereses > 0'); })();

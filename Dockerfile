@@ -1,39 +1,33 @@
-# ===== Build PlanVSFondo =====
-FROM node:20-alpine AS build_planvsfondo
-WORKDIR /app
-COPY apps/planvsfondo/package.json apps/planvsfondo/package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
-COPY apps/planvsfondo ./
-ARG VITE_BASE=/planvsfondo/
-ENV VITE_BASE=$VITE_BASE
-RUN npm run build
+# --- Builder: compila planvsfondo y comparadorhipotecas ---
+FROM node:20-alpine AS builder
+WORKDIR /build
 
-# ===== Build comparadorhipotecas =====
-FROM node:20-alpine AS build_comparadorhipotecas
-WORKDIR /app
-COPY apps/comparadorhipotecas/package.json apps/comparadorhipotecas/package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
-COPY apps/comparadorhipotecas ./
-ARG VITE_BASE=/comparadorhipotecas/
-ENV VITE_BASE=$VITE_BASE
-RUN npm run build
+# Instala deps por app (mejor caché)
+COPY apps/planvsfondo/package.json apps/planvsfondo/package-lock.json* ./apps/planvsfondo/
+COPY apps/comparadorhipotecas/package.json apps/comparadorhipotecas/package-lock.json* ./apps/comparadorhipotecas/
+RUN --mount=type=cache,target=/root/.npm \
+    (cd apps/planvsfondo && npm ci) && \
+    (cd apps/comparadorhipotecas && npm ci)
 
-# ===== Build ejemplo =====
-FROM node:20-alpine AS build_ejemplo
-WORKDIR /app
-COPY apps/ejemplo/package.json apps/ejemplo/package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
-COPY apps/ejemplo ./
-ARG VITE_BASE=/ejemplo/
-ENV VITE_BASE=$VITE_BASE
-RUN npm run build
+# Copia fuentes y build
+COPY apps/planvsfondo/ ./apps/planvsfondo/
+COPY apps/comparadorhipotecas/ ./apps/comparadorhipotecas/
+RUN --mount=type=cache,target=/root/.npm \
+    (cd apps/planvsfondo && npm run build) && \
+    (cd apps/comparadorhipotecas && npm run build)
 
-# ===== Runtime =====
-FROM nginx:alpine
-COPY landing/ /usr/share/nginx/html/
-COPY --from=build_planvsfondo /app/dist /usr/share/nginx/html/planvsfondo
-COPY --from=build_comparadorhipotecas /app/dist /usr/share/nginx/html/comparadorhipotecas
-COPY --from=build_ejemplo     /app/dist /usr/share/nginx/html/ejemplo
+# --- Runtime: Nginx sirviendo landing + apps ---
+FROM nginx:alpine AS runtime
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Landing en la raíz
+COPY landing/ /usr/share/nginx/html/
+
+# Copia los dist de cada app a su subcarpeta
+COPY --from=builder /build/apps/planvsfondo/dist/ /usr/share/nginx/html/planvsfondo/
+COPY --from=builder /build/apps/comparadorhipotecas/dist/ /usr/share/nginx/html/comparadorhipotecas/
+
+RUN chmod -R 755 /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
+
