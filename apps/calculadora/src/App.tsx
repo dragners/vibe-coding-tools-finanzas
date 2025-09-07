@@ -324,6 +324,7 @@ function fvAnnuity(pmt: number, r: number, n: number) {
 
 // Escenarios de retirada estándar (estable, fuera del componente)
 const WITHDRAWALS = [10000, 15000, 20000, 25000, 35000] as const;
+const MAX_WITHDRAWAL_YEARS = 35 as const;
 // =============================================
 // Plan (todo tributa como trabajo)
 function simulatePlanWithdrawals(params: {
@@ -340,7 +341,7 @@ function simulatePlanWithdrawals(params: {
   let totalTax = 0;
   let totalNet = 0;
   let lastWithdrawal = 0;
-  while (value > 1e-6 && year < 1000) {
+  while (value > 1e-6 && year < MAX_WITHDRAWAL_YEARS) {
     year += 1;
     value *= 1 + r;
     const w = Math.min(annualWithdrawal, value);
@@ -357,7 +358,7 @@ function simulatePlanWithdrawals(params: {
   if (year > 0) {
     fullYears = (year - 1) + (lastWithdrawal > 0 ? lastWithdrawal / Math.max(annualWithdrawal, 1) : 0);
   }
-  const months = Math.max(0, Math.round(fullYears * 12));
+  const months = Math.min(MAX_WITHDRAWAL_YEARS * 12, Math.max(0, Math.round(fullYears * 12)));
   return { yearsFloat: fullYears, months, totalGross, totalTax, totalNet };
 }
 
@@ -375,7 +376,7 @@ function simulateFundWithdrawals(params: {
   let totalTax = 0;
   let totalNet = 0;
   let lastWithdrawal = 0;
-  while (value > 1e-6 && year < 1000) {
+  while (value > 1e-6 && year < MAX_WITHDRAWAL_YEARS) {
     year += 1;
     value *= 1 + r;
     const w = Math.min(annualWithdrawal, value);
@@ -396,7 +397,7 @@ function simulateFundWithdrawals(params: {
   if (year > 0) {
     fullYears = (year - 1) + (lastWithdrawal > 0 ? lastWithdrawal / Math.max(annualWithdrawal, 1) : 0);
   }
-  const months = Math.max(0, Math.round(fullYears * 12));
+  const months = Math.min(MAX_WITHDRAWAL_YEARS * 12, Math.max(0, Math.round(fullYears * 12)));
   return { yearsFloat: fullYears, months, totalGross, totalTax, totalNet };
 }
 
@@ -423,7 +424,7 @@ function simulateCombinedWithdrawals(params: {
   let reinvNetTot = 0;
   let reinvTaxTot = 0;
   let lastW = 0;
-  while ((planValue > 1e-6 || reinvValue > 1e-6) && year < 1000) {
+  while ((planValue > 1e-6 || reinvValue > 1e-6) && year < MAX_WITHDRAWAL_YEARS) {
     year += 1;
     planValue *= 1 + r;
     reinvValue *= 1 + r;
@@ -463,7 +464,7 @@ function simulateCombinedWithdrawals(params: {
   if (year > 0) {
     fullYears = (year - 1) + (lastW > 0 ? lastW / Math.max(annualWithdrawal, 1) : 0);
   }
-  const months = Math.max(0, Math.round(fullYears * 12));
+  const months = Math.min(MAX_WITHDRAWAL_YEARS * 12, Math.max(0, Math.round(fullYears * 12)));
   return {
     yearsFloat: fullYears,
     months,
@@ -517,6 +518,14 @@ function runTests() {
   console.assert(z2.months === 0, "Fondo con 0 valor inicial debe dar 0 meses");
   const z3 = simulateCombinedWithdrawals({ startPlanCapital: 0, startReinvValue: 0, reinvCostBasis: 0, pensionAnnual: 0, annualWithdrawal: 10000, r: 0.05, region: "Cataluña" });
   console.assert(z3.months === 0, "Combinado con 0 capital inicial debe dar 0 meses");
+
+  // === Cap de duración: 35 años máximo ===
+  const capFund = simulateFundWithdrawals({ startValue: 1e9, costBasis: 1e9, annualWithdrawal: 1000, r: 0.1 });
+  console.assert(capFund.months === MAX_WITHDRAWAL_YEARS * 12, "Cap duración (fondo): <= 35 años");
+  const capPlan = simulatePlanWithdrawals({ startCapital: 1e9, pensionAnnual: 0, annualWithdrawal: 1000, r: 0.1, region: "Cataluña" });
+  console.assert(capPlan.months === MAX_WITHDRAWAL_YEARS * 12, "Cap duración (plan): <= 35 años");
+  const capComb = simulateCombinedWithdrawals({ startPlanCapital: 5e8, startReinvValue: 5e8, reinvCostBasis: 5e8, pensionAnnual: 0, annualWithdrawal: 1000, r: 0.1, region: "Cataluña" });
+  console.assert(capComb.months === MAX_WITHDRAWAL_YEARS * 12, "Cap duración (combinado): <= 35 años");
 }
 if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") { runTests(); }
 
@@ -902,6 +911,7 @@ export default function App() {
                     Límites legales de aportación: hasta <b>1.500€</b>/año en <b>planes individuales (PPI)</b>. El tope de <b>10.000€</b>/año solo aplica cuando existe un <b>plan de empleo</b> (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan. En esta calculadora el campo “Aportación anual” se limita a 10.000€ asumiendo ese escenario.
                   </li>
                   <li>En retiros parciales, cada año primero se aplica la TIR al capital restante y después se descuenta el retiro bruto; el saldo continúa capitalizándose hasta agotarse.</li>
+                  <li>La duración de las retiradas se limita a un máximo de <b>35 años</b> (≈ 420 meses). Si la TIR anual es mayor o igual al ritmo de retirada, el capital podría no agotarse; se aplica este tope para reflejar un horizonte razonable de jubilación y evitar resultados poco útiles.</li>
                   <li>
                     IRPF general: suma de <i>escala estatal 2025</i> y <i>escala autonómica 2025</i> de la <b>CCAA seleccionada</b>.
                     Incluidas todas las CCAA de régimen común (sin Navarra ni País Vasco).
