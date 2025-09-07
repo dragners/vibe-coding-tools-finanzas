@@ -1,13 +1,13 @@
 # Multi-app (landing raíz y apps en subcarpetas)
 
 - Landing en `/`
-- Apps en `/calculadora/`, `/ejemplo/`
+- Apps en `/planvsfondo/`, `/ejemplo/`
 - Preparado para proxy externo con HTTPS que apunte todo el dominio a este contenedor
 
 ## Arranque
 docker compose up -d --build
 # http://host:8080/
-# http://host:8080/calculadora/
+# http://host:8080/planvsfondo/
 # http://host:8080/ejemplo/
 
 ## Añadir una nueva app (subcarpeta)
