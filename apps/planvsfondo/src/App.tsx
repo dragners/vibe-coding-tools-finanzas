@@ -584,6 +584,35 @@ export default function App() {
     ),
     [planFV, reinvestFV, reinvestCost, pension, r, region, reinvestSavings]
   );
+
+  const planGrossAnns = useMemo(
+    () => WITHDRAWALS.map((w) => grossFromPlanNet(w, pension, region)),
+    [pension, region]
+  );
+  const fundGainFraction = useMemo(
+    () => (fundFV > 0 ? Math.max(0, (fundFV - fundCost) / fundFV) : 0),
+    [fundFV, fundCost]
+  );
+  const fundGrossAnns = useMemo(
+    () => WITHDRAWALS.map((w) => grossFromFundNet(w, fundGainFraction)),
+    [fundGainFraction]
+  );
+  const combinedGrossAnns = useMemo(
+    () =>
+      (!reinvestSavings
+        ? []
+        : WITHDRAWALS.map((w) => {
+            const avail = planFV + reinvestFV;
+            const sharePlan = avail > 0 ? planFV / avail : 0;
+            const netPlan = w * sharePlan;
+            const grossPlan = grossFromPlanNet(netPlan, pension, region);
+            const remainingNet = w - netPlan;
+            const gainFraction = reinvestFV > 0 ? Math.max(0, (reinvestFV - reinvestCost) / reinvestFV) : 0;
+            const grossReinv = grossFromFundNet(remainingNet, gainFraction);
+            return { total: grossPlan + grossReinv, plan: grossPlan, reinv: grossReinv };
+          })),
+    [reinvestSavings, planFV, reinvestFV, reinvestCost, pension, region]
+  );
   return (
     <div className="relative min-h-screen text-gray-900">
       
@@ -774,12 +803,13 @@ export default function App() {
                       <th className="py-2 pr-3 text-center">Neto Total <InfoTip className="ml-1 align-middle" text="Importe neto total recibido a partir del capital acumulado (aportaciones + rentabilidad) del plan de pensiones o de los fondos, tras agotar la duración. No incluye los cobros de la pensión pública." /></th>
                       <th className="py-2 pr-3 text-center">Impuestos Totales <InfoTip className="ml-1 align-middle" text="Total de impuestos satisfechos por las retiradas del capital acumulado del plan de pensiones o de los fondos durante la duración. No incluye los impuestos asociados a la pensión pública." /></th>
                       <th className="py-2 pr-3 text-center">Duración</th>
+                      <th className="py-2 pr-3 text-center">Bruto Anual <InfoTip className="ml-1 align-middle" text="Importe bruto anual a retirar antes de impuestos para obtener el neto indicado." /></th>
                     </tr>
                   </thead>
                   <tbody>
-                    
+
                     <tr>
-                      <td colSpan={4} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded">
+                      <td colSpan={5} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded">
                         {reinvestSavings ? 'Plan de pensiones + Fondo (ahorro IRPF)' : 'Plan de pensiones'}
                       </td>
                     </tr>
@@ -806,10 +836,16 @@ export default function App() {
                             )}
                           </td>
                           <td className="py-2 pr-3 text-center">{formatDuration(reinvestSavings ? cs.months : ps.months)}</td>
+                          <td className="py-2 pr-3 text-center">
+                            {fmtEUR(reinvestSavings ? combinedGrossAnns[idx].total : planGrossAnns[idx])}
+                            {reinvestSavings && (
+                              <span className="text-gray-500 text-xs"> ({fmtEUR(combinedGrossAnns[idx].plan)} + {fmtEUR(combinedGrossAnns[idx].reinv)})</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
-                    
+
                     <tr className="border-t bg-gray-50">
                       <td className="py-2 pr-3 font-medium">Rescate total</td>
                       <td className="py-2 pr-3 text-center">
@@ -825,10 +861,11 @@ export default function App() {
                         )}
                       </td>
                       <td className="py-2 pr-3 text-center">—</td>
+                      <td className="py-2 pr-3 text-center">—</td>
                     </tr>
-                    
+
                     <tr>
-                      <td colSpan={4} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded mt-2">
+                      <td colSpan={5} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded mt-2">
                         Fondo de inversión
                       </td>
                     </tr>
@@ -843,14 +880,16 @@ export default function App() {
                           <td className="py-2 pr-3 text-center">{fmtEUR(fs.totalNet)}</td>
                           <td className="py-2 pr-3 text-gray-600 text-center">{fmtEUR(fs.totalTax)}</td>
                           <td className="py-2 pr-3 text-center">{formatDuration(fs.months)}</td>
+                          <td className="py-2 pr-3 text-center">{fmtEUR(fundGrossAnns[idx])}</td>
                         </tr>
                       );
                     })}
-                    
+
                     <tr className="border-t bg-white">
                       <td className="py-2 pr-3 font-medium">Rescate total</td>
                       <td className="py-2 pr-3 text-center">{fmtEUR(fundNetLump)}</td>
                       <td className="py-2 pr-3 text-gray-600 text-center">{fmtEUR(fundTaxLump)}</td>
+                      <td className="py-2 pr-3 text-center">—</td>
                       <td className="py-2 pr-3 text-center">—</td>
                     </tr>
                   </tbody>
