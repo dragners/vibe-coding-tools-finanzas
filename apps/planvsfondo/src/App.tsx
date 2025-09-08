@@ -35,7 +35,7 @@ function InfoTip({ text, className = "" }: { text: string; className?: string })
     <span ref={ref} className={`relative inline-block ${className}`}>
       <button
         type="button"
-        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-gray-600 border border-gray-300 leading-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-gray-600 leading-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
         aria-label="Más información"
         aria-expanded={open}
         onClick={() => setOpen(o => !o)}
@@ -294,73 +294,108 @@ function fvAnnuity(pmt: number, r: number, n: number) {
 }
 const WITHDRAWALS = [10000, 15000, 20000, 25000, 35000] as const;
 const MAX_WITHDRAWAL_YEARS = 35 as const;
+
+function netFromPlanGross(gross: number, pensionAnnual: number, region: RegionKey) {
+  const tax = Math.max(0, generalTax(pensionAnnual + gross, region) - generalTax(pensionAnnual, region));
+  return gross - tax;
+}
+function grossFromPlanNet(targetNet: number, pensionAnnual: number, region: RegionKey) {
+  if (targetNet <= 0) return 0;
+  let lo = 0, hi = targetNet * 1.5 + 100;
+  while (netFromPlanGross(hi, pensionAnnual, region) < targetNet) hi *= 2;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const net = netFromPlanGross(mid, pensionAnnual, region);
+    if (net >= targetNet) hi = mid; else lo = mid;
+  }
+  return hi;
+}
+function netFromFundGross(gross: number, gainFraction: number) {
+  const realizedGain = gross * gainFraction;
+  const tax = savingsTax(realizedGain);
+  return gross - tax;
+}
+function grossFromFundNet(targetNet: number, gainFraction: number) {
+  if (targetNet <= 0) return 0;
+  if (gainFraction <= 0) return targetNet;
+  let lo = 0, hi = targetNet / (1 - 0.30) + 100;
+  while (netFromFundGross(hi, gainFraction) < targetNet) hi *= 2;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const net = netFromFundGross(mid, gainFraction);
+    if (net >= targetNet) hi = mid; else lo = mid;
+  }
+  return hi;
+}
 function simulatePlanWithdrawals(params: {
   startCapital: number;
   pensionAnnual: number;
-  annualWithdrawal: number;
-  r: number; // rendimiento anual post-jubilación
+  annualNetWithdrawal: number;
+  r: number;
   region: RegionKey;
 }) {
-  const { startCapital, pensionAnnual, annualWithdrawal, r, region } = params;
+  const { startCapital, pensionAnnual, annualNetWithdrawal, r, region } = params;
   let value = startCapital;
   let year = 0;
   let totalGross = 0;
   let totalTax = 0;
   let totalNet = 0;
-  let lastWithdrawal = 0;
+  let lastNet = 0;
   while (value > 1e-6 && year < MAX_WITHDRAWAL_YEARS) {
     year += 1;
     value *= 1 + r;
-    const w = Math.min(annualWithdrawal, value);
+    const grossNeeded = grossFromPlanNet(annualNetWithdrawal, pensionAnnual, region);
+    const w = Math.min(grossNeeded, value);
     const tax = Math.max(0, generalTax(pensionAnnual + w, region) - generalTax(pensionAnnual, region));
     const net = w - tax;
     value -= w;
     totalGross += w;
     totalTax += tax;
     totalNet += net;
-    lastWithdrawal = w;
+    lastNet = net;
     if (w <= 0) break;
   }
   let fullYears = 0;
   if (year > 0) {
-    fullYears = (year - 1) + (lastWithdrawal > 0 ? lastWithdrawal / Math.max(annualWithdrawal, 1) : 0);
+    fullYears = (year - 1) + (lastNet > 0 ? lastNet / Math.max(annualNetWithdrawal, 1) : 0);
   }
   const months = Math.min(MAX_WITHDRAWAL_YEARS * 12, Math.max(0, Math.round(fullYears * 12)));
   return { yearsFloat: fullYears, months, totalGross, totalTax, totalNet };
 }
 function simulateFundWithdrawals(params: {
   startValue: number;
-  costBasis: number; // suma de aportaciones
-  annualWithdrawal: number;
+  costBasis: number;
+  annualNetWithdrawal: number;
   r: number;
 }) {
-  let { startValue, costBasis, annualWithdrawal, r } = params;
+  let { startValue, costBasis, annualNetWithdrawal, r } = params;
   let value = startValue;
   let year = 0;
   let totalGross = 0;
   let totalTax = 0;
   let totalNet = 0;
-  let lastWithdrawal = 0;
+  let lastNet = 0;
   while (value > 1e-6 && year < MAX_WITHDRAWAL_YEARS) {
     year += 1;
     value *= 1 + r;
-    const w = Math.min(annualWithdrawal, value);
     const gainFraction = value > 0 ? Math.max(0, (value - costBasis) / value) : 0;
+    const grossNeeded = grossFromFundNet(annualNetWithdrawal, gainFraction);
+    const w = Math.min(grossNeeded, value);
     const realizedGain = w * gainFraction;
     const tax = savingsTax(realizedGain);
     const net = w - tax;
     const basisRedeemed = w * (value > 0 ? costBasis / value : 1);
     costBasis = Math.max(0, costBasis - basisRedeemed);
-    value -= w;
+    value = Math.max(0, value - w);
     totalGross += w;
     totalTax += tax;
     totalNet += net;
-    lastWithdrawal = w;
+    lastNet = net;
     if (w <= 0) break;
   }
   let fullYears = 0;
   if (year > 0) {
-    fullYears = (year - 1) + (lastWithdrawal > 0 ? lastWithdrawal / Math.max(annualWithdrawal, 1) : 0);
+    fullYears = (year - 1) + (lastNet > 0 ? lastNet / Math.max(annualNetWithdrawal, 1) : 0);
   }
   const months = Math.min(MAX_WITHDRAWAL_YEARS * 12, Math.max(0, Math.round(fullYears * 12)));
   return { yearsFloat: fullYears, months, totalGross, totalTax, totalNet };
@@ -370,11 +405,11 @@ function simulateCombinedWithdrawals(params: {
   startReinvValue: number;
   reinvCostBasis: number;
   pensionAnnual: number;
-  annualWithdrawal: number;
+  annualNetWithdrawal: number;
   r: number;
   region: RegionKey;
 }) {
-  let { startPlanCapital, startReinvValue, reinvCostBasis, pensionAnnual, annualWithdrawal, r, region } = params;
+  let { startPlanCapital, startReinvValue, reinvCostBasis, pensionAnnual, annualNetWithdrawal, r, region } = params;
   let planValue = startPlanCapital;
   let reinvValue = startReinvValue;
   let basis = reinvCostBasis;
@@ -386,43 +421,44 @@ function simulateCombinedWithdrawals(params: {
   let planTaxTot = 0;
   let reinvNetTot = 0;
   let reinvTaxTot = 0;
-  let lastW = 0;
+  let lastNet = 0;
   while ((planValue > 1e-6 || reinvValue > 1e-6) && year < MAX_WITHDRAWAL_YEARS) {
     year += 1;
     planValue *= 1 + r;
     reinvValue *= 1 + r;
     const avail = planValue + reinvValue;
     if (avail <= 1e-12) break;
-    const targetW = Math.min(annualWithdrawal, avail);
-    const wPlan = avail > 0 ? targetW * (planValue / avail) : 0;
-    const wReinv = targetW - wPlan;
+    const sharePlan = avail > 0 ? planValue / avail : 0;
+    const netPlanTarget = annualNetWithdrawal * sharePlan;
+    const grossPlanNeeded = grossFromPlanNet(netPlanTarget, pensionAnnual, region);
+    const wPlan = Math.min(grossPlanNeeded, planValue);
     const taxPlan = Math.max(0, generalTax(pensionAnnual + wPlan, region) - generalTax(pensionAnnual, region));
     const netPlan = wPlan - taxPlan;
     planValue = Math.max(0, planValue - wPlan);
-    let taxReinv = 0;
-    let netReinv = 0;
-    if (wReinv > 0 && reinvValue > 0) {
-      const gainFraction = Math.max(0, (reinvValue - basis) / reinvValue);
-      const realizedGain = wReinv * gainFraction;
-      taxReinv = savingsTax(realizedGain);
-      netReinv = wReinv - taxReinv;
-      const basisRedeemed = wReinv * (basis / reinvValue);
-      basis = Math.max(0, basis - basisRedeemed);
-      reinvValue = Math.max(0, reinvValue - wReinv);
-    }
-    totalGross += targetW;
+    const remainingNet = annualNetWithdrawal - netPlan;
+    const gainFraction = reinvValue > 0 ? Math.max(0, (reinvValue - basis) / reinvValue) : 0;
+    const grossReinvNeeded = grossFromFundNet(remainingNet, gainFraction);
+    const wReinv = Math.min(grossReinvNeeded, reinvValue);
+    const realizedGain = wReinv * gainFraction;
+    const taxReinv = savingsTax(realizedGain);
+    const netReinv = wReinv - taxReinv;
+    const basisRedeemed = wReinv * (reinvValue > 0 ? basis / reinvValue : 1);
+    basis = Math.max(0, basis - basisRedeemed);
+    reinvValue = Math.max(0, reinvValue - wReinv);
+    const netTotal = netPlan + netReinv;
+    totalGross += wPlan + wReinv;
     totalTax += taxPlan + taxReinv;
-    totalNet += netPlan + netReinv;
+    totalNet += netTotal;
     planNetTot += netPlan;
     planTaxTot += taxPlan;
     reinvNetTot += netReinv;
     reinvTaxTot += taxReinv;
-    lastW = targetW;
-    if (targetW <= 0) break;
+    lastNet = netTotal;
+    if (wPlan + wReinv <= 0) break;
   }
   let fullYears = 0;
   if (year > 0) {
-    fullYears = (year - 1) + (lastW > 0 ? lastW / Math.max(annualWithdrawal, 1) : 0);
+    fullYears = (year - 1) + (lastNet > 0 ? lastNet / Math.max(annualNetWithdrawal, 1) : 0);
   }
   const months = Math.min(MAX_WITHDRAWAL_YEARS * 12, Math.max(0, Math.round(fullYears * 12)));
   return {
@@ -437,6 +473,7 @@ function simulateCombinedWithdrawals(params: {
     reinvTax: reinvTaxTot,
   };
 }
+
 function runTests() {
   const approx = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
   console.assert(approx(savingsTax(1000), 190), "savingsTax 1000 => 190");
@@ -455,17 +492,17 @@ function runTests() {
   const mgEXT_low = generalMarginalRate(10000, "Extremadura");
   const mgCYL_low = generalMarginalRate(10000, "Castilla y León");
   console.assert(mgEXT_low < mgCYL_low, "Extremadura tiene mínimo autonómico más bajo que CyL");
-  const z1 = simulatePlanWithdrawals({ startCapital: 0, pensionAnnual: 0, annualWithdrawal: 10000, r: 0.05, region: "Cataluña" });
+  const z1 = simulatePlanWithdrawals({ startCapital: 0, pensionAnnual: 0, annualNetWithdrawal: 10000, r: 0.05, region: "Cataluña" });
   console.assert(z1.months === 0, "Plan con 0 capital inicial debe dar 0 meses");
-  const z2 = simulateFundWithdrawals({ startValue: 0, costBasis: 0, annualWithdrawal: 10000, r: 0.05 });
+  const z2 = simulateFundWithdrawals({ startValue: 0, costBasis: 0, annualNetWithdrawal: 10000, r: 0.05 });
   console.assert(z2.months === 0, "Fondo con 0 valor inicial debe dar 0 meses");
-  const z3 = simulateCombinedWithdrawals({ startPlanCapital: 0, startReinvValue: 0, reinvCostBasis: 0, pensionAnnual: 0, annualWithdrawal: 10000, r: 0.05, region: "Cataluña" });
+  const z3 = simulateCombinedWithdrawals({ startPlanCapital: 0, startReinvValue: 0, reinvCostBasis: 0, pensionAnnual: 0, annualNetWithdrawal: 10000, r: 0.05, region: "Cataluña" });
   console.assert(z3.months === 0, "Combinado con 0 capital inicial debe dar 0 meses");
-  const capFund = simulateFundWithdrawals({ startValue: 1e9, costBasis: 1e9, annualWithdrawal: 1000, r: 0.1 });
+  const capFund = simulateFundWithdrawals({ startValue: 1e9, costBasis: 1e9, annualNetWithdrawal: 1000, r: 0.1 });
   console.assert(capFund.months === MAX_WITHDRAWAL_YEARS * 12, "Cap duración (fondo): <= 35 años");
-  const capPlan = simulatePlanWithdrawals({ startCapital: 1e9, pensionAnnual: 0, annualWithdrawal: 1000, r: 0.1, region: "Cataluña" });
+  const capPlan = simulatePlanWithdrawals({ startCapital: 1e9, pensionAnnual: 0, annualNetWithdrawal: 1000, r: 0.1, region: "Cataluña" });
   console.assert(capPlan.months === MAX_WITHDRAWAL_YEARS * 12, "Cap duración (plan): <= 35 años");
-  const capComb = simulateCombinedWithdrawals({ startPlanCapital: 5e8, startReinvValue: 5e8, reinvCostBasis: 5e8, pensionAnnual: 0, annualWithdrawal: 1000, r: 0.1, region: "Cataluña" });
+  const capComb = simulateCombinedWithdrawals({ startPlanCapital: 5e8, startReinvValue: 5e8, reinvCostBasis: 5e8, pensionAnnual: 0, annualNetWithdrawal: 1000, r: 0.1, region: "Cataluña" });
   console.assert(capComb.months === MAX_WITHDRAWAL_YEARS * 12, "Cap duración (combinado): <= 35 años");
 }
 if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") { runTests(); }
@@ -481,6 +518,7 @@ export default function App() {
   const years = useMemo(() => Math.max(0, Math.floor(parseNum(yearsInput))), [yearsInput]);
   const annualContributionRaw = useMemo(() => Math.max(0, parseNum(annualContributionInput)), [annualContributionInput]);
   const pension = useMemo(() => Math.max(0, parseNum(pensionInput)), [pensionInput]);
+  const pensionNet = useMemo(() => pension - generalTax(pension, region), [pension, region]);
   const r = useMemo(() => Math.max(0, Math.min(0.25, tir / 100)), [tir]);
   const contrib = useMemo(() => Math.min(10000, annualContributionRaw), [annualContributionRaw]);
   const N = useMemo(() => years, [years]);
@@ -522,11 +560,11 @@ export default function App() {
     [reinvestSavings, planTaxLump, reinvTaxLump]
   );
   const planSims = useMemo(
-    () => WITHDRAWALS.map((w) => ({ w, ...simulatePlanWithdrawals({ startCapital: planFV, pensionAnnual: pension, annualWithdrawal: w, r, region }) })),
+    () => WITHDRAWALS.map((w) => ({ w, ...simulatePlanWithdrawals({ startCapital: planFV, pensionAnnual: pension, annualNetWithdrawal: w, r, region }) })),
     [planFV, pension, r, region]
   );
   const fundSims = useMemo(
-    () => WITHDRAWALS.map((w) => ({ w, ...simulateFundWithdrawals({ startValue: fundFV, costBasis: fundCost, annualWithdrawal: w, r }) })),
+    () => WITHDRAWALS.map((w) => ({ w, ...simulateFundWithdrawals({ startValue: fundFV, costBasis: fundCost, annualNetWithdrawal: w, r }) })),
     [fundFV, fundCost, r]
   );
   const combinedSims = useMemo(
@@ -538,7 +576,7 @@ export default function App() {
             startReinvValue: reinvestFV,
             reinvCostBasis: reinvestCost,
             pensionAnnual: pension,
-            annualWithdrawal: w,
+            annualNetWithdrawal: w,
             r,
             region,
           })
@@ -655,7 +693,7 @@ export default function App() {
                   />
                 </div>
                 <div className="md:col-span-1">
-                  <label className="block text-sm">Pensión pública prevista (anual)</label>
+                  <label className="block text-sm">Pensión pública prevista (bruto anual)</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -684,6 +722,7 @@ export default function App() {
                       </div>
                     </div>
                     <div className="text-xs text-gray-500 md:text-right mt-3 md:mt-0">
+                      <div>Pensión pública neta prevista: <b>{fmtEUR(pensionNet)}</b></div>
                       <div>Tipo marginal estimado (trabajo): <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
                       <div>Ahorro IRPF anual por aportar al plan: <b>{fmtEUR(annualIRPFSaving)}</b></div>
                     </div>
@@ -750,7 +789,10 @@ export default function App() {
                       const cs = combinedSims[idx];
                       return (
                         <tr key={`plan-${w}`} className="border-t bg-gray-50">
-                          <td className="py-2 pr-3 font-medium">Retirar {fmtEUR(w)}/año</td>
+                          <td className="py-2 pr-3">
+                            <div className="font-medium">Retirar {fmtEUR(w)} € netos al año</div>
+                            <div className="text-xs text-gray-500">Total neto con pensión: {fmtEUR(pensionNet + w)}</div>
+                          </td>
                           <td className="py-2 pr-3 text-center">
                             {fmtEUR(reinvestSavings ? cs.totalNet : ps.totalNet)}
                             {reinvestSavings && (
@@ -794,7 +836,10 @@ export default function App() {
                       const fs = fundSims[idx];
                       return (
                         <tr key={`fund-${w}`} className="border-t bg-white">
-                          <td className="py-2 pr-3 font-medium">Retirar {fmtEUR(w)}/año</td>
+                          <td className="py-2 pr-3">
+                            <div className="font-medium">Retirar {fmtEUR(w)} € netos al año</div>
+                            <div className="text-xs text-gray-500">Total neto con pensión: {fmtEUR(pensionNet + w)}</div>
+                          </td>
                           <td className="py-2 pr-3 text-center">{fmtEUR(fs.totalNet)}</td>
                           <td className="py-2 pr-3 text-gray-600 text-center">{fmtEUR(fs.totalTax)}</td>
                           <td className="py-2 pr-3 text-center">{formatDuration(fs.months)}</td>
@@ -815,11 +860,11 @@ export default function App() {
               <div className="text-xs text-gray-600 leading-relaxed mt-4">
                 <p className="mb-2">Notas y supuestos:</p>
                 <ul className="list-disc ml-5 space-y-1">
-                  <li>Los importes de “Retirar 10.000/15.000/…” son <b>brutos</b> retirados del capital cada año y se suman a la <b>pensión bruta</b>.</li>
+                  <li>Los importes de “Retirar 10.000/15.000/…” son <b>netos</b> recibidos cada año; se calcula el bruto necesario y se suman a la <b>pensión neta</b>.</li>
                   <li>
                     Límites legales de aportación: hasta <b>1.500€</b>/año en <b>planes individuales (PPI)</b>. El tope de <b>10.000€</b>/año solo aplica cuando existe un <b>plan de empleo</b> (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan. En esta calculadora el campo “Aportación anual” se limita a 10.000€ asumiendo ese escenario.
                   </li>
-                  <li>En retiros parciales, cada año primero se aplica la TIR al capital restante y después se descuenta el retiro bruto; el saldo continúa capitalizándose hasta agotarse.</li>
+                  <li>En retiros parciales, cada año primero se aplica la TIR al capital restante y después se descuenta el retiro bruto necesario para alcanzar el neto; el saldo continúa capitalizándose hasta agotarse.</li>
                   <li>La duración de las retiradas se limita a un máximo de <b>35 años</b> (≈ 420 meses). Si la TIR anual es mayor o igual al ritmo de retirada, el capital podría no agotarse; se aplica este tope para reflejar un horizonte razonable de jubilación y evitar resultados poco útiles.</li>
                   <li>
                     IRPF general: suma de <i>escala estatal 2025</i> y <i>escala autonómica 2025</i> de la <b>CCAA seleccionada</b>.
