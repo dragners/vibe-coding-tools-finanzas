@@ -790,7 +790,7 @@ export default function App() {
                       return (
                         <tr key={`plan-${w}`} className="border-t bg-gray-50">
                           <td className="py-2 pr-3">
-                            <div className="font-medium">Retirar {fmtEUR(w)} € netos al año</div>
+                            <div className="font-medium">Retirar {fmtEUR(w)} netos al año</div>
                             <div className="text-xs text-gray-500">Total neto con pensión: {fmtEUR(pensionNet + w)}</div>
                           </td>
                           <td className="py-2 pr-3 text-center">
@@ -837,7 +837,7 @@ export default function App() {
                       return (
                         <tr key={`fund-${w}`} className="border-t bg-white">
                           <td className="py-2 pr-3">
-                            <div className="font-medium">Retirar {fmtEUR(w)} € netos al año</div>
+                            <div className="font-medium">Retirar {fmtEUR(w)} netos al año</div>
                             <div className="text-xs text-gray-500">Total neto con pensión: {fmtEUR(pensionNet + w)}</div>
                           </td>
                           <td className="py-2 pr-3 text-center">{fmtEUR(fs.totalNet)}</td>
