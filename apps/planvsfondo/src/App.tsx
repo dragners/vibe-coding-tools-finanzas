@@ -1,13 +1,13 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-const fmtEUR = (n: number) => n.toLocaleString("es-ES", {
+const fmtEUR = (n: number, locale: string) => n.toLocaleString(locale, {
   style: "currency",
   currency: "EUR",
   maximumFractionDigits: 0,
 });
-const formatDuration = (months: number) => {
+const formatDuration = (months: number, lang: 'es' | 'en') => {
   const y = Math.floor(months / 12);
   const m = months % 12;
-  return `${y} años ${m} meses`;
+  return lang === 'es' ? `${y} años ${m} meses` : `${y} years ${m} months`;
 };
 const parseNum = (s: string | number): number => {
   if (typeof s === 'number') return isFinite(s) ? s : 0;
@@ -15,7 +15,7 @@ const parseNum = (s: string | number): number => {
   const n = parseFloat(s.replace(',', '.'));
   return isNaN(n) ? 0 : n;
 };
-function InfoTip({ text, className = "" }: { text: string; className?: string }) {
+function InfoTip({ text, className = "", lang }: { text: string; className?: string; lang: 'es' | 'en' }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -36,7 +36,7 @@ function InfoTip({ text, className = "" }: { text: string; className?: string })
       <button
         type="button"
         className="inline-flex items-center justify-center w-5 h-5 rounded-full text-gray-600 leading-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
-        aria-label="Más información"
+        aria-label={lang === 'es' ? 'Más información' : 'More info'}
         aria-expanded={open}
         onClick={() => setOpen(o => !o)}
       >
@@ -50,6 +50,117 @@ function InfoTip({ text, className = "" }: { text: string; className?: string })
     </span>
   );
 }
+
+const TEXTS = {
+  es: {
+    back: "Volver a Herramientas",
+    title: "Calculadora Plan de Pensiones vs Fondo",
+    intro: "Compara, con fiscalidad española, aportar a un <b>plan de pensiones</b> frente a un <b>fondo de inversión</b>. Introduce tus datos para ver el <b>valor acumulado a la jubilación</b> y el <b>neto a recibir</b> bajo distintos modos de rescate. El ahorro anual por aportar al plan se estima con tu <i>tipo marginal</i> (estatal + autonómico según comunidad seleccionada). Al rescatar, el plan tributa por tramos de la <i>base general</i> y los fondos por la <i>tarifa del ahorro</i> sobre la ganancia realizada.",
+    region: "Comunidad Autónoma",
+    salary: "Salario bruto anual actual",
+    yearsToRetire: "Años hasta jubilación",
+    annualContribution: "Aportación anual (máx. 10.000€)",
+    annualContributionTip: "Límites legales de aportación: hasta 1.500€/año en planes individuales (PPI). El tope de 10.000€/año solo aplica cuando existe un plan de empleo (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan.",
+    expectedReturn: "TIR anual esperada",
+    expectedPublicPension: "Pensión pública prevista (bruto anual)",
+    reinvestLabel: "¿Reinvertir el ahorro anual de IRPF en un fondo de inversión?",
+    reinvestTip: "Si reinviertes en un fondo el ahorro de IRPF generado por las aportaciones al plan de pensiones, ese ahorro también se invierte y se capitaliza al mismo TIR que el fondo. En rescates parciales, los importes se prorratean entre plan y fondo.",
+    no: "No",
+    yes: "Sí",
+    pensionNetPrev: "Pensión pública neta prevista:",
+    marginalType: "Tipo marginal estimado (trabajo):",
+    annualIRPFSaving: "Ahorro IRPF anual por aportar al plan:",
+    retirementValue: "Valor a la jubilación",
+    planPlusFund: "Plan de pensiones + Fondo (ahorro IRPF)",
+    planOnly: "Plan de pensiones",
+    fundInvestment: "Fondo de inversión",
+    totalInvested: "Total invertido:",
+    totalIRPFSaved: "Total ahorro IRPF (no reinvertido):",
+    detailBruto: "Detalle bruto:",
+    detailInvertido: "Detalle invertido:",
+    plan: "Plan",
+    fund: "Fondo",
+    fundIRPF: "Fondo (ahorro IRPF)",
+    withdrawalsDuration: "Rescates y duración del capital",
+    scenario: "Escenario",
+    totalNet: "Neto Total",
+    totalNetTip: "Importe neto total recibido a partir del capital acumulado (aportaciones + rentabilidad) del plan de pensiones o de los fondos, tras agotar la duración. No incluye los cobros de la pensión pública.",
+    totalTaxes: "Impuestos Totales",
+    totalTaxesTip: "Total de impuestos satisfechos por las retiradas del capital acumulado del plan de pensiones o de los fondos durante la duración. No incluye los impuestos asociados a la pensión pública.",
+    duration: "Duración",
+    grossAnnual: "Bruto Anual",
+    grossAnnualTip: "Importe bruto anual a retirar antes de impuestos para obtener el neto indicado.",
+    withdraw: "Retirar",
+    netPerYear: "netos al año",
+    totalNetWithPension: "Total neto con pensión:",
+    totalWithdrawal: "Rescate total",
+    notesTitle: "Notas y supuestos:",
+    notes1: "Los importes de “Retirar 10.000/15.000/…” son <b>netos</b> recibidos cada año; se calcula el bruto necesario y se suman a la <b>pensión neta</b>.",
+    notes2: "Límites legales de aportación: hasta <b>1.500€</b>/año en <b>planes individuales (PPI)</b>. El tope de <b>10.000€</b>/año solo aplica cuando existe un <b>plan de empleo</b> (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan. En esta calculadora el campo “Aportación anual” se limita a 10.000€ asumiendo ese escenario.",
+    notes3: "En retiros parciales, cada año primero se aplica la TIR al capital restante y después se descuenta el retiro bruto necesario para alcanzar el neto; el saldo continúa capitalizándose hasta agotarse.",
+    notes4: "La duración de las retiradas se limita a un máximo de <b>35 años</b> (≈ 420 meses). Si la TIR anual es mayor o igual al ritmo de retirada, el capital podría no agotarse; se aplica este tope para reflejar un horizonte razonable de jubilación y evitar resultados poco útiles.",
+    notes5: "IRPF general: suma de <i>escala estatal 2025</i> y <i>escala autonómica 2025</i> de la <b>CCAA seleccionada</b>. Incluidas todas las CCAA de régimen común (sin Navarra ni País Vasco).",
+    notes6: "IRPF del ahorro: 19%/21%/23%/27%/30% (España · normativa 2025). Los rescates de fondos tributan solo por la ganancia efectivamente realizada cada año.",
+    footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
+    moreInfo: "Más información",
+    langES: "ES",
+    langEN: "EN",
+  },
+  en: {
+    back: "Back to Tools",
+    title: "Pension Plan vs Fund Calculator",
+    intro: "Compare, under Spanish tax rules, contributing to a <b>pension plan</b> versus an <b>investment fund</b>. Enter your data to see the <b>accumulated value at retirement</b> and the <b>net amount received</b> under different withdrawal modes. The annual tax saving from contributing to the plan is estimated with your <i>marginal rate</i> (state + regional according to selected region). Upon withdrawal, the plan is taxed by <i>general income brackets</i> and funds by the <i>savings tax scale</i> on realized gains.",
+    region: "Autonomous Community",
+    salary: "Current gross annual salary",
+    yearsToRetire: "Years until retirement",
+    annualContribution: "Annual contribution (max €10,000)",
+    annualContributionTip: "Legal contribution limits: up to €1,500/year in individual plans (PPI). The €10,000/year cap only applies when there is an employment plan (PPE/PPSE) with company contributions and, where applicable, worker contributions linked to that plan.",
+    expectedReturn: "Expected annual IRR",
+    expectedPublicPension: "Expected public pension (gross annual)",
+    reinvestLabel: "Reinvest the annual income tax saving in an investment fund?",
+    reinvestTip: "If you reinvest in a fund the income tax savings generated by pension plan contributions, that saving is also invested and compounds at the same IRR as the fund. In partial withdrawals, amounts are prorated between plan and fund.",
+    no: "No",
+    yes: "Yes",
+    pensionNetPrev: "Expected net public pension:",
+    marginalType: "Estimated marginal rate (work):",
+    annualIRPFSaving: "Annual income tax saving from plan contribution:",
+    retirementValue: "Value at retirement",
+    planPlusFund: "Pension plan + Fund (tax saving)",
+    planOnly: "Pension plan",
+    fundInvestment: "Investment fund",
+    totalInvested: "Total invested:",
+    totalIRPFSaved: "Total income tax saved (not reinvested):",
+    detailBruto: "Gross detail:",
+    detailInvertido: "Invested detail:",
+    plan: "Plan",
+    fund: "Fund",
+    fundIRPF: "Fund (tax saving)",
+    withdrawalsDuration: "Withdrawals and capital duration",
+    scenario: "Scenario",
+    totalNet: "Total Net",
+    totalNetTip: "Total net amount received from the accumulated capital (contributions + return) of the pension plan or funds after exhausting the duration. Does not include public pension payments.",
+    totalTaxes: "Total Taxes",
+    totalTaxesTip: "Total taxes paid from withdrawals of the accumulated capital of the pension plan or funds during the duration. Does not include taxes associated with the public pension.",
+    duration: "Duration",
+    grossAnnual: "Annual Gross",
+    grossAnnualTip: "Gross annual amount to withdraw before taxes to obtain the indicated net.",
+    withdraw: "Withdraw",
+    netPerYear: "net per year",
+    totalNetWithPension: "Total net with pension:",
+    totalWithdrawal: "Lump sum withdrawal",
+    notesTitle: "Notes and assumptions:",
+    notes1: "Amounts “Withdraw 10,000/15,000/…” are <b>net</b> received each year; the required gross is computed and added to the <b>net pension</b>.",
+    notes2: "Legal contribution limits: up to <b>€1,500</b>/year in <b>individual plans (PPI)</b>. The <b>€10,000</b>/year cap only applies when there is an <b>employment plan</b> (PPE/PPSE) with company contributions and, where applicable, worker contributions linked to that plan. In this calculator the “Annual contribution” field is limited to €10,000 assuming that scenario.",
+    notes3: "In partial withdrawals, each year the IRR is first applied to the remaining capital and then the gross withdrawal needed to reach the net is deducted; the balance continues compounding until exhausted.",
+    notes4: "Withdrawal duration is limited to a maximum of <b>35 years</b> (≈ 420 months). If the annual IRR is greater than or equal to the withdrawal rate, the capital might not be depleted; this cap reflects a reasonable retirement horizon and avoids unhelpful results.",
+    notes5: "General income tax: sum of <i>2025 state scale</i> and <i>2025 regional scale</i> of the <b>selected region</b>. Includes all common-regime regions (excluding Navarre and Basque Country).",
+    notes6: "Savings tax: 19%/21%/23%/27%/30% (Spain · 2025 rules). Fund withdrawals are taxed only on the gain realized each year.",
+    footer: "© David Gonzalez, if you want to know more about me, visit",
+    moreInfo: "More info",
+    langES: "ES",
+    langEN: "EN",
+  }
+} as const;
 const REGIONS = [
   "Andalucía",
   "Aragón",
@@ -507,6 +618,7 @@ function runTests() {
 }
 if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") { runTests(); }
 export default function App() {
+  const [lang, setLang] = useState<'es' | 'en'>('es');
   const [salaryInput, setSalaryInput] = useState("45000");
   const [yearsInput, setYearsInput] = useState("25");
   const [annualContributionInput, setAnnualContributionInput] = useState("1500");
@@ -514,6 +626,10 @@ export default function App() {
   const [pensionInput, setPensionInput] = useState("22000");
   const [reinvestSavings, setReinvestSavings] = useState(false);
   const [region, setRegion] = useState<RegionKey>("Cataluña");
+  const t = TEXTS[lang];
+  const locale = lang === 'es' ? 'es-ES' : 'en-US';
+  const fmt = (n: number) => fmtEUR(n, locale);
+  const fmtDur = (months: number) => formatDuration(months, lang);
   const salary = useMemo(() => Math.max(0, parseNum(salaryInput)), [salaryInput]);
   const years = useMemo(() => Math.max(0, Math.floor(parseNum(yearsInput))), [yearsInput]);
   const annualContributionRaw = useMemo(() => Math.max(0, parseNum(annualContributionInput)), [annualContributionInput]);
@@ -634,31 +750,36 @@ export default function App() {
       <div className="landing-bg" aria-hidden />
       
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-3">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <a
             href="/"
             className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline"
           >
             <span aria-hidden>←</span>
-            Volver a Herramientas
+            {t.back}
           </a>
+          <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1" role="radiogroup" aria-label="Language">
+            <label className="cursor-pointer">
+              <input type="radio" name="lang" className="sr-only peer" checked={lang==='es'} onChange={()=>setLang('es')} />
+              <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">{t.langES}</span>
+            </label>
+            <label className="cursor-pointer">
+              <input type="radio" name="lang" className="sr-only peer" checked={lang==='en'} onChange={()=>setLang('en')} />
+              <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">{t.langEN}</span>
+            </label>
+          </div>
         </div>
       </div>
       <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-3">Calculadora Plan de Pensiones vs Fondo</h1>
-        <p className="text-sm md:text-base text-gray-700 mb-6">
-          Compara, con fiscalidad española, aportar a un <b>plan de pensiones</b> frente a un <b>fondo de inversión</b>.
-          Introduce tus datos para ver el <b>valor acumulado a la jubilación</b> y el <b>neto a recibir</b> bajo distintos modos de rescate.
-          El ahorro anual por aportar al plan se estima con tu <i>tipo marginal</i> (estatal + autonómico según comunidad seleccionada).
-          Al rescatar, el plan tributa por tramos de la <i>base general</i> y los fondos por la <i>tarifa del ahorro</i> sobre la ganancia realizada.
-        </p>
+        <h1 className="text-3xl md:text-4xl font-extrabold mb-3">{t.title}</h1>
+        <p className="text-sm md:text-base text-gray-700 mb-6" dangerouslySetInnerHTML={{ __html: t.intro }} />
         <div className="grid grid-cols-1 gap-6">
           
           <div>
             <div className="bg-white rounded-2xl shadow p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-1">
-                  <label className="block text-sm">Comunidad Autónoma</label>
+                  <label className="block text-sm">{t.region}</label>
                   <select
                     className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
                     value={region}
@@ -670,7 +791,7 @@ export default function App() {
                   </select>
                 </div>
                 <div className="md:col-span-1">
-                  <label className="block text-sm">Salario bruto anual actual</label>
+                  <label className="block text-sm">{t.salary}</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -684,7 +805,7 @@ export default function App() {
                   </div>
                 </div>
                 <div className="md:col-span-1">
-                  <label className="block text-sm">Años hasta jubilación</label>
+                  <label className="block text-sm">{t.yearsToRetire}</label>
                   <input
                     type="number"
                     className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
@@ -695,7 +816,7 @@ export default function App() {
                   />
                 </div>
                 <div className="md:col-span-1">
-                  <label className="block text-sm">Aportación anual (máx. 10.000€) <InfoTip className="ml-1 align-middle" text="Límites legales de aportación: hasta 1.500€/año en planes individuales (PPI). El tope de 10.000€/año solo aplica cuando existe un plan de empleo (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan." /></label>
+                  <label className="block text-sm">{t.annualContribution} <InfoTip lang={lang} className="ml-1 align-middle" text={t.annualContributionTip}/></label>
                   <div className="relative">
                     <input
                       type="number"
@@ -710,7 +831,7 @@ export default function App() {
                   </div>
                 </div>
                 <div className="md:col-span-1">
-                  <label className="block text-sm">TIR anual esperada: {tir}%</label>
+                  <label className="block text-sm">{t.expectedReturn}: {tir}%</label>
                   <input
                     type="range"
                     className="w-full accent-cyan-600"
@@ -722,7 +843,7 @@ export default function App() {
                   />
                 </div>
                 <div className="md:col-span-1">
-                  <label className="block text-sm">Pensión pública prevista (bruto anual)</label>
+                  <label className="block text-sm">{t.expectedPublicPension}</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -738,22 +859,22 @@ export default function App() {
                 <div className="md:col-span-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 md:items-center md:gap-4">
                     <div>
-                      <label className="block text-sm mb-2">¿Reinvertir el ahorro anual de IRPF en un fondo de inversión? <InfoTip className="ml-1 align-middle" text="Si reinviertes en un fondo el ahorro de IRPF generado por las aportaciones al plan de pensiones, ese ahorro también se invierte y se capitaliza al mismo TIR que el fondo. En rescates parciales, los importes se prorratean entre plan y fondo." /></label>
-                      <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1" role="radiogroup" aria-label="Reinvertir ahorro IRPF">
+                      <label className="block text-sm mb-2">{t.reinvestLabel} <InfoTip lang={lang} className="ml-1 align-middle" text={t.reinvestTip} /></label>
+                      <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1" role="radiogroup" aria-label={t.reinvestLabel}>
                         <label className="cursor-pointer">
                           <input type="radio" name="reinv" value="no" className="sr-only peer" checked={!reinvestSavings} onChange={() => setReinvestSavings(false)} />
-                          <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">No</span>
+                          <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">{t.no}</span>
                         </label>
                         <label className="cursor-pointer">
                           <input type="radio" name="reinv" value="si" className="sr-only peer" checked={reinvestSavings} onChange={() => setReinvestSavings(true)} />
-                          <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">Sí</span>
+                          <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">{t.yes}</span>
                         </label>
                       </div>
                     </div>
                     <div className="text-xs text-gray-500 md:text-right mt-3 md:mt-0">
-                      <div>Pensión pública neta prevista: <b>{fmtEUR(pensionNet)}</b></div>
-                      <div>Tipo marginal estimado (trabajo): <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
-                      <div>Ahorro IRPF anual por aportar al plan: <b>{fmtEUR(annualIRPFSaving)}</b></div>
+                      <div>{t.pensionNetPrev} <b>{fmt(pensionNet)}</b></div>
+                      <div>{t.marginalType} <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
+                      <div>{t.annualIRPFSaving} <b>{fmt(annualIRPFSaving)}</b></div>
                     </div>
                   </div>
                 </div>
@@ -763,54 +884,54 @@ export default function App() {
           </div>
           
           <div className="space-y-6">
-            <h2 className="text-xl md:text-2xl font-bold">Valor a la jubilación</h2>
+            <h2 className="text-xl md:text-2xl font-bold">{t.retirementValue}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               <div className="bg-white rounded-2xl shadow p-4">
-                <div className="text-base font-semibold text-gray-700">{reinvestSavings ? 'Plan de pensiones + Fondo (ahorro IRPF)' : 'Plan de pensiones'}</div>
-                <div className="text-xl font-bold">{fmtEUR(combinedPlanBruto)}</div>
-                <div className="mt-2 text-sm">Total invertido: <b>{fmtEUR(combinedPlanInvertido)}</b></div>
+                <div className="text-base font-semibold text-gray-700">{reinvestSavings ? t.planPlusFund : t.planOnly}</div>
+                <div className="text-xl font-bold">{fmt(combinedPlanBruto)}</div>
+                <div className="mt-2 text-sm">{t.totalInvested} <b>{fmt(combinedPlanInvertido)}</b></div>
                 {reinvestSavings ? (
                   <>
-                    <div className="text-xs text-gray-500 mt-2">Detalle bruto: Plan {fmtEUR(planFV)} · Fondo (ahorro IRPF) {fmtEUR(reinvestFV)}</div>
-                    <div className="text-xs text-gray-500">Detalle invertido: Plan {fmtEUR(planCost)} · Fondo (ahorro IRPF) {fmtEUR(reinvestCost)}</div>
+                    <div className="text-xs text-gray-500 mt-2">{t.detailBruto} {t.plan} {fmt(planFV)} · {t.fundIRPF} {fmt(reinvestFV)}</div>
+                    <div className="text-xs text-gray-500">{t.detailInvertido} {t.plan} {fmt(planCost)} · {t.fundIRPF} {fmt(reinvestCost)}</div>
                   </>
                 ) : (
                   <>
-                    <div className="mt-1 text-sm">Total ahorro IRPF (no reinvertido): <b>{fmtEUR(totalIRPFSaved)}</b></div>
-                    <div className="text-xs text-gray-500 mt-2">Detalle bruto: Plan {fmtEUR(planFV)}</div>
-                    <div className="text-xs text-gray-500">Detalle invertido: Plan {fmtEUR(planCost)}</div>
+                    <div className="mt-1 text-sm">{t.totalIRPFSaved} <b>{fmt(totalIRPFSaved)}</b></div>
+                    <div className="text-xs text-gray-500 mt-2">{t.detailBruto} {t.plan} {fmt(planFV)}</div>
+                    <div className="text-xs text-gray-500">{t.detailInvertido} {t.plan} {fmt(planCost)}</div>
                   </>
                 )}
               </div>
-              
+
               <div className="bg-white rounded-2xl shadow p-4">
-                <div className="text-base font-semibold text-gray-700">Fondo de inversión</div>
-                <div className="text-xl font-bold">{fmtEUR(fundFV)}</div>
-                <div className="mt-2 text-sm">Total invertido: <b>{fmtEUR(fundCost)}</b></div>
-                <div className="text-xs text-gray-500 mt-2">Detalle bruto: Fondo {fmtEUR(fundFV)}</div>
-                <div className="text-xs text-gray-500">Detalle invertido: Fondo {fmtEUR(fundCost)}</div>
+                <div className="text-base font-semibold text-gray-700">{t.fundInvestment}</div>
+                <div className="text-xl font-bold">{fmt(fundFV)}</div>
+                <div className="mt-2 text-sm">{t.totalInvested} <b>{fmt(fundCost)}</b></div>
+                <div className="text-xs text-gray-500 mt-2">{t.detailBruto} {t.fund} {fmt(fundFV)}</div>
+                <div className="text-xs text-gray-500">{t.detailInvertido} {t.fund} {fmt(fundCost)}</div>
               </div>
             </div>
             
             <div className="bg-white rounded-2xl shadow p-4">
-              <h3 className="font-semibold mb-3">Rescates y duración del capital</h3>
+              <h3 className="font-semibold mb-3">{t.withdrawalsDuration}</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="text-left text-gray-600">
-                      <th className="py-2 pr-3">Escenario</th>
-                      <th className="py-2 pr-3 text-center">Neto Total <InfoTip className="ml-1 align-middle" text="Importe neto total recibido a partir del capital acumulado (aportaciones + rentabilidad) del plan de pensiones o de los fondos, tras agotar la duración. No incluye los cobros de la pensión pública." /></th>
-                      <th className="py-2 pr-3 text-center">Impuestos Totales <InfoTip className="ml-1 align-middle" text="Total de impuestos satisfechos por las retiradas del capital acumulado del plan de pensiones o de los fondos durante la duración. No incluye los impuestos asociados a la pensión pública." /></th>
-                      <th className="py-2 pr-3 text-center">Duración</th>
-                      <th className="py-2 pr-3 text-center">Bruto Anual <InfoTip className="ml-1 align-middle" text="Importe bruto anual a retirar antes de impuestos para obtener el neto indicado." /></th>
+                      <th className="py-2 pr-3">{t.scenario}</th>
+                      <th className="py-2 pr-3 text-center">{t.totalNet} <InfoTip lang={lang} className="ml-1 align-middle" text={t.totalNetTip} /></th>
+                      <th className="py-2 pr-3 text-center">{t.totalTaxes} <InfoTip lang={lang} className="ml-1 align-middle" text={t.totalTaxesTip} /></th>
+                      <th className="py-2 pr-3 text-center">{t.duration}</th>
+                      <th className="py-2 pr-3 text-center">{t.grossAnnual} <InfoTip lang={lang} className="ml-1 align-middle" text={t.grossAnnualTip} /></th>
                     </tr>
                   </thead>
                   <tbody>
 
                     <tr>
                       <td colSpan={5} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded">
-                        {reinvestSavings ? 'Plan de pensiones + Fondo (ahorro IRPF)' : 'Plan de pensiones'}
+                        {reinvestSavings ? t.planPlusFund : t.planOnly}
                       </td>
                     </tr>
                     
@@ -820,26 +941,26 @@ export default function App() {
                       return (
                         <tr key={`plan-${w}`} className="border-t bg-gray-50">
                           <td className="py-2 pr-3">
-                            <div className="font-medium">Retirar {fmtEUR(w)} netos al año</div>
-                            <div className="text-xs text-gray-500">Total neto con pensión: {fmtEUR(pensionNet + w)}</div>
+                            <div className="font-medium">{t.withdraw} {fmt(w)} {t.netPerYear}</div>
+                            <div className="text-xs text-gray-500">{t.totalNetWithPension} {fmt(pensionNet + w)}</div>
                           </td>
                           <td className="py-2 pr-3 text-center">
-                            {fmtEUR(reinvestSavings ? cs.totalNet : ps.totalNet)}
+                            {fmt(reinvestSavings ? cs.totalNet : ps.totalNet)}
                             {reinvestSavings && (
-                              <span className="text-gray-500 text-xs"> ({fmtEUR(cs.planNet)} + {fmtEUR(cs.reinvNet)})</span>
+                              <span className="text-gray-500 text-xs"> ({fmt(cs.planNet)} + {fmt(cs.reinvNet)})</span>
                             )}
                           </td>
                           <td className="py-2 pr-3 text-gray-600 text-center">
-                            {fmtEUR(reinvestSavings ? cs.totalTax : ps.totalTax)}
+                            {fmt(reinvestSavings ? cs.totalTax : ps.totalTax)}
                             {reinvestSavings && (
-                              <span className="text-gray-500 text-xs"> ({fmtEUR(cs.planTax)} + {fmtEUR(cs.reinvTax)})</span>
+                              <span className="text-gray-500 text-xs"> ({fmt(cs.planTax)} + {fmt(cs.reinvTax)})</span>
                             )}
                           </td>
-                          <td className="py-2 pr-3 text-center">{formatDuration(reinvestSavings ? cs.months : ps.months)}</td>
+                          <td className="py-2 pr-3 text-center">{fmtDur(reinvestSavings ? cs.months : ps.months)}</td>
                           <td className="py-2 pr-3 text-center">
-                            {fmtEUR(reinvestSavings ? combinedGrossAnns[idx].total : planGrossAnns[idx])}
+                            {fmt(reinvestSavings ? combinedGrossAnns[idx].total : planGrossAnns[idx])}
                             {reinvestSavings && (
-                              <span className="text-gray-500 text-xs"> ({fmtEUR(combinedGrossAnns[idx].plan)} + {fmtEUR(combinedGrossAnns[idx].reinv)})</span>
+                              <span className="text-gray-500 text-xs"> ({fmt(combinedGrossAnns[idx].plan)} + {fmt(combinedGrossAnns[idx].reinv)})</span>
                             )}
                           </td>
                         </tr>
@@ -847,17 +968,17 @@ export default function App() {
                     })}
 
                     <tr className="border-t bg-gray-50">
-                      <td className="py-2 pr-3 font-medium">Rescate total</td>
+                      <td className="py-2 pr-3 font-medium">{t.totalWithdrawal}</td>
                       <td className="py-2 pr-3 text-center">
-                        {fmtEUR(reinvestSavings ? combinedNetLump : planNetLump)}
+                        {fmt(reinvestSavings ? combinedNetLump : planNetLump)}
                         {reinvestSavings && (
-                          <span className="text-gray-500 text-xs"> ({fmtEUR(planNetLump)} + {fmtEUR(reinvNetLump)})</span>
+                          <span className="text-gray-500 text-xs"> ({fmt(planNetLump)} + {fmt(reinvNetLump)})</span>
                         )}
                       </td>
                       <td className="py-2 pr-3 text-gray-600 text-center">
-                        {fmtEUR(reinvestSavings ? combinedTaxLump : planTaxLump)}
+                        {fmt(reinvestSavings ? combinedTaxLump : planTaxLump)}
                         {reinvestSavings && (
-                          <span className="text-gray-500 text-xs"> ({fmtEUR(planTaxLump)} + {fmtEUR(reinvTaxLump)})</span>
+                          <span className="text-gray-500 text-xs"> ({fmt(planTaxLump)} + {fmt(reinvTaxLump)})</span>
                         )}
                       </td>
                       <td className="py-2 pr-3 text-center">—</td>
@@ -866,7 +987,7 @@ export default function App() {
 
                     <tr>
                       <td colSpan={5} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded mt-2">
-                        Fondo de inversión
+                        {t.fundInvestment}
                       </td>
                     </tr>
                     {WITHDRAWALS.map((w, idx) => {
@@ -874,21 +995,21 @@ export default function App() {
                       return (
                         <tr key={`fund-${w}`} className="border-t bg-white">
                           <td className="py-2 pr-3">
-                            <div className="font-medium">Retirar {fmtEUR(w)} netos al año</div>
-                            <div className="text-xs text-gray-500">Total neto con pensión: {fmtEUR(pensionNet + w)}</div>
+                            <div className="font-medium">{t.withdraw} {fmt(w)} {t.netPerYear}</div>
+                            <div className="text-xs text-gray-500">{t.totalNetWithPension} {fmt(pensionNet + w)}</div>
                           </td>
-                          <td className="py-2 pr-3 text-center">{fmtEUR(fs.totalNet)}</td>
-                          <td className="py-2 pr-3 text-gray-600 text-center">{fmtEUR(fs.totalTax)}</td>
-                          <td className="py-2 pr-3 text-center">{formatDuration(fs.months)}</td>
-                          <td className="py-2 pr-3 text-center">{fmtEUR(fundGrossAnns[idx])}</td>
+                          <td className="py-2 pr-3 text-center">{fmt(fs.totalNet)}</td>
+                          <td className="py-2 pr-3 text-gray-600 text-center">{fmt(fs.totalTax)}</td>
+                          <td className="py-2 pr-3 text-center">{fmtDur(fs.months)}</td>
+                          <td className="py-2 pr-3 text-center">{fmt(fundGrossAnns[idx])}</td>
                         </tr>
                       );
                     })}
 
                     <tr className="border-t bg-white">
-                      <td className="py-2 pr-3 font-medium">Rescate total</td>
-                      <td className="py-2 pr-3 text-center">{fmtEUR(fundNetLump)}</td>
-                      <td className="py-2 pr-3 text-gray-600 text-center">{fmtEUR(fundTaxLump)}</td>
+                      <td className="py-2 pr-3 font-medium">{t.totalWithdrawal}</td>
+                      <td className="py-2 pr-3 text-center">{fmt(fundNetLump)}</td>
+                      <td className="py-2 pr-3 text-gray-600 text-center">{fmt(fundTaxLump)}</td>
                       <td className="py-2 pr-3 text-center">—</td>
                       <td className="py-2 pr-3 text-center">—</td>
                     </tr>
@@ -897,25 +1018,17 @@ export default function App() {
               </div>
               
               <div className="text-xs text-gray-600 leading-relaxed mt-4">
-                <p className="mb-2">Notas y supuestos:</p>
+                <p className="mb-2">{t.notesTitle}</p>
                 <ul className="list-disc ml-5 space-y-1">
-                  <li>Los importes de “Retirar 10.000/15.000/…” son <b>netos</b> recibidos cada año; se calcula el bruto necesario y se suman a la <b>pensión neta</b>.</li>
-                  <li>
-                    Límites legales de aportación: hasta <b>1.500€</b>/año en <b>planes individuales (PPI)</b>. El tope de <b>10.000€</b>/año solo aplica cuando existe un <b>plan de empleo</b> (PPE/PPSE) con aportaciones de la empresa y, en su caso, contribuciones del trabajador vinculadas a ese plan. En esta calculadora el campo “Aportación anual” se limita a 10.000€ asumiendo ese escenario.
-                  </li>
-                  <li>En retiros parciales, cada año primero se aplica la TIR al capital restante y después se descuenta el retiro bruto necesario para alcanzar el neto; el saldo continúa capitalizándose hasta agotarse.</li>
-                  <li>La duración de las retiradas se limita a un máximo de <b>35 años</b> (≈ 420 meses). Si la TIR anual es mayor o igual al ritmo de retirada, el capital podría no agotarse; se aplica este tope para reflejar un horizonte razonable de jubilación y evitar resultados poco útiles.</li>
-                  <li>
-                    IRPF general: suma de <i>escala estatal 2025</i> y <i>escala autonómica 2025</i> de la <b>CCAA seleccionada</b>.
-                    Incluidas todas las CCAA de régimen común (sin Navarra ni País Vasco).
-                  </li>
-                  <li>
-                    IRPF del ahorro: 19%/21%/23%/27%/30% (España · normativa 2025). Los rescates de fondos tributan solo por la
-                    ganancia efectivamente realizada cada año.
-                  </li>
+                  <li dangerouslySetInnerHTML={{ __html: t.notes1 }} />
+                  <li dangerouslySetInnerHTML={{ __html: t.notes2 }} />
+                  <li dangerouslySetInnerHTML={{ __html: t.notes3 }} />
+                  <li dangerouslySetInnerHTML={{ __html: t.notes4 }} />
+                  <li dangerouslySetInnerHTML={{ __html: t.notes5 }} />
+                  <li dangerouslySetInnerHTML={{ __html: t.notes6 }} />
                 </ul>
               </div>
-              <div className="mt-6 text-sm text-gray-600">© David Gonzalez, si quieres saber más sobre mí, visita <a className="text-cyan-700 hover:underline" href="https://dragner.net/" target="_blank" rel="noopener"><strong>dragner.net</strong></a></div>
+              <div className="mt-6 text-sm text-gray-600">{t.footer} <a className="text-cyan-700 hover:underline" href="https://dragner.net/" target="_blank" rel="noopener"><strong>dragner.net</strong></a></div>
             </div>
           </div>
         </div>
