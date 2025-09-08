@@ -65,11 +65,12 @@
       .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
       .brand{font-weight:900;letter-spacing:.4px;font-size:clamp(20px,2.6vw,28px);text-transform:uppercase}
       .brand .capslead{font-size:1.22em;line-height:0.9;display:inline-block}
+      .brand-word{display:inline-block;white-space:nowrap}
 
       /* Lang chips (ES | EN) */
-      .lang-switch{display:flex;gap:8px}
-      .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:14px;cursor:pointer;background:#fff;color:var(--text);user-select:none}
-      .chip[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+      .lang-switch{display:inline-flex;gap:4px;border:1px solid var(--border);border-radius:12px;background:#fff;padding:4px}
+      .chip{display:inline-flex;align-items:center;border:none;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;background:transparent;color:var(--text);user-select:none}
+      .chip[aria-pressed="true"]{background:var(--accent);color:#fff}
       .chip:focus{outline:none;box-shadow:0 0 0 3px var(--ring)}
 
       /* Centered layout */
@@ -90,7 +91,7 @@
       .card .pill{display:inline-block;background:rgba(14,165,233,.12);color:var(--accent-strong);border:1px solid rgba(14,165,233,.25);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;position:absolute;top:12px;right:12px}
 
       /* Footer */
-      footer{margin:44px 0 8px;color:var(--muted);text-align:left}
+      footer{margin:44px 0 8px;color:var(--muted);text-align:center}
       .more{font-size:16px;font-weight:400}
       .ext{color:var(--accent-strong);text-decoration:none;font-weight:800}
       .ext:hover{text-decoration:underline}
@@ -99,6 +100,7 @@
       @media (max-width:520px){
         .grid{grid-template-columns:1fr;max-width:560px}
         .card{min-height:124px;padding:18px}
+        .card .pill{position:static;margin:0 auto 8px;display:inline-block}
       }
     </style>
   </head>
@@ -118,7 +120,7 @@
       <section class="hero">
         
         <p class="sub" data-i18n="subtitle">
-          En esta colección reúno dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>vibe coding</em> y se apoyan en IA para construir mejor, más rápido y con claridad.
+          En esta colección reúno mis dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>Vibe Coding</em> y se apoyan en IA para construir <strong>mejor, más rápido e intuitivo</strong>.
         </p>
       </section>
 
@@ -155,7 +157,7 @@
       </section>
 
       <footer>
-        <p class="more"><span data-i18n="footer_text">© David Gonzalez, si quieres saber más sobre mí, visita</span> <a class="ext" href="https://dragner.net/" target="_blank" rel="noopener"><strong>dragner.net</strong></a></p>
+        <p class="more"><span data-i18n="footer_text">©David Gonzalez, si quieres saber más sobre mí, visita</span> <a class="ext" href="https://dragner.net/" target="_blank" rel="noopener"><strong>dragner.net</strong></a></p>
       </footer>
     </main>
 
@@ -163,25 +165,25 @@
       const I18N = {
         es:{
           title:'Herramientas financieras',
-          subtitle:'En esta colección reúno dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>vibe coding</em> y se apoyan en IA para construir mejor, más rápido y con claridad.',
+          subtitle:'En esta colección reúno mis dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>Vibe Coding</em> y se apoyan en IA para construir <strong>mejor, más rápido e intuitivo</strong>.',
           calc_badge:'Calculadora',
           calc_title:'Plan de Pensiones vs Fondo de Inversión',
           calc_desc:'Compara el neto a recibir al invertir en plan de pensiones o fondo, con tramos IRPF estatales y autonómicos 2025, rescates parciales y rescate total.',
           comp_badge:'Comparador',
           comp_title:'Comparador de Ofertas de Hipoteca',
           comp_desc:'Compara fácilmente las ofertas de hipotecas, teniendo en cuenta todos los productos que bonifican las hipotecas.',
-          footer_text:'© David Gonzalez, si quieres saber más sobre mí, visita'
+          footer_text:'©David Gonzalez, si quieres saber más sobre mí, visita'
         },
         en:{
           title:'Financial tools',
-          subtitle:'This collection blends two passions: personal finance and technology. Built with <em>vibe coding</em> and AI to ship better, faster, and clearer.',
+          subtitle:'This collection brings together my two passions: personal finance and technology. All tools are born with <em>Vibe Coding</em> and leverage AI to build <strong>better, faster, and more intuitive</strong>.',
           calc_badge:'Calculator',
           calc_title:'Pension Plan vs Investment Fund',
           calc_desc:'Compare net outcomes for pension plans vs funds with 2025 state/regional tax brackets, partial withdrawals and lump sum.',
           comp_badge:'Comparator',
           comp_title:'Mortgage Offer Comparator',
           comp_desc:'Easily compare mortgage offers, accounting for all discount-linked products.',
-          footer_text:'© David Gonzalez, want to know more about me? Visit'
+          footer_text:'©David Gonzalez, want to know more about me? Visit'
         }
       };
 
@@ -224,7 +226,7 @@
         if(!el) return;
         const txt = (el.textContent||'').trim();
         if(!txt) return;
-        const html = txt.split(/\s+/).map(w => w ? '<span class="capslead">'+w[0]+'</span>'+w.slice(1) : '').join(' ');
+        const html = txt.split(/\s+/).map(w => w ? '<span class="brand-word"><span class="capslead">'+w[0]+'</span>'+w.slice(1)+'</span>' : '').join(' ');
         el.innerHTML = html;
       }
 
