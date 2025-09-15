@@ -28,7 +28,6 @@
     <meta name="twitter:description" content="Colección de herramientas financieras creadas con vibe coding e IA." />
     <meta name="twitter:image" content="/og-image.png" />
 
-    <meta name="robots" content="noindex,nofollow" />
     <style>
       :root{
         --bg:#ffffff;           /* fondo claro acorde con dragner.net */
@@ -205,6 +204,16 @@
         const t = I18N[lang] || I18N.es;
         document.documentElement.lang = lang;
         document.title = (lang==='en'?'Financial tools · Dragner':'Herramientas financieras · Dragner');
+
+        // Update meta description
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+          const desc = lang === 'en'
+            ? 'Collection of financial tools created with vibe coding and AI.'
+            : 'Colección de herramientas financieras creadas con vibe coding e IA.';
+          metaDesc.setAttribute('content', desc);
+        }
+
         els.title.textContent = stripHTML(t.title);
         stylizeBrand(els.title);
         els.subtitle.innerHTML = t.subtitle;
