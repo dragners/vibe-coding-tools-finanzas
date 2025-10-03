@@ -3,10 +3,9 @@ import "./index.css";
 
 type Lang = "es" | "en";
 
-type KnownRatioPeriod = "1Y" | "3Y" | "5Y";
-type RatioPeriod = KnownRatioPeriod | string;
+type RatioPeriod = "1Y" | "3Y" | "5Y";
 
-type KnownPerformanceKey =
+type PerformanceKey =
   | "1D"
   | "1W"
   | "1M"
@@ -17,8 +16,6 @@ type KnownPerformanceKey =
   | "3Y Anual"
   | "5Y Anual"
   | "10Y Anual";
-
-type PerformanceKey = KnownPerformanceKey | string;
 
 type FundRow = {
   name: string;
@@ -190,39 +187,6 @@ function Section({
   texts: Record<TextKey, string>;
 }) {
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
-  const performanceColumns = useMemo(() => {
-    const base: PerformanceKey[] = [...PERFORMANCE_DEFAULT_ORDER];
-    const seen = new Set<string>(base);
-    for (const row of data) {
-      const keys = Object.keys(row.performance ?? {});
-      for (const key of keys) {
-        if (!seen.has(key)) {
-          base.push(key as PerformanceKey);
-          seen.add(key);
-        }
-      }
-    }
-    return base;
-  }, [data]);
-
-  const ratioColumns = useMemo(() => {
-    const base: RatioPeriod[] = [...RATIO_DEFAULT_ORDER];
-    const seen = new Set<string>(base);
-    for (const row of data) {
-      const mergeKeys = [
-        ...Object.keys(row.sharpe ?? {}),
-        ...Object.keys(row.volatility ?? {}),
-      ];
-      for (const key of mergeKeys) {
-        if (!seen.has(key)) {
-          base.push(key as RatioPeriod);
-          seen.add(key);
-        }
-      }
-    }
-    return base;
-  }, [data]);
-
   return (
     <section className="mt-12">
       <div className="mb-6">
