@@ -53,9 +53,10 @@ const PERFORMANCE_TARGETS = [
   },
 ];
 
-const PERFORMANCE_DATE_REGEX = /Rentabilidades acumuladas %\s*(\d{2}\/\d{2}\/\d{4})/i;
+const PERFORMANCE_DATE_REGEX =
+  /Rentabilidades acumuladas (?:%|\(%\))\s*(\d{2}\/\d{2}\/\d{4})/i;
 const PERFORMANCE_BLOCK_REGEX =
-  /Rentabilidades acumuladas %[\s\S]*?(?:Rentabilidad trimestral %?|Rentabilidades anuales %|Cartera|Operaciones|Comparar|©|$)/i;
+  /Rentabilidades acumuladas (?:%|\(%\))[\s\S]*?(?:Rentabilidad trimestral %?|Rentabilidades anuales %|Cartera|Operaciones|Comparar|©|$)/i;
 
 const DEBUG_PERFORMANCE = process.env.DEBUG_PERFORMANCE === "1";
 
@@ -151,27 +152,14 @@ function normalizePerformanceText(text) {
     .trim();
 }
 
-function parsePerformanceNumber(raw) {
-  if (typeof raw !== "string") {
-    return { number: null, normalized: null };
-  }
-
-  const sanitized = raw
-    .replace(/[%\u00a0]/g, "")
-    .replace(/[−–—]/g, "-")
-    .trim();
+function parseSpanishFloat(raw) {
+  if (typeof raw !== "string") return null;
+  const sanitized = raw.replace(/[−—–]/g, "-").replace(/[%\u00a0]/g, " ").trim();
+  if (!sanitized || sanitized === "-") return null;
   const compact = sanitized.replace(/\s+/g, "");
-
-  if (!compact || compact === "-") {
-    return { number: null, normalized: null };
-  }
-
   const normalized = compact.replace(/\./g, "").replace(/,/g, ".");
   const number = Number.parseFloat(normalized);
-  if (Number.isNaN(number)) {
-    return { number: null, normalized };
-  }
-  return { number, normalized };
+  return Number.isNaN(number) ? null : number;
 }
 
 function parsePerformance(html) {
@@ -212,52 +200,48 @@ function parsePerformance(html) {
     debug.date = dateMatch[1];
   }
 
-  const match = normalizedText.match(PERFORMANCE_BLOCK_REGEX);
-  if (!match) {
+  const blockMatch = normalizedText.match(PERFORMANCE_BLOCK_REGEX);
+  const block = blockMatch ? blockMatch[0] : normalizedText;
+  if (!blockMatch) {
     debug.reason = "block_not_found";
-    logPerformanceDebug("Performance block not found", debug);
-    return { values, debug };
+  } else {
+    debug.blockFound = true;
+    debug.blockIndex = blockMatch.index ?? null;
   }
-
-  const block = match[0];
-  debug.blockFound = true;
-  debug.blockIndex = match.index ?? null;
   debug.rawBlock = block.slice(0, 2000);
   debug.normalizedBlock = block.replace(/[ \t]+/g, " ").trim().slice(0, 2000);
 
   for (const { key, variants } of PERFORMANCE_TARGETS) {
-    let captured = null;
+    let matchedValue = null;
     let usedVariant = null;
+
     for (const variant of variants) {
-      const variantPattern = escapeRegExp(variant);
       const variantRegex = new RegExp(
-        `${variantPattern}(?:[\s:\u00a0])+(-?[0-9]+(?:[.,][0-9]+)?)` +
-          `(?:[\s\u00a0]+[-+−—–0-9.,%]+)?(?:[\s\u00a0]+[-+−—–0-9.,%]+)?`,
+        `${escapeRegExp(variant)}\s+([+−—–-]?[0-9]+(?:[.,][0-9]+)?)` +
+          `(?:\s+[-+−—–0-9.,%]+)?(?:\s+[-+−—–0-9.,%]+)?`,
         "i",
       );
-      const found = block.match(variantRegex);
-      if (found) {
-        captured = found[1];
+      const match = block.match(variantRegex);
+      if (match) {
+        matchedValue = match[1];
         usedVariant = variant;
         break;
       }
     }
 
-    if (!captured) {
+    if (!matchedValue) {
       debug.missing.push({ key, variants });
       continue;
     }
 
-    const { number, normalized } = parsePerformanceNumber(captured);
-    debug.matches.push({ key, variant: usedVariant, raw: captured, normalized, number });
-    if (number === null) {
-      continue;
-    }
+    const number = parseSpanishFloat(matchedValue);
+    debug.matches.push({ key, variant: usedVariant, raw: matchedValue, number });
+    if (number === null) continue;
     values[key] = number;
   }
 
   if (!Object.keys(values).length) {
-    debug.reason = "values_not_found";
+    debug.reason = debug.reason ?? "values_not_found";
     logPerformanceDebug("No performance values extracted", debug);
     return { values, debug };
   }
