@@ -5,16 +5,20 @@ WORKDIR /build
 # Instala deps por app (mejor caché)
 COPY apps/planvsfondo/package.json apps/planvsfondo/package-lock.json* ./apps/planvsfondo/
 COPY apps/comparadorhipotecas/package.json apps/comparadorhipotecas/package-lock.json* ./apps/comparadorhipotecas/
+COPY apps/listadofondos/package.json apps/listadofondos/package-lock.json* ./apps/listadofondos/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm ci) && \
-    (cd apps/comparadorhipotecas && npm ci)
+    (cd apps/comparadorhipotecas && npm ci) && \
+    (cd apps/listadofondos && npm ci)
 
 # Copia fuentes y build
 COPY apps/planvsfondo/ ./apps/planvsfondo/
 COPY apps/comparadorhipotecas/ ./apps/comparadorhipotecas/
+COPY apps/listadofondos/ ./apps/listadofondos/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm run build) && \
-    (cd apps/comparadorhipotecas && npm run build)
+    (cd apps/comparadorhipotecas && npm run build) && \
+    (cd apps/listadofondos && npm run build)
 
 # --- Runtime: Nginx sirviendo landing + apps ---
 FROM nginx:alpine AS runtime
@@ -26,6 +30,7 @@ COPY landing/ /usr/share/nginx/html/
 # Copia los dist de cada app a su subcarpeta
 COPY --from=builder /build/apps/planvsfondo/dist/ /usr/share/nginx/html/planvsfondo/
 COPY --from=builder /build/apps/comparadorhipotecas/dist/ /usr/share/nginx/html/comparadorhipotecas/
+COPY --from=builder /build/apps/listadofondos/dist/ /usr/share/nginx/html/listadofondos/
 
 RUN chmod -R 755 /usr/share/nginx/html
 EXPOSE 80
