@@ -81,7 +81,52 @@ function resolvePerformanceKey(label) {
   return null;
 }
 
-function parsePerformance(html) {
+function parsePerformanceFromTables(html) {
+  const tables = extractTables(html);
+  const result = {};
+
+  for (const table of tables) {
+    const rows = extractRows(table);
+    if (!rows.length) continue;
+
+    const headerCells = extractCells(rows[0]).map((cell) =>
+      sanitizeValue(stripHtml(cell)),
+    );
+
+    if (!headerCells.some((label) => resolvePerformanceKey(label))) continue;
+
+    for (let i = 1; i < rows.length; i++) {
+      const cells = extractCells(rows[i]);
+      if (!cells.length) continue;
+
+      const rowLabel = sanitizeValue(stripHtml(cells[0] ?? ""));
+      const normalized = rowLabel.toLowerCase();
+      if (
+        !normalized ||
+        !(
+          normalized.includes("rentabilidad") ||
+          normalized.includes("rendimiento") ||
+          normalized.includes("total return")
+        )
+      ) {
+        continue;
+      }
+
+      for (let j = 1; j < cells.length && j < headerCells.length; j++) {
+        const key = resolvePerformanceKey(headerCells[j]);
+        if (!key) continue;
+        const value = sanitizeValue(stripHtml(cells[j] ?? ""));
+        if (value !== "-") {
+          result[key] = value;
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+function parsePerformanceLegacy(html) {
   const tables = extractTables(html);
   const byPosition = tables[19];
   const result = {};
@@ -120,7 +165,61 @@ function parsePerformance(html) {
   return result;
 }
 
-function parseRatio(html, keywords) {
+function parsePerformance(html) {
+  const parsed = parsePerformanceFromTables(html);
+  if (Object.keys(parsed).length) return parsed;
+  return parsePerformanceLegacy(html);
+}
+
+function resolveRatioPeriod(label) {
+  if (!label) return null;
+  const normalized = label.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (normalized.includes("1a") || normalized.includes("1y")) return "1Y";
+  if (normalized.includes("3a") || normalized.includes("3y")) return "3Y";
+  if (normalized.includes("5a") || normalized.includes("5y")) return "5Y";
+  return null;
+}
+
+function parseRatioFromTables(html, keywords) {
+  const tables = extractTables(html);
+  let found = {};
+
+  for (const table of tables) {
+    const rows = extractRows(table);
+    if (!rows.length) continue;
+
+    const headerCells = extractCells(rows[0]).map((cell) =>
+      sanitizeValue(stripHtml(cell)),
+    );
+    const periods = headerCells.map((label) => resolveRatioPeriod(label));
+    if (!periods.some(Boolean)) continue;
+
+    for (let i = 1; i < rows.length; i++) {
+      const cells = extractCells(rows[i]);
+      if (!cells.length) continue;
+      const label = sanitizeValue(stripHtml(cells[0] ?? ""));
+      const normalized = label.toLowerCase();
+      if (!keywords.some((keyword) => normalized.includes(keyword))) continue;
+
+      const values = {};
+      for (let j = 1; j < cells.length && j < periods.length; j++) {
+        const key = periods[j];
+        if (!key) continue;
+        const value = sanitizeValue(stripHtml(cells[j] ?? ""));
+        if (value !== "-") {
+          values[key] = value;
+        }
+      }
+      if (Object.keys(values).length) {
+        found = values;
+      }
+    }
+  }
+
+  return found;
+}
+
+function parseRatioLegacy(html, keywords) {
   const tables = extractTables(html);
   for (const table of tables) {
     const rows = extractRows(table);
@@ -140,7 +239,40 @@ function parseRatio(html, keywords) {
   return {};
 }
 
-function parseTer(html) {
+function parseRatio(html, keywords) {
+  const parsed = parseRatioFromTables(html, keywords);
+  if (Object.keys(parsed).length) return parsed;
+  return parseRatioLegacy(html, keywords);
+}
+
+function parseTerFromTables(html) {
+  const tables = extractTables(html);
+  let found = "-";
+
+  for (const table of tables) {
+    const rows = extractRows(table);
+    for (const row of rows) {
+      const cells = extractCells(row);
+      if (!cells.length) continue;
+      const label = sanitizeValue(stripHtml(cells[0] ?? "")).toLowerCase();
+      if (
+        label.includes("ter") ||
+        label.includes("gastos corrientes") ||
+        label.includes("ratio de gastos") ||
+        label.includes("total expense")
+      ) {
+        const value = sanitizeValue(stripHtml(cells[cells.length - 1] ?? ""));
+        if (value !== "-") {
+          found = value;
+        }
+      }
+    }
+  }
+
+  return found;
+}
+
+function parseTerLegacy(html) {
   const tables = extractTables(html);
   for (const table of tables) {
     const rows = extractRows(table);
@@ -155,6 +287,12 @@ function parseTer(html) {
     }
   }
   return "-";
+}
+
+function parseTer(html) {
+  const parsed = parseTerFromTables(html);
+  if (parsed && parsed !== "-") return parsed;
+  return parseTerLegacy(html);
 }
 
 async function fetchHtml(url) {
