@@ -5,3 +5,10 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
+    depends_on:
+      - listadofondos-api
+  listadofondos-api:
+    build:
+      context: .
+      dockerfile: services/listadofondos-api/Dockerfile
+    restart: unless-stopped
