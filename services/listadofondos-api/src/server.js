@@ -83,14 +83,32 @@ function resolvePerformanceKey(label) {
 
 function parsePerformance(html) {
   const tables = extractTables(html);
-  let selected = tables.find((tbl) => {
+  const byPosition = tables[19];
+  const result = {};
+
+  if (byPosition) {
+    const rows = extractRows(byPosition);
+    for (let i = 1; i < rows.length && i <= PERFORMANCE_KEYS.length; i++) {
+      const cells = extractCells(rows[i]);
+      if (cells.length < 2) continue;
+      const value = sanitizeValue(stripHtml(cells[1] ?? ""));
+      if (value !== "-") {
+        result[PERFORMANCE_KEYS[i - 1]] = value;
+      }
+    }
+  }
+
+  if (Object.keys(result).length >= 5) {
+    return result;
+  }
+
+  const fallback = tables.find((tbl) => {
     const text = stripHtml(tbl);
     return PERFORMANCE_KEYS.every((key) => text.includes(key.split(" ")[0]));
   });
-  if (!selected) selected = tables[19];
-  const result = {};
-  if (!selected) return result;
-  const rows = extractRows(selected);
+  if (!fallback) return result;
+
+  const rows = extractRows(fallback);
   for (const row of rows) {
     const cells = extractCells(row);
     if (cells.length < 2) continue;

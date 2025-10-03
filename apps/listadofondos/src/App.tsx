@@ -3,9 +3,10 @@ import "./index.css";
 
 type Lang = "es" | "en";
 
-type RatioPeriod = "1Y" | "3Y" | "5Y";
+type KnownRatioPeriod = "1Y" | "3Y" | "5Y";
+type RatioPeriod = KnownRatioPeriod | string;
 
-type PerformanceKey =
+type KnownPerformanceKey =
   | "1D"
   | "1W"
   | "1M"
@@ -16,6 +17,8 @@ type PerformanceKey =
   | "3Y Anual"
   | "5Y Anual"
   | "10Y Anual";
+
+type PerformanceKey = KnownPerformanceKey | string;
 
 type FundRow = {
   name: string;
@@ -101,7 +104,7 @@ const TEXTS = {
   },
 } as const;
 
-const PERFORMANCE_LABELS: PerformanceKey[] = [
+const PERFORMANCE_DEFAULT_ORDER: readonly KnownPerformanceKey[] = [
   "1D",
   "1W",
   "1M",
@@ -114,7 +117,7 @@ const PERFORMANCE_LABELS: PerformanceKey[] = [
   "10Y Anual",
 ];
 
-const RATIO_LABELS: RatioPeriod[] = ["1Y", "3Y", "5Y"];
+const RATIO_DEFAULT_ORDER: readonly KnownRatioPeriod[] = ["1Y", "3Y", "5Y"];
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
 
@@ -129,6 +132,10 @@ function formatValue(raw?: string) {
   return val;
 }
 
+function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
+  return label.replace(" Anual", "");
+}
+
 function Section({
   section,
   data,
@@ -139,80 +146,193 @@ function Section({
   texts: Record<TextKey, string>;
 }) {
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
+  const performanceColumns = useMemo(() => {
+    const base: PerformanceKey[] = [...PERFORMANCE_DEFAULT_ORDER];
+    const seen = new Set<string>(base);
+    for (const row of data) {
+      const keys = Object.keys(row.performance ?? {});
+      for (const key of keys) {
+        if (!seen.has(key)) {
+          base.push(key as PerformanceKey);
+          seen.add(key);
+        }
+      }
+    }
+    return base;
+  }, [data]);
+
+  const ratioColumns = useMemo(() => {
+    const base: RatioPeriod[] = [...RATIO_DEFAULT_ORDER];
+    const seen = new Set<string>(base);
+    for (const row of data) {
+      const mergeKeys = [
+        ...Object.keys(row.sharpe ?? {}),
+        ...Object.keys(row.volatility ?? {}),
+      ];
+      for (const key of mergeKeys) {
+        if (!seen.has(key)) {
+          base.push(key as RatioPeriod);
+          seen.add(key);
+        }
+      }
+    }
+    return base;
+  }, [data]);
+
   return (
-    <section className="mt-10">
-      <div className="flex flex-col gap-2 mb-4">
-        <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
-        <p className="text-sm text-slate-600 max-w-3xl">{texts.sectionDescription}</p>
+    <section className="mt-12">
+      <div className="mb-6">
+        <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">{title}</h2>
+        <p className="mt-1 text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
       </div>
-      <div className="overflow-x-auto bg-white shadow-sm ring-1 ring-slate-200 rounded-lg">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
-            <tr className="text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
-              <th className="px-4 py-3 min-w-[220px]">{texts.name}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{texts.isin}</th>
-              <th className="px-4 py-3 min-w-[180px]">{texts.category}</th>
-              <th className="px-4 py-3 min-w-[160px]">{texts.performance}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{texts.sharpe}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{texts.volatility}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{texts.ter}</th>
-              <th className="px-4 py-3 min-w-[180px]">{texts.comment}</th>
+      <div className="overflow-x-auto">
+        <table className="w-full border-separate border-spacing-y-3 text-sm text-gray-800">
+          <thead>
+            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th
+                rowSpan={2}
+                scope="col"
+                className="px-4 py-3 min-w-[220px] bg-white/70 text-left rounded-tl-2xl rounded-bl-2xl"
+              >
+                {texts.name}
+              </th>
+              <th
+                rowSpan={2}
+                scope="col"
+                className="px-4 py-3 whitespace-nowrap bg-white/70 text-left"
+              >
+                {texts.isin}
+              </th>
+              <th
+                rowSpan={2}
+                scope="col"
+                className="px-4 py-3 min-w-[180px] bg-white/70 text-left"
+              >
+                {texts.category}
+              </th>
+              <th
+                colSpan={performanceColumns.length}
+                scope="colgroup"
+                className="px-4 py-3 text-center bg-white/70"
+              >
+                {texts.performance}
+              </th>
+              <th
+                colSpan={ratioColumns.length}
+                scope="colgroup"
+                className="px-4 py-3 text-center bg-white/70"
+              >
+                {texts.sharpe}
+              </th>
+              <th
+                colSpan={ratioColumns.length}
+                scope="colgroup"
+                className="px-4 py-3 text-center bg-white/70"
+              >
+                {texts.volatility}
+              </th>
+              <th
+                rowSpan={2}
+                scope="col"
+                className="px-4 py-3 whitespace-nowrap bg-white/70 text-left"
+              >
+                {texts.ter}
+              </th>
+              <th
+                rowSpan={2}
+                scope="col"
+                className="px-4 py-3 min-w-[200px] bg-white/70 text-left rounded-tr-2xl rounded-br-2xl"
+              >
+                {texts.comment}
+              </th>
+            </tr>
+            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              {performanceColumns.map((label) => (
+                <th
+                  key={`perf-${label}`}
+                  scope="col"
+                  className="px-2 py-2 text-center whitespace-nowrap"
+                >
+                  {displayMetricLabel(label)}
+                </th>
+              ))}
+              {ratioColumns.map((label) => (
+                <th
+                  key={`sharpe-${label}`}
+                  scope="col"
+                  className="px-2 py-2 text-center whitespace-nowrap"
+                >
+                  {displayMetricLabel(label)}
+                </th>
+              ))}
+              {ratioColumns.map((label) => (
+                <th
+                  key={`vol-${label}`}
+                  scope="col"
+                  className="px-2 py-2 text-center whitespace-nowrap"
+                >
+                  {displayMetricLabel(label)}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-sm text-slate-800">
+          <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-slate-500">
+                <td
+                  colSpan={
+                    5 + performanceColumns.length + ratioColumns.length * 2
+                  }
+                  className="px-4 py-6 text-center text-sm font-medium text-gray-500 bg-white/90 rounded-2xl"
+                >
                   {texts.noData}
                 </td>
               </tr>
             ) : (
               data.map((row) => (
-                <tr key={`${section}-${row.morningstarId}`} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 align-top">
+                <tr key={`${section}-${row.morningstarId}`} className="align-top">
+                  <td className="px-4 py-4 bg-white/95 backdrop-blur first:rounded-l-2xl">
                     <a
                       href={row.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-medium text-blue-600 hover:text-blue-700"
+                      className="font-semibold text-cyan-600 hover:text-cyan-700"
                     >
                       {row.name}
                     </a>
                   </td>
-                  <td className="px-4 py-3 align-top whitespace-nowrap text-slate-600">{formatValue(row.isin)}</td>
-                  <td className="px-4 py-3 align-top">{formatValue(row.category)}</td>
-                  <td className="px-4 py-3 align-top">
-                    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-600">
-                      {PERFORMANCE_LABELS.map((key) => (
-                        <React.Fragment key={key}>
-                          <dt className="font-semibold text-slate-500">{key}</dt>
-                          <dd className="text-slate-700">{formatValue(row.performance[key])}</dd>
-                        </React.Fragment>
-                      ))}
-                    </dl>
+                  <td className="px-4 py-4 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
+                    {formatValue(row.isin)}
                   </td>
-                  <td className="px-4 py-3 align-top">
-                    <dl className="space-y-1 text-xs text-slate-600">
-                      {RATIO_LABELS.map((key) => (
-                        <div key={key} className="flex justify-between gap-2">
-                          <dt className="font-semibold text-slate-500">{key}</dt>
-                          <dd className="text-slate-700">{formatValue(row.sharpe[key])}</dd>
-                        </div>
-                      ))}
-                    </dl>
+                  <td className="px-4 py-4 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
+                  {performanceColumns.map((label) => (
+                    <td
+                      key={`${row.morningstarId}-perf-${label}`}
+                      className="px-2 py-4 bg-white/95 backdrop-blur text-center font-medium text-gray-700"
+                    >
+                      {formatValue(row.performance[label])}
+                    </td>
+                  ))}
+                  {ratioColumns.map((label) => (
+                    <td
+                      key={`${row.morningstarId}-sharpe-${label}`}
+                      className="px-2 py-4 bg-white/95 backdrop-blur text-center text-gray-700"
+                    >
+                      {formatValue(row.sharpe[label])}
+                    </td>
+                  ))}
+                  {ratioColumns.map((label) => (
+                    <td
+                      key={`${row.morningstarId}-vol-${label}`}
+                      className="px-2 py-4 bg-white/95 backdrop-blur text-center text-gray-700"
+                    >
+                      {formatValue(row.volatility[label])}
+                    </td>
+                  ))}
+                  <td className="px-4 py-4 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
+                    {formatValue(row.ter)}
                   </td>
-                  <td className="px-4 py-3 align-top">
-                    <dl className="space-y-1 text-xs text-slate-600">
-                      {RATIO_LABELS.map((key) => (
-                        <div key={key} className="flex justify-between gap-2">
-                          <dt className="font-semibold text-slate-500">{key}</dt>
-                          <dd className="text-slate-700">{formatValue(row.volatility[key])}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </td>
-                  <td className="px-4 py-3 align-top whitespace-nowrap">{formatValue(row.ter)}</td>
-                  <td className="px-4 py-3 align-top text-slate-600">
+                  <td className="px-4 py-4 bg-white/95 backdrop-blur text-gray-600 last:rounded-r-2xl">
                     {formatValue(row.comment) || texts.commentPlaceholder}
                   </td>
                 </tr>
@@ -264,72 +384,101 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-16">
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <a href="/" className="text-sm text-blue-600 hover:text-blue-700">
-              ← {texts.back}
+    <div className="relative min-h-screen text-gray-900">
+      <style>{`
+        .landing-bg{position:fixed;inset:0;z-index:-1;background:
+          radial-gradient(900px 600px at 10% 0%, rgba(14,165,233,.12), transparent 60%),
+          radial-gradient(900px 600px at 90% -10%, rgba(2,132,199,.10), transparent 60%),
+          linear-gradient(180deg,#fff 0%,#f8fbff 60%,#fff 100%),
+          linear-gradient(to bottom, rgba(15,23,42,.04) 1px, transparent 1px),
+          linear-gradient(to right, rgba(15,23,42,.04) 1px, transparent 1px);
+          background-size:auto,auto,100% 100%,24px 24px,24px 24px;background-position:center}
+      `}</style>
+      <div className="landing-bg" aria-hidden="true" />
+
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-2">
+            <a
+              href="/"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline"
+            >
+              <span aria-hidden="true">←</span>
+              {texts.back}
             </a>
-            <h1 className="mt-2 text-3xl font-bold text-slate-900">{texts.title}</h1>
-            <p className="mt-2 text-slate-600 max-w-3xl">{texts.subtitle}</p>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-extrabold">{texts.title}</h1>
+              <p className="mt-1 text-sm md:text-base text-gray-700 max-w-3xl">{texts.subtitle}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="inline-flex rounded-md shadow-sm" role="group">
+          <div className="flex flex-col items-stretch md:items-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <div
+                className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1"
+                role="radiogroup"
+                aria-label="Language"
+              >
+                <label className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lang"
+                    className="sr-only peer"
+                    checked={lang === "es"}
+                    onChange={() => setLang("es")}
+                  />
+                  <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">
+                    {texts.langES}
+                  </span>
+                </label>
+                <label className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lang"
+                    className="sr-only peer"
+                    checked={lang === "en"}
+                    onChange={() => setLang("en")}
+                  />
+                  <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">
+                    {texts.langEN}
+                  </span>
+                </label>
+              </div>
               <button
                 type="button"
-                onClick={() => setLang("es")}
-                className={`px-3 py-1.5 text-sm font-medium border border-slate-200 ${
-                  lang === "es" ? "bg-blue-600 text-white" : "bg-white text-slate-600"
-                } rounded-l-md`}
+                onClick={onRefresh}
+                disabled={refreshing}
+                className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {texts.langES}
-              </button>
-              <button
-                type="button"
-                onClick={() => setLang("en")}
-                className={`px-3 py-1.5 text-sm font-medium border border-slate-200 border-l-0 ${
-                  lang === "en" ? "bg-blue-600 text-white" : "bg-white text-slate-600"
-                } rounded-r-md`}
-              >
-                {texts.langEN}
+                {refreshing ? texts.refreshing : texts.refresh}
               </button>
             </div>
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={refreshing}
-              className="px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 disabled:hover:bg-blue-600"
-            >
-              {refreshing ? texts.refreshing : texts.refresh}
-            </button>
+            {status === "ready" && data && (
+              <p className="text-xs text-gray-500">
+                {texts.lastUpdated}: {new Intl.DateTimeFormat(lang === "es" ? "es-ES" : "en-GB", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }).format(new Date(data.lastUpdated))}
+              </p>
+            )}
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-6xl mx-auto px-4 mt-8">
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
         {status === "loading" && (
-          <p className="text-slate-600 text-sm">{texts.loading}</p>
+          <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-gray-600 shadow-sm backdrop-blur">
+            {texts.loading}
+          </div>
         )}
         {status === "error" && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
             {texts.error}
             {error ? ` (${error})` : null}
           </div>
         )}
-        {status === "ready" && data && (
-          <div className="space-y-3 text-sm text-slate-600">
-            <p>
-              {texts.lastUpdated}: {new Intl.DateTimeFormat(lang === "es" ? "es-ES" : "en-GB", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }).format(new Date(data.lastUpdated))}
-            </p>
-          </div>
-        )}
 
         {data && status === "ready" && (
-          <div className="mt-6 space-y-10">
+          <div className="space-y-12 pb-12">
             <Section section="funds" data={data.funds} texts={texts} />
             <Section section="plans" data={data.plans} texts={texts} />
           </div>
