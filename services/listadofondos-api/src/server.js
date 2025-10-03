@@ -26,6 +26,25 @@ const PERFORMANCE_KEYS = [
   "10Y Anual",
 ];
 
+const PERFORMANCE_TEXT_LABEL_MAP = new Map([
+  ["1 dia", "1D"],
+  ["1 semana", "1W"],
+  ["1 mes", "1M"],
+  ["3 meses", "3M"],
+  ["6 meses", "6M"],
+  ["ytd", "YTD"],
+  ["ano actual", "YTD"],
+  ["ano en curso", "YTD"],
+  ["1 ano", "1Y"],
+  ["1 ano (anualizado)", "1Y"],
+  ["3 anos (anualizado)", "3Y Anual"],
+  ["3 anos anualizado", "3Y Anual"],
+  ["5 anos (anualizado)", "5Y Anual"],
+  ["5 anos anualizado", "5Y Anual"],
+  ["10 anos (anualizado)", "10Y Anual"],
+  ["10 anos anualizado", "10Y Anual"],
+]);
+
 const RATIO_PERIODS = ["1Y", "3Y", "5Y"];
 
 const USER_AGENT =
@@ -53,6 +72,22 @@ function stripHtml(html) {
   return decodeHtml(html.replace(/<[^>]+>/g, " "));
 }
 
+function htmlToPlainText(html) {
+  if (!html) return "";
+  const withBreaks = html
+    .replace(/<(?:br|BR)\s*\/?>(\s*)/g, "\n$1")
+    .replace(/<\/(?:p|div|li|tr|h[1-6])>/gi, "\n");
+  const withoutTags = withBreaks.replace(/<[^>]+>/g, " ");
+  return decodeHtml(withoutTags)
+    .replace(/\r/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n\s+/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
 function extractTables(html) {
   return html.match(/<table[\s\S]*?<\/table>/gi) ?? [];
 }
@@ -73,12 +108,86 @@ function resolvePerformanceKey(label) {
   if (normalized.includes("1m")) return "1M";
   if (normalized.includes("3m")) return "3M";
   if (normalized.includes("6m")) return "6M";
-  if (normalized.includes("ytd") || normalized.includes("anioactual") || normalized.includes("aactual")) return "YTD";
-  if ((normalized.includes("1a") || normalized.includes("1y")) && normalized.includes("anual")) return "1Y";
+  if (
+    normalized.includes("ytd") ||
+    normalized.includes("anioactual") ||
+    normalized.includes("aactual") ||
+    normalized.includes("anoactual") ||
+    normalized.includes("anoencurso")
+  )
+    return "YTD";
+  if (normalized.includes("1a") || normalized.includes("1y") || normalized.includes("1ano")) {
+    if (normalized.includes("anual")) return "1Y";
+    if (normalized.includes("ano")) return "1Y";
+  }
   if ((normalized.includes("3a") || normalized.includes("3y")) && normalized.includes("anual")) return "3Y Anual";
   if ((normalized.includes("5a") || normalized.includes("5y")) && normalized.includes("anual")) return "5Y Anual";
   if ((normalized.includes("10a") || normalized.includes("10y")) && normalized.includes("anual")) return "10Y Anual";
   return null;
+}
+
+function normalizeTextLabel(label) {
+  return label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildPerformanceTextRegex() {
+  const variants = [
+    ["1 día", "1D"],
+    ["1 dia", "1D"],
+    ["1 semana", "1W"],
+    ["1 mes", "1M"],
+    ["3 meses", "3M"],
+    ["6 meses", "6M"],
+    ["YTD", "YTD"],
+    ["Año actual", "YTD"],
+    ["Ano actual", "YTD"],
+    ["Año en curso", "YTD"],
+    ["Ano en curso", "YTD"],
+    ["1 año", "1Y"],
+    ["1 ano", "1Y"],
+    ["1 año (anualizado)", "1Y"],
+    ["1 ano (anualizado)", "1Y"],
+    ["3 años (anualizado)", "3Y Anual"],
+    ["3 anos (anualizado)", "3Y Anual"],
+    ["3 años anualizado", "3Y Anual"],
+    ["3 anos anualizado", "3Y Anual"],
+    ["5 años (anualizado)", "5Y Anual"],
+    ["5 anos (anualizado)", "5Y Anual"],
+    ["5 años anualizado", "5Y Anual"],
+    ["5 anos anualizado", "5Y Anual"],
+    ["10 años (anualizado)", "10Y Anual"],
+    ["10 anos (anualizado)", "10Y Anual"],
+    ["10 años anualizado", "10Y Anual"],
+    ["10 anos anualizado", "10Y Anual"],
+  ];
+
+  const patternParts = variants.map(([variant]) =>
+    variant
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\s+/g, "\\s+")
+      .replace(/í/g, "(?:í|i)")
+      .replace(/ñ/g, "(?:ñ|n)"),
+  );
+
+  return {
+    regex: new RegExp(`(${patternParts.join("|")})\\s*(-?\\d[\\d.,]*)%?`, "gi"),
+    variants,
+  };
+}
+
+const { regex: PERFORMANCE_TEXT_REGEX, variants: PERFORMANCE_TEXT_VARIANTS } =
+  buildPerformanceTextRegex();
+
+for (const [variant, key] of PERFORMANCE_TEXT_VARIANTS) {
+  const normalized = normalizeTextLabel(variant);
+  if (!PERFORMANCE_TEXT_LABEL_MAP.has(normalized)) {
+    PERFORMANCE_TEXT_LABEL_MAP.set(normalized, key);
+  }
 }
 
 function parsePerformanceFromTables(html) {
@@ -126,6 +235,31 @@ function parsePerformanceFromTables(html) {
   return result;
 }
 
+function parsePerformanceFromText(html) {
+  PERFORMANCE_TEXT_REGEX.lastIndex = 0;
+  const text = htmlToPlainText(html);
+  if (!text) return {};
+  const match = text.match(
+    /Rentabilidades acumuladas %([\s\S]*?)(?:Rentabilidad trimestral|Categoría:|Indice:|Índice:)/i,
+  );
+  if (!match) return {};
+  const block = match[0];
+  const result = {};
+
+  let found;
+  while ((found = PERFORMANCE_TEXT_REGEX.exec(block)) !== null) {
+    const [, rawLabel, rawValue] = found;
+    const key = PERFORMANCE_TEXT_LABEL_MAP.get(normalizeTextLabel(rawLabel));
+    if (!key) continue;
+    const sanitized = sanitizeValue(rawValue.replace(/\s+/g, "").replace(/,$/, ""));
+    if (!sanitized || sanitized === "-" || !/[0-9]/.test(sanitized)) continue;
+    result[key] = sanitized.replace(/%$/, "");
+  }
+
+  PERFORMANCE_TEXT_REGEX.lastIndex = 0;
+  return result;
+}
+
 function parsePerformanceLegacy(html) {
   const tables = extractTables(html);
   const byPosition = tables[19];
@@ -166,9 +300,15 @@ function parsePerformanceLegacy(html) {
 }
 
 function parsePerformance(html) {
-  const parsed = parsePerformanceFromTables(html);
-  if (Object.keys(parsed).length) return parsed;
-  return parsePerformanceLegacy(html);
+  const textParsed = parsePerformanceFromText(html);
+  const tableParsed = parsePerformanceFromTables(html);
+  const combined = { ...tableParsed, ...textParsed };
+  if (Object.keys(combined).length) return combined;
+  const legacyParsed = parsePerformanceLegacy(html);
+  if (Object.keys(textParsed).length) {
+    return { ...legacyParsed, ...textParsed };
+  }
+  return legacyParsed;
 }
 
 function resolveRatioPeriod(label) {
