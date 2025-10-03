@@ -64,12 +64,15 @@ const TEXTS = {
     fundsTitle: "Fondos de Inversión",
     plansTitle: "Planes de Pensiones",
     sectionDescription:
+      "Rentabilidades acumuladas, ratio de Sharpe, volatilidad y TER por producto.",
+    dataNote:
       "Los datos se obtienen automáticamente de Morningstar una vez al día y pueden actualizarse manualmente.",
     langES: "ES",
     langEN: "EN",
     back: "Volver a Herramientas",
     descriptionLink: "Ver ficha en Morningstar",
     commentPlaceholder: "-",
+    footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
   },
   en: {
     title: "Fund List and Comparison",
@@ -92,12 +95,14 @@ const TEXTS = {
     fundsTitle: "Mutual Funds",
     plansTitle: "Pension Plans",
     sectionDescription:
-      "Data is fetched from Morningstar once per day and can be updated manually.",
+      "Cumulative returns, Sharpe ratio, volatility and TER per product.",
+    dataNote: "Data is automatically retrieved from Morningstar once per day and can be refreshed manually.",
     langES: "ES",
     langEN: "EN",
     back: "Back to Tools",
     descriptionLink: "View on Morningstar",
     commentPlaceholder: "-",
+    footer: "© David Gonzalez, want to know more about me? Visit",
   },
 } as const;
 
@@ -394,6 +399,20 @@ export default function App() {
             <Section section="plans" data={data.plans} texts={texts} />
           </div>
         )}
+
+        <p className="text-xs text-gray-500 max-w-3xl">{texts.dataNote}</p>
+
+        <footer className="text-sm text-gray-500">
+          <span>{texts.footer}</span>{" "}
+          <a
+            href="https://dragner.net/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-cyan-600 hover:underline"
+          >
+            dragner.net
+          </a>
+        </footer>
       </main>
     </div>
   );
