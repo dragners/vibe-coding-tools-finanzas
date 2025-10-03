@@ -13,18 +13,51 @@ const CACHE_DIR = process.env.CACHE_DIR
   : path.resolve(__dirname, "../cache");
 const CACHE_FILE = path.join(CACHE_DIR, "data.json");
 
-const PERFORMANCE_KEYS = [
-  "1D",
-  "1W",
-  "1M",
-  "3M",
-  "6M",
-  "YTD",
-  "1Y",
-  "3Y Anual",
-  "5Y Anual",
-  "10Y Anual",
+const PERFORMANCE_TARGETS = [
+  { key: "1D", variants: ["1 día", "1 dia"] },
+  { key: "1W", variants: ["1 semana"] },
+  { key: "1M", variants: ["1 mes"] },
+  { key: "3M", variants: ["3 meses"] },
+  { key: "6M", variants: ["6 meses"] },
+  {
+    key: "YTD",
+    variants: ["YTD", "Año actual", "Ano actual", "Año en curso", "Ano en curso"],
+  },
+  { key: "1Y", variants: ["1 año", "1 ano"] },
+  {
+    key: "3Y Anual",
+    variants: [
+      "3 años (anualizado)",
+      "3 anos (anualizado)",
+      "3 años anualizado",
+      "3 anos anualizado",
+    ],
+  },
+  {
+    key: "5Y Anual",
+    variants: [
+      "5 años (anualizado)",
+      "5 anos (anualizado)",
+      "5 años anualizado",
+      "5 anos anualizado",
+    ],
+  },
+  {
+    key: "10Y Anual",
+    variants: [
+      "10 años (anualizado)",
+      "10 anos (anualizado)",
+      "10 años anualizado",
+      "10 anos anualizado",
+    ],
+  },
 ];
+
+const PERFORMANCE_DATE_REGEX = /Rentabilidades acumuladas %\s*(\d{2}\/\d{2}\/\d{4})/i;
+const PERFORMANCE_BLOCK_REGEX =
+  /Rentabilidades acumuladas %[\s\S]*?(?:Rentabilidad trimestral %?|Rentabilidades anuales %|Cartera|Operaciones|Comparar|©|$)/i;
+
+const DEBUG_PERFORMANCE = process.env.DEBUG_PERFORMANCE === "1";
 
 const RATIO_PERIODS = ["1Y", "3Y", "5Y"];
 
@@ -53,6 +86,22 @@ function stripHtml(html) {
   return decodeHtml(html.replace(/<[^>]+>/g, " "));
 }
 
+function htmlToPlainText(html) {
+  if (!html) return "";
+  const withBreaks = html
+    .replace(/<(?:br|BR)\s*\/?>(\s*)/g, "\n$1")
+    .replace(/<\/(?:p|div|li|tr|h[1-6])>/gi, "\n");
+  const withoutTags = withBreaks.replace(/<[^>]+>/g, " ");
+  return decodeHtml(withoutTags)
+    .replace(/\r/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n\s+/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
 function extractTables(html) {
   return html.match(/<table[\s\S]*?<\/table>/gi) ?? [];
 }
@@ -65,110 +114,164 @@ function extractCells(rowHtml) {
   return rowHtml.match(/<t[dh][^>]*>[\s\S]*?<\/t[dh]>/gi) ?? [];
 }
 
-function resolvePerformanceKey(label) {
-  if (!label) return null;
-  const normalized = label.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (normalized.includes("1d") || normalized.includes("1dia")) return "1D";
-  if (normalized.includes("1w") || normalized.includes("1s") || normalized.includes("1sem")) return "1W";
-  if (normalized.includes("1m")) return "1M";
-  if (normalized.includes("3m")) return "3M";
-  if (normalized.includes("6m")) return "6M";
-  if (normalized.includes("ytd") || normalized.includes("anioactual") || normalized.includes("aactual")) return "YTD";
-  if ((normalized.includes("1a") || normalized.includes("1y")) && normalized.includes("anual")) return "1Y";
-  if ((normalized.includes("3a") || normalized.includes("3y")) && normalized.includes("anual")) return "3Y Anual";
-  if ((normalized.includes("5a") || normalized.includes("5y")) && normalized.includes("anual")) return "5Y Anual";
-  if ((normalized.includes("10a") || normalized.includes("10y")) && normalized.includes("anual")) return "10Y Anual";
-  return null;
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function parsePerformanceFromTables(html) {
-  const tables = extractTables(html);
-  const result = {};
-
-  for (const table of tables) {
-    const rows = extractRows(table);
-    if (!rows.length) continue;
-
-    const headerCells = extractCells(rows[0]).map((cell) =>
-      sanitizeValue(stripHtml(cell)),
-    );
-
-    if (!headerCells.some((label) => resolvePerformanceKey(label))) continue;
-
-    for (let i = 1; i < rows.length; i++) {
-      const cells = extractCells(rows[i]);
-      if (!cells.length) continue;
-
-      const rowLabel = sanitizeValue(stripHtml(cells[0] ?? ""));
-      const normalized = rowLabel.toLowerCase();
-      if (
-        !normalized ||
-        !(
-          normalized.includes("rentabilidad") ||
-          normalized.includes("rendimiento") ||
-          normalized.includes("total return")
-        )
-      ) {
-        continue;
-      }
-
-      for (let j = 1; j < cells.length && j < headerCells.length; j++) {
-        const key = resolvePerformanceKey(headerCells[j]);
-        if (!key) continue;
-        const value = sanitizeValue(stripHtml(cells[j] ?? ""));
-        if (value !== "-") {
-          result[key] = value;
-        }
-      }
-    }
+function normalizeSpanishNumber(value) {
+  if (typeof value !== "string") return { number: null, normalized: null };
+  const trimmed = value.replace(/%/g, "").replace(/\s+/g, "").trim();
+  if (!trimmed) return { number: null, normalized: null };
+  const hasComma = trimmed.includes(",");
+  const hasDot = trimmed.includes(".");
+  let normalized = trimmed;
+  if (hasComma && hasDot) {
+    normalized = normalized.replace(/\./g, "").replace(/,/g, ".");
+  } else if (hasComma) {
+    normalized = normalized.replace(/,/g, ".");
   }
-
-  return result;
+  const number = Number.parseFloat(normalized);
+  if (Number.isNaN(number)) {
+    return { number: null, normalized: normalized || null };
+  }
+  return { number, normalized };
 }
 
-function parsePerformanceLegacy(html) {
-  const tables = extractTables(html);
-  const byPosition = tables[19];
-  const result = {};
+function logPerformanceDebug(message, details) {
+  if (!DEBUG_PERFORMANCE) return;
+  console.log(`[performance] ${message}`, details);
+}
 
-  if (byPosition) {
-    const rows = extractRows(byPosition);
-    for (let i = 1; i < rows.length && i <= PERFORMANCE_KEYS.length; i++) {
-      const cells = extractCells(rows[i]);
-      if (cells.length < 2) continue;
-      const value = sanitizeValue(stripHtml(cells[1] ?? ""));
-      if (value !== "-") {
-        result[PERFORMANCE_KEYS[i - 1]] = value;
-      }
-    }
+function normalizePerformanceText(text) {
+  return text
+    .replace(/\r/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+}
+
+function parsePerformanceNumber(raw) {
+  if (typeof raw !== "string") {
+    return { number: null, normalized: null };
   }
 
-  if (Object.keys(result).length >= 5) {
-    return result;
+  const sanitized = raw
+    .replace(/[%\u00a0]/g, "")
+    .replace(/[−–—]/g, "-")
+    .trim();
+  const compact = sanitized.replace(/\s+/g, "");
+
+  if (!compact || compact === "-") {
+    return { number: null, normalized: null };
   }
 
-  const fallback = tables.find((tbl) => {
-    const text = stripHtml(tbl);
-    return PERFORMANCE_KEYS.every((key) => text.includes(key.split(" ")[0]));
-  });
-  if (!fallback) return result;
-
-  const rows = extractRows(fallback);
-  for (const row of rows) {
-    const cells = extractCells(row);
-    if (cells.length < 2) continue;
-    const key = resolvePerformanceKey(stripHtml(cells[0]));
-    if (!key) continue;
-    const value = sanitizeValue(stripHtml(cells[1]));
-    if (value) result[key] = value;
+  const normalized = compact.replace(/\./g, "").replace(/,/g, ".");
+  const number = Number.parseFloat(normalized);
+  if (Number.isNaN(number)) {
+    return { number: null, normalized };
   }
-  return result;
+  return { number, normalized };
 }
 
 function parsePerformance(html) {
-  const parsed = parsePerformanceFromTables(html);
-  if (Object.keys(parsed).length) return parsed;
-  return parsePerformanceLegacy(html);
+  const debug = {
+    blockFound: false,
+    rawBlock: null,
+    normalizedBlock: null,
+    matches: [],
+    missing: [],
+    sampleText: null,
+    reason: null,
+    date: null,
+    blockIndex: null,
+    htmlSample: null,
+  };
+  const values = {};
+
+  if (!html) {
+    debug.reason = "empty_html";
+    logPerformanceDebug("Empty HTML received", debug);
+    return { values, debug };
+  }
+
+  debug.htmlSample = html.slice(0, 500);
+
+  const text = htmlToPlainText(html);
+  if (!text) {
+    debug.reason = "empty_text";
+    logPerformanceDebug("Unable to convert HTML to plain text", debug);
+    return { values, debug };
+  }
+
+  const normalizedText = normalizePerformanceText(text);
+  debug.sampleText = normalizedText.slice(0, 600);
+
+  const dateMatch = normalizedText.match(PERFORMANCE_DATE_REGEX);
+  if (dateMatch) {
+    debug.date = dateMatch[1];
+  }
+
+  const match = normalizedText.match(PERFORMANCE_BLOCK_REGEX);
+  if (!match) {
+    debug.reason = "block_not_found";
+    logPerformanceDebug("Performance block not found", debug);
+    return { values, debug };
+  }
+
+  const block = match[0];
+  debug.blockFound = true;
+  debug.blockIndex = match.index ?? null;
+  debug.rawBlock = block.slice(0, 2000);
+  debug.normalizedBlock = block.replace(/[ \t]+/g, " ").trim().slice(0, 2000);
+
+  for (const { key, variants } of PERFORMANCE_TARGETS) {
+    let captured = null;
+    let usedVariant = null;
+    for (const variant of variants) {
+      const variantPattern = escapeRegExp(variant);
+      const variantRegex = new RegExp(
+        `${variantPattern}(?:[\s:\u00a0])+(-?[0-9]+(?:[.,][0-9]+)?)` +
+          `(?:[\s\u00a0]+[-+−—–0-9.,%]+)?(?:[\s\u00a0]+[-+−—–0-9.,%]+)?`,
+        "i",
+      );
+      const found = block.match(variantRegex);
+      if (found) {
+        captured = found[1];
+        usedVariant = variant;
+        break;
+      }
+    }
+
+    if (!captured) {
+      debug.missing.push({ key, variants });
+      continue;
+    }
+
+    const { number, normalized } = parsePerformanceNumber(captured);
+    debug.matches.push({ key, variant: usedVariant, raw: captured, normalized, number });
+    if (number === null) {
+      continue;
+    }
+    values[key] = number;
+  }
+
+  if (!Object.keys(values).length) {
+    debug.reason = "values_not_found";
+    logPerformanceDebug("No performance values extracted", debug);
+    return { values, debug };
+  }
+
+  debug.reason = null;
+  logPerformanceDebug("Parsed performance metrics", {
+    values,
+    matches: debug.matches,
+    missing: debug.missing,
+    date: debug.date,
+    blockIndex: debug.blockIndex,
+  });
+
+  return { values, debug };
 }
 
 function resolveRatioPeriod(label) {
@@ -388,6 +491,8 @@ async function fetchFund(entry) {
     fetchHtml(urlFees),
   ]);
 
+  const { values: performanceValues, debug: performanceDebug } = parsePerformance(perfHtml);
+
   return {
     name: entry.name,
     isin: entry.isin ?? "-",
@@ -395,7 +500,8 @@ async function fetchFund(entry) {
     morningstarId: entry.morningstarId,
     comment: entry.comment ?? "-",
     url: urlPerf,
-    performance: parsePerformance(perfHtml),
+    performance: performanceValues,
+    performanceDebug,
     sharpe: parseRatio(statsHtml, ["sharpe"]),
     volatility: parseRatio(statsHtml, ["volat", "desv"]),
     ter: parseTer(feesHtml),
@@ -419,6 +525,7 @@ async function buildPayload() {
           comment: entry.comment ?? "-",
           url: `https://lt.morningstar.com/xgnfa0k0aw/snapshot/snapshot.aspx?tab=1&Id=${encodeURIComponent(entry.morningstarId)}`,
           performance: {},
+          performanceDebug: { error: err?.message ?? "Failed to fetch fund" },
           sharpe: {},
           volatility: {},
           ter: "-",
