@@ -46,7 +46,7 @@ const TEXTS = {
   es: {
     title: "Listado y Comparativa de Fondos",
     subtitle:
-      "Consulta la rentabilidad, ratios de Sharpe, volatilidad y TER de cada fondo o plan de pensiones.",
+      "Listado y comparativa de mis fondos favoritos que sigo e invierto desde hace años.",
     refresh: "Refrescar datos",
     refreshing: "Actualizando...",
     lastUpdated: "Última actualización",
@@ -63,8 +63,7 @@ const TEXTS = {
     error: "No se han podido cargar los datos. Inténtalo de nuevo más tarde.",
     fundsTitle: "Fondos de Inversión",
     plansTitle: "Planes de Pensiones",
-    sectionDescription:
-      "Rentabilidades acumuladas, ratio de Sharpe, volatilidad y TER por producto.",
+    sectionDescription: "",
     dataNote:
       "Los datos se obtienen automáticamente de Morningstar una vez al día y pueden actualizarse manualmente.",
     langES: "ES",
@@ -94,8 +93,7 @@ const TEXTS = {
     error: "Data could not be loaded. Please try again later.",
     fundsTitle: "Mutual Funds",
     plansTitle: "Pension Plans",
-    sectionDescription:
-      "Cumulative returns, Sharpe ratio, volatility and TER per product.",
+    sectionDescription: "",
     dataNote: "Data is automatically retrieved from Morningstar once per day and can be refreshed manually.",
     langES: "ES",
     langEN: "EN",
@@ -144,7 +142,7 @@ function renderMetricCells<T extends string>(
   keyPrefix: string,
 ) {
   return columns.map((label) => (
-    <td key={`${keyPrefix}-${label}`} className="px-3 py-4 text-sm font-medium text-gray-700">
+    <td key={`${keyPrefix}-${label}`} className="px-3 py-2.5 text-sm font-medium text-gray-700">
       {formatValue(values[label])}
     </td>
   ));
@@ -162,52 +160,54 @@ function Section({
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
   return (
     <section className="mt-12">
-      <div className="mb-6">
+      <div className="mb-6 space-y-1">
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">{title}</h2>
-        <p className="mt-1 text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
+        {texts.sectionDescription ? (
+          <p className="text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
+        ) : null}
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full border-separate border-spacing-y-2 text-sm text-gray-800">
+        <table className="min-w-full border-separate border-spacing-y-1 text-sm text-gray-800">
           <thead>
             <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-              <th rowSpan={2} className="px-4 py-3 min-w-[220px] bg-white/70 rounded-tl-2xl">
+              <th rowSpan={2} className="px-4 py-2.5 min-w-[220px] bg-white/70 rounded-tl-2xl">
                 {texts.name}
               </th>
-              <th rowSpan={2} className="px-4 py-3 whitespace-nowrap bg-white/70">
+              <th rowSpan={2} className="px-4 py-2.5 whitespace-nowrap bg-white/70">
                 {texts.isin}
               </th>
-              <th rowSpan={2} className="px-4 py-3 min-w-[180px] bg-white/70">
+              <th rowSpan={2} className="px-4 py-2.5 min-w-[180px] bg-white/70">
                 {texts.category}
               </th>
-              <th colSpan={PERFORMANCE_LABELS.length} className="px-4 py-3 bg-white/70 text-center">
+              <th colSpan={PERFORMANCE_LABELS.length} className="px-4 py-2.5 bg-white/70 text-center">
                 {texts.performance}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-4 py-3 bg-white/70 text-center">
+              <th colSpan={RATIO_LABELS.length} className="px-4 py-2.5 bg-white/70 text-center">
                 {texts.sharpe}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-4 py-3 bg-white/70 text-center">
+              <th colSpan={RATIO_LABELS.length} className="px-4 py-2.5 bg-white/70 text-center">
                 {texts.volatility}
               </th>
-              <th rowSpan={2} className="px-4 py-3 whitespace-nowrap bg-white/70">
+              <th rowSpan={2} className="px-4 py-2.5 whitespace-nowrap bg-white/70">
                 {texts.ter}
               </th>
-              <th rowSpan={2} className="px-4 py-3 min-w-[200px] bg-white/70 rounded-tr-2xl">
+              <th rowSpan={2} className="px-4 py-2.5 min-w-[200px] bg-white/70 rounded-tr-2xl">
                 {texts.comment}
               </th>
             </tr>
             <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
               {PERFORMANCE_LABELS.map((label) => (
-                <th key={`perf-${label}`} className="px-3 py-2 bg-white/70 text-center">
+                <th key={`perf-${label}`} className="px-3 py-1.5 bg-white/70 text-center">
                   {displayMetricLabel(label)}
                 </th>
               ))}
               {RATIO_LABELS.map((label) => (
-                <th key={`sharpe-${label}`} className="px-3 py-2 bg-white/70 text-center">
+                <th key={`sharpe-${label}`} className="px-3 py-1.5 bg-white/70 text-center">
                   {displayMetricLabel(label)}
                 </th>
               ))}
               {RATIO_LABELS.map((label) => (
-                <th key={`vol-${label}`} className="px-3 py-2 bg-white/70 text-center">
+                <th key={`vol-${label}`} className="px-3 py-1.5 bg-white/70 text-center">
                   {displayMetricLabel(label)}
                 </th>
               ))}
@@ -228,7 +228,7 @@ function Section({
             ) : (
               data.map((row) => (
                 <tr key={`${section}-${row.morningstarId}`} className="align-top">
-                  <td className="px-4 py-4 bg-white/95 backdrop-blur">
+                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur">
                     <a
                       href={row.url}
                       target="_blank"
@@ -238,17 +238,17 @@ function Section({
                       {row.name}
                     </a>
                   </td>
-                  <td className="px-4 py-4 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
+                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
                     {formatValue(row.isin)}
                   </td>
-                  <td className="px-4 py-4 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
+                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
                   {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
                   {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe")}
                   {renderMetricCells(RATIO_LABELS, row.volatility, "vol")}
-                  <td className="px-4 py-4 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
+                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
                     {formatValue(row.ter)}
                   </td>
-                  <td className="px-4 py-4 bg-white/95 backdrop-blur text-gray-600">
+                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur text-gray-600">
                     {formatValue(row.comment) || texts.commentPlaceholder}
                   </td>
                 </tr>
