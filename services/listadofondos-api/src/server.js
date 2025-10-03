@@ -13,37 +13,50 @@ const CACHE_DIR = process.env.CACHE_DIR
   : path.resolve(__dirname, "../cache");
 const CACHE_FILE = path.join(CACHE_DIR, "data.json");
 
-const PERFORMANCE_KEYS = [
-  "1D",
-  "1W",
-  "1M",
-  "3M",
-  "6M",
-  "YTD",
-  "1Y",
-  "3Y Anual",
-  "5Y Anual",
-  "10Y Anual",
+const PERFORMANCE_LABELS = [
+  { key: "1D", variants: ["1 día", "1 dia"] },
+  { key: "1W", variants: ["1 semana"] },
+  { key: "1M", variants: ["1 mes"] },
+  { key: "3M", variants: ["3 meses"] },
+  { key: "6M", variants: ["6 meses"] },
+  {
+    key: "YTD",
+    variants: ["YTD", "Año actual", "Ano actual", "Año en curso", "Ano en curso"],
+  },
+  { key: "1Y", variants: ["1 año", "1 ano", "1 año (anualizado)", "1 ano (anualizado)"] },
+  {
+    key: "3Y Anual",
+    variants: [
+      "3 años (anualizado)",
+      "3 anos (anualizado)",
+      "3 años anualizado",
+      "3 anos anualizado",
+    ],
+  },
+  {
+    key: "5Y Anual",
+    variants: [
+      "5 años (anualizado)",
+      "5 anos (anualizado)",
+      "5 años anualizado",
+      "5 anos anualizado",
+    ],
+  },
+  {
+    key: "10Y Anual",
+    variants: [
+      "10 años (anualizado)",
+      "10 anos (anualizado)",
+      "10 años anualizado",
+      "10 anos anualizado",
+    ],
+  },
 ];
 
-const PERFORMANCE_TEXT_LABEL_MAP = new Map([
-  ["1 dia", "1D"],
-  ["1 semana", "1W"],
-  ["1 mes", "1M"],
-  ["3 meses", "3M"],
-  ["6 meses", "6M"],
-  ["ytd", "YTD"],
-  ["ano actual", "YTD"],
-  ["ano en curso", "YTD"],
-  ["1 ano", "1Y"],
-  ["1 ano (anualizado)", "1Y"],
-  ["3 anos (anualizado)", "3Y Anual"],
-  ["3 anos anualizado", "3Y Anual"],
-  ["5 anos (anualizado)", "5Y Anual"],
-  ["5 anos anualizado", "5Y Anual"],
-  ["10 anos (anualizado)", "10Y Anual"],
-  ["10 anos anualizado", "10Y Anual"],
-]);
+const PERFORMANCE_BLOCK_REGEX =
+  /Rentabilidades acumuladas %([\s\S]*?)(?:Rentabilidad trimestral|Categoría:|Indice:|Índice:)/i;
+
+const DEBUG_PERFORMANCE = process.env.DEBUG_PERFORMANCE === "1";
 
 const RATIO_PERIODS = ["1Y", "3Y", "5Y"];
 
@@ -100,215 +113,108 @@ function extractCells(rowHtml) {
   return rowHtml.match(/<t[dh][^>]*>[\s\S]*?<\/t[dh]>/gi) ?? [];
 }
 
-function resolvePerformanceKey(label) {
-  if (!label) return null;
-  const normalized = label.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (normalized.includes("1d") || normalized.includes("1dia")) return "1D";
-  if (normalized.includes("1w") || normalized.includes("1s") || normalized.includes("1sem")) return "1W";
-  if (normalized.includes("1m")) return "1M";
-  if (normalized.includes("3m")) return "3M";
-  if (normalized.includes("6m")) return "6M";
-  if (
-    normalized.includes("ytd") ||
-    normalized.includes("anioactual") ||
-    normalized.includes("aactual") ||
-    normalized.includes("anoactual") ||
-    normalized.includes("anoencurso")
-  )
-    return "YTD";
-  if (normalized.includes("1a") || normalized.includes("1y") || normalized.includes("1ano")) {
-    if (normalized.includes("anual")) return "1Y";
-    if (normalized.includes("ano")) return "1Y";
-  }
-  if ((normalized.includes("3a") || normalized.includes("3y")) && normalized.includes("anual")) return "3Y Anual";
-  if ((normalized.includes("5a") || normalized.includes("5y")) && normalized.includes("anual")) return "5Y Anual";
-  if ((normalized.includes("10a") || normalized.includes("10y")) && normalized.includes("anual")) return "10Y Anual";
-  return null;
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function normalizeTextLabel(label) {
-  return label
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+function normalizeSpanishNumber(value) {
+  if (typeof value !== "string") return { number: null, normalized: null };
+  const trimmed = value.replace(/%/g, "").replace(/\s+/g, "").trim();
+  if (!trimmed) return { number: null, normalized: null };
+  const hasComma = trimmed.includes(",");
+  const hasDot = trimmed.includes(".");
+  let normalized = trimmed;
+  if (hasComma && hasDot) {
+    normalized = normalized.replace(/\./g, "").replace(/,/g, ".");
+  } else if (hasComma) {
+    normalized = normalized.replace(/,/g, ".");
+  }
+  const number = Number.parseFloat(normalized);
+  if (Number.isNaN(number)) {
+    return { number: null, normalized: normalized || null };
+  }
+  return { number, normalized };
 }
 
-function buildPerformanceTextRegex() {
-  const variants = [
-    ["1 día", "1D"],
-    ["1 dia", "1D"],
-    ["1 semana", "1W"],
-    ["1 mes", "1M"],
-    ["3 meses", "3M"],
-    ["6 meses", "6M"],
-    ["YTD", "YTD"],
-    ["Año actual", "YTD"],
-    ["Ano actual", "YTD"],
-    ["Año en curso", "YTD"],
-    ["Ano en curso", "YTD"],
-    ["1 año", "1Y"],
-    ["1 ano", "1Y"],
-    ["1 año (anualizado)", "1Y"],
-    ["1 ano (anualizado)", "1Y"],
-    ["3 años (anualizado)", "3Y Anual"],
-    ["3 anos (anualizado)", "3Y Anual"],
-    ["3 años anualizado", "3Y Anual"],
-    ["3 anos anualizado", "3Y Anual"],
-    ["5 años (anualizado)", "5Y Anual"],
-    ["5 anos (anualizado)", "5Y Anual"],
-    ["5 años anualizado", "5Y Anual"],
-    ["5 anos anualizado", "5Y Anual"],
-    ["10 años (anualizado)", "10Y Anual"],
-    ["10 anos (anualizado)", "10Y Anual"],
-    ["10 años anualizado", "10Y Anual"],
-    ["10 anos anualizado", "10Y Anual"],
-  ];
-
-  const patternParts = variants.map(([variant]) =>
-    variant
-      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-      .replace(/\s+/g, "\\s+")
-      .replace(/í/g, "(?:í|i)")
-      .replace(/ñ/g, "(?:ñ|n)"),
-  );
-
-  return {
-    regex: new RegExp(`(${patternParts.join("|")})\\s*(-?\\d[\\d.,]*)%?`, "gi"),
-    variants,
-  };
-}
-
-const { regex: PERFORMANCE_TEXT_REGEX, variants: PERFORMANCE_TEXT_VARIANTS } =
-  buildPerformanceTextRegex();
-
-for (const [variant, key] of PERFORMANCE_TEXT_VARIANTS) {
-  const normalized = normalizeTextLabel(variant);
-  if (!PERFORMANCE_TEXT_LABEL_MAP.has(normalized)) {
-    PERFORMANCE_TEXT_LABEL_MAP.set(normalized, key);
-  }
-}
-
-function parsePerformanceFromTables(html) {
-  const tables = extractTables(html);
-  const result = {};
-
-  for (const table of tables) {
-    const rows = extractRows(table);
-    if (!rows.length) continue;
-
-    const headerCells = extractCells(rows[0]).map((cell) =>
-      sanitizeValue(stripHtml(cell)),
-    );
-
-    if (!headerCells.some((label) => resolvePerformanceKey(label))) continue;
-
-    for (let i = 1; i < rows.length; i++) {
-      const cells = extractCells(rows[i]);
-      if (!cells.length) continue;
-
-      const rowLabel = sanitizeValue(stripHtml(cells[0] ?? ""));
-      const normalized = rowLabel.toLowerCase();
-      if (
-        !normalized ||
-        !(
-          normalized.includes("rentabilidad") ||
-          normalized.includes("rendimiento") ||
-          normalized.includes("total return")
-        )
-      ) {
-        continue;
-      }
-
-      for (let j = 1; j < cells.length && j < headerCells.length; j++) {
-        const key = resolvePerformanceKey(headerCells[j]);
-        if (!key) continue;
-        const value = sanitizeValue(stripHtml(cells[j] ?? ""));
-        if (value !== "-") {
-          result[key] = value;
-        }
-      }
-    }
-  }
-
-  return result;
-}
-
-function parsePerformanceFromText(html) {
-  PERFORMANCE_TEXT_REGEX.lastIndex = 0;
-  const text = htmlToPlainText(html);
-  if (!text) return {};
-  const match = text.match(
-    /Rentabilidades acumuladas %([\s\S]*?)(?:Rentabilidad trimestral|Categoría:|Indice:|Índice:)/i,
-  );
-  if (!match) return {};
-  const block = match[0];
-  const result = {};
-
-  let found;
-  while ((found = PERFORMANCE_TEXT_REGEX.exec(block)) !== null) {
-    const [, rawLabel, rawValue] = found;
-    const key = PERFORMANCE_TEXT_LABEL_MAP.get(normalizeTextLabel(rawLabel));
-    if (!key) continue;
-    const sanitized = sanitizeValue(rawValue.replace(/\s+/g, "").replace(/,$/, ""));
-    if (!sanitized || sanitized === "-" || !/[0-9]/.test(sanitized)) continue;
-    result[key] = sanitized.replace(/%$/, "");
-  }
-
-  PERFORMANCE_TEXT_REGEX.lastIndex = 0;
-  return result;
-}
-
-function parsePerformanceLegacy(html) {
-  const tables = extractTables(html);
-  const byPosition = tables[19];
-  const result = {};
-
-  if (byPosition) {
-    const rows = extractRows(byPosition);
-    for (let i = 1; i < rows.length && i <= PERFORMANCE_KEYS.length; i++) {
-      const cells = extractCells(rows[i]);
-      if (cells.length < 2) continue;
-      const value = sanitizeValue(stripHtml(cells[1] ?? ""));
-      if (value !== "-") {
-        result[PERFORMANCE_KEYS[i - 1]] = value;
-      }
-    }
-  }
-
-  if (Object.keys(result).length >= 5) {
-    return result;
-  }
-
-  const fallback = tables.find((tbl) => {
-    const text = stripHtml(tbl);
-    return PERFORMANCE_KEYS.every((key) => text.includes(key.split(" ")[0]));
-  });
-  if (!fallback) return result;
-
-  const rows = extractRows(fallback);
-  for (const row of rows) {
-    const cells = extractCells(row);
-    if (cells.length < 2) continue;
-    const key = resolvePerformanceKey(stripHtml(cells[0]));
-    if (!key) continue;
-    const value = sanitizeValue(stripHtml(cells[1]));
-    if (value) result[key] = value;
-  }
-  return result;
+function logPerformanceDebug(message, details) {
+  if (!DEBUG_PERFORMANCE) return;
+  console.log(`[performance] ${message}`, details);
 }
 
 function parsePerformance(html) {
-  const textParsed = parsePerformanceFromText(html);
-  const tableParsed = parsePerformanceFromTables(html);
-  const combined = { ...tableParsed, ...textParsed };
-  if (Object.keys(combined).length) return combined;
-  const legacyParsed = parsePerformanceLegacy(html);
-  if (Object.keys(textParsed).length) {
-    return { ...legacyParsed, ...textParsed };
+  const debug = {
+    blockFound: false,
+    rawBlock: null,
+    matches: [],
+    missing: [],
+    sampleText: null,
+    reason: null,
+  };
+  const values = {};
+
+  if (!html) {
+    debug.reason = "empty_html";
+    logPerformanceDebug("Empty HTML received", debug);
+    return { values, debug };
   }
-  return legacyParsed;
+
+  const text = htmlToPlainText(html);
+  if (!text) {
+    debug.reason = "empty_text";
+    logPerformanceDebug("Unable to convert HTML to plain text", debug);
+    return { values, debug };
+  }
+
+  const match = text.match(PERFORMANCE_BLOCK_REGEX);
+  if (!match) {
+    debug.sampleText = text.slice(0, 500);
+    debug.reason = "block_not_found";
+    logPerformanceDebug("Performance block not found", debug);
+    return { values, debug };
+  }
+
+  const block = match[0];
+  debug.blockFound = true;
+  debug.rawBlock = block.slice(0, 2000);
+
+  for (const { key, variants } of PERFORMANCE_LABELS) {
+    let captured = null;
+    let usedVariant = null;
+    for (const variant of variants) {
+      const pattern = escapeRegExp(variant).replace(/\s+/g, "\\s+");
+      const variantRegex = new RegExp(
+        `${pattern}\\s*:?[\u00a0\s]*(-?[0-9]+(?:[.,][0-9]+)?)`,
+        "i",
+      );
+      const found = block.match(variantRegex);
+      if (found) {
+        captured = found[1];
+        usedVariant = variant;
+        break;
+      }
+    }
+
+    if (!captured) {
+      debug.missing.push({ key, variants });
+      continue;
+    }
+
+    const { number, normalized } = normalizeSpanishNumber(captured);
+    debug.matches.push({ key, variant: usedVariant, raw: captured, normalized, number });
+    if (number === null) {
+      continue;
+    }
+    values[key] = number;
+  }
+
+  debug.reason = null;
+  logPerformanceDebug("Parsed performance metrics", {
+    values,
+    matches: debug.matches,
+    missing: debug.missing,
+  });
+
+  return { values, debug };
 }
 
 function resolveRatioPeriod(label) {
@@ -528,6 +434,8 @@ async function fetchFund(entry) {
     fetchHtml(urlFees),
   ]);
 
+  const { values: performanceValues, debug: performanceDebug } = parsePerformance(perfHtml);
+
   return {
     name: entry.name,
     isin: entry.isin ?? "-",
@@ -535,7 +443,8 @@ async function fetchFund(entry) {
     morningstarId: entry.morningstarId,
     comment: entry.comment ?? "-",
     url: urlPerf,
-    performance: parsePerformance(perfHtml),
+    performance: performanceValues,
+    performanceDebug,
     sharpe: parseRatio(statsHtml, ["sharpe"]),
     volatility: parseRatio(statsHtml, ["volat", "desv"]),
     ter: parseTer(feesHtml),
@@ -559,6 +468,7 @@ async function buildPayload() {
           comment: entry.comment ?? "-",
           url: `https://lt.morningstar.com/xgnfa0k0aw/snapshot/snapshot.aspx?tab=1&Id=${encodeURIComponent(entry.morningstarId)}`,
           performance: {},
+          performanceDebug: { error: err?.message ?? "Failed to fetch fund" },
           sharpe: {},
           volatility: {},
           ter: "-",
