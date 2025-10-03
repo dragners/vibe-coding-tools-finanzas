@@ -104,7 +104,7 @@ const TEXTS = {
   },
 } as const;
 
-const PERFORMANCE_DEFAULT_ORDER: readonly KnownPerformanceKey[] = [
+const PERFORMANCE_LABELS: readonly PerformanceKey[] = [
   "1D",
   "1W",
   "1M",
@@ -117,7 +117,7 @@ const PERFORMANCE_DEFAULT_ORDER: readonly KnownPerformanceKey[] = [
   "10Y Anual",
 ];
 
-const RATIO_DEFAULT_ORDER: readonly KnownRatioPeriod[] = ["1Y", "3Y", "5Y"];
+const RATIO_LABELS: readonly RatioPeriod[] = ["1Y", "3Y", "5Y"];
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
 
@@ -134,6 +134,50 @@ function formatValue(raw?: string) {
 
 function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
   return label.replace(" Anual", "");
+}
+
+function MetricTable<T extends string>({
+  title,
+  columns,
+  values,
+}: {
+  title: string;
+  columns: readonly T[];
+  values: Partial<Record<T, string>>;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+      <div className="bg-cyan-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-cyan-700">
+        {title}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-center">
+          <thead className="bg-white">
+            <tr>
+              {columns.map((label) => (
+                <th
+                  key={label}
+                  scope="col"
+                  className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500"
+                >
+                  {displayMetricLabel(label as PerformanceKey | RatioPeriod)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {columns.map((label) => (
+                <td key={label} className="px-3 py-2 text-sm font-medium text-gray-700">
+                  {formatValue(values[label])}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function Section({
@@ -188,101 +232,22 @@ function Section({
       <div className="overflow-x-auto">
         <table className="w-full border-separate border-spacing-y-3 text-sm text-gray-800">
           <thead>
-            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-              <th
-                rowSpan={2}
-                scope="col"
-                className="px-4 py-3 min-w-[220px] bg-white/70 text-left rounded-tl-2xl rounded-bl-2xl"
-              >
-                {texts.name}
-              </th>
-              <th
-                rowSpan={2}
-                scope="col"
-                className="px-4 py-3 whitespace-nowrap bg-white/70 text-left"
-              >
-                {texts.isin}
-              </th>
-              <th
-                rowSpan={2}
-                scope="col"
-                className="px-4 py-3 min-w-[180px] bg-white/70 text-left"
-              >
-                {texts.category}
-              </th>
-              <th
-                colSpan={performanceColumns.length}
-                scope="colgroup"
-                className="px-4 py-3 text-center bg-white/70"
-              >
-                {texts.performance}
-              </th>
-              <th
-                colSpan={ratioColumns.length}
-                scope="colgroup"
-                className="px-4 py-3 text-center bg-white/70"
-              >
-                {texts.sharpe}
-              </th>
-              <th
-                colSpan={ratioColumns.length}
-                scope="colgroup"
-                className="px-4 py-3 text-center bg-white/70"
-              >
-                {texts.volatility}
-              </th>
-              <th
-                rowSpan={2}
-                scope="col"
-                className="px-4 py-3 whitespace-nowrap bg-white/70 text-left"
-              >
-                {texts.ter}
-              </th>
-              <th
-                rowSpan={2}
-                scope="col"
-                className="px-4 py-3 min-w-[200px] bg-white/70 text-left rounded-tr-2xl rounded-br-2xl"
-              >
-                {texts.comment}
-              </th>
-            </tr>
-            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-              {performanceColumns.map((label) => (
-                <th
-                  key={`perf-${label}`}
-                  scope="col"
-                  className="px-2 py-2 text-center whitespace-nowrap"
-                >
-                  {displayMetricLabel(label)}
-                </th>
-              ))}
-              {ratioColumns.map((label) => (
-                <th
-                  key={`sharpe-${label}`}
-                  scope="col"
-                  className="px-2 py-2 text-center whitespace-nowrap"
-                >
-                  {displayMetricLabel(label)}
-                </th>
-              ))}
-              {ratioColumns.map((label) => (
-                <th
-                  key={`vol-${label}`}
-                  scope="col"
-                  className="px-2 py-2 text-center whitespace-nowrap"
-                >
-                  {displayMetricLabel(label)}
-                </th>
-              ))}
+            <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th className="px-4 py-3 min-w-[220px] bg-white/70 rounded-l-2xl">{texts.name}</th>
+              <th className="px-4 py-3 whitespace-nowrap bg-white/70">{texts.isin}</th>
+              <th className="px-4 py-3 min-w-[180px] bg-white/70">{texts.category}</th>
+              <th className="px-4 py-3 min-w-[320px] bg-white/70">{texts.performance}</th>
+              <th className="px-4 py-3 whitespace-nowrap bg-white/70">{texts.sharpe}</th>
+              <th className="px-4 py-3 whitespace-nowrap bg-white/70">{texts.volatility}</th>
+              <th className="px-4 py-3 whitespace-nowrap bg-white/70">{texts.ter}</th>
+              <th className="px-4 py-3 min-w-[200px] bg-white/70 rounded-r-2xl">{texts.comment}</th>
             </tr>
           </thead>
           <tbody>
             {data.length === 0 ? (
               <tr>
                 <td
-                  colSpan={
-                    5 + performanceColumns.length + ratioColumns.length * 2
-                  }
+                  colSpan={8}
                   className="px-4 py-6 text-center text-sm font-medium text-gray-500 bg-white/90 rounded-2xl"
                 >
                   {texts.noData}
@@ -305,30 +270,15 @@ function Section({
                     {formatValue(row.isin)}
                   </td>
                   <td className="px-4 py-4 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
-                  {performanceColumns.map((label) => (
-                    <td
-                      key={`${row.morningstarId}-perf-${label}`}
-                      className="px-2 py-4 bg-white/95 backdrop-blur text-center font-medium text-gray-700"
-                    >
-                      {formatValue(row.performance[label])}
-                    </td>
-                  ))}
-                  {ratioColumns.map((label) => (
-                    <td
-                      key={`${row.morningstarId}-sharpe-${label}`}
-                      className="px-2 py-4 bg-white/95 backdrop-blur text-center text-gray-700"
-                    >
-                      {formatValue(row.sharpe[label])}
-                    </td>
-                  ))}
-                  {ratioColumns.map((label) => (
-                    <td
-                      key={`${row.morningstarId}-vol-${label}`}
-                      className="px-2 py-4 bg-white/95 backdrop-blur text-center text-gray-700"
-                    >
-                      {formatValue(row.volatility[label])}
-                    </td>
-                  ))}
+                  <td className="px-4 py-4 bg-white/95 backdrop-blur">
+                    <MetricTable title={texts.performance} columns={PERFORMANCE_LABELS} values={row.performance} />
+                  </td>
+                  <td className="px-4 py-4 bg-white/95 backdrop-blur">
+                    <MetricTable title={texts.sharpe} columns={RATIO_LABELS} values={row.sharpe} />
+                  </td>
+                  <td className="px-4 py-4 bg-white/95 backdrop-blur">
+                    <MetricTable title={texts.volatility} columns={RATIO_LABELS} values={row.volatility} />
+                  </td>
                   <td className="px-4 py-4 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
                     {formatValue(row.ter)}
                   </td>
