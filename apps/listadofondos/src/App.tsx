@@ -24,7 +24,7 @@ type FundRow = {
   morningstarId: string;
   comment: string;
   url: string;
-  performance: Partial<Record<PerformanceKey, string>>;
+  performance: Partial<Record<PerformanceKey, string | number>>;
   sharpe: Partial<Record<RatioPeriod, string>>;
   volatility: Partial<Record<RatioPeriod, string>>;
   ter: string;
@@ -125,10 +125,14 @@ function useTexts(lang: Lang) {
   return useMemo(() => TEXTS[lang], [lang]);
 }
 
-function formatValue(raw?: string) {
-  if (!raw) return "-";
+function formatValue(raw?: string | number) {
+  if (raw === null || raw === undefined) return "-";
+  if (typeof raw === "number") {
+    if (!Number.isFinite(raw)) return "-";
+    return String(raw);
+  }
   const val = raw.trim();
-  if (!val || val === "NaN" || val === "N/A") return "-";
+  if (!val || val.toUpperCase() === "N/A" || val === "NaN") return "-";
   return val;
 }
 
@@ -138,7 +142,7 @@ function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
 
 function renderMetricCells<T extends string>(
   columns: readonly T[],
-  values: Partial<Record<T, string>>,
+  values: Partial<Record<T, string | number>>,
   keyPrefix: string,
 ) {
   return columns.map((label) => (
