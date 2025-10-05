@@ -24,6 +24,7 @@ type FundRow = {
   morningstarId: string;
   comment: string;
   url: string;
+  rating?: number | string | null;
   performance: Partial<Record<PerformanceKey, string | number>>;
   sharpe: Partial<Record<RatioPeriod, string>>;
   volatility: Partial<Record<RatioPeriod, string>>;
@@ -140,6 +141,33 @@ function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
   return label.replace(" Anual", "");
 }
 
+function renderRatingStars(rating?: number | string | null) {
+  if (rating === null || rating === undefined) return null;
+
+  const value =
+    typeof rating === "string" && rating.trim()
+      ? Number.parseFloat(rating)
+      : typeof rating === "number"
+      ? rating
+      : null;
+
+  if (value === null || Number.isNaN(value) || value <= 0) return null;
+
+  const maxStars = 5;
+  const fullStars = Math.max(0, Math.min(maxStars, Math.floor(value)));
+  const hasHalfStar = value - fullStars >= 0.5 && fullStars < maxStars;
+
+  const stars = `${"★".repeat(fullStars)}${hasHalfStar ? "½" : ""}`;
+
+  if (!stars) return null;
+
+  return (
+    <span className="ml-2 text-xs font-semibold text-amber-500 whitespace-nowrap">
+      {stars}
+    </span>
+  );
+}
+
 function renderMetricCells<T extends string>(
   columns: readonly T[],
   values: Partial<Record<T, string | number>>,
@@ -233,14 +261,17 @@ function Section({
               data.map((row) => (
                 <tr key={`${section}-${row.morningstarId}`} className="align-top">
                   <td className="px-4 py-2.5 bg-white/95 backdrop-blur">
-                    <a
-                      href={row.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-semibold text-cyan-600 hover:text-cyan-700"
-                    >
-                      {row.name}
-                    </a>
+                    <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <a
+                        href={row.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-cyan-600 hover:text-cyan-700"
+                      >
+                        {row.name}
+                      </a>
+                      {renderRatingStars(row.rating)}
+                    </span>
                   </td>
                   <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
                     {formatValue(row.isin)}
