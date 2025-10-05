@@ -327,6 +327,48 @@ function parseRatioFromTables(html, keywords) {
   return {};
 }
 
+/**
+ * Deterministic extractor for "Análisis de Rentabilidad/Riesgo" (tab=2) from plain text.
+ * Looks for the block that starts at "Análisis de Rentabilidad/Riesgo" and then
+ * parses lines like:
+ *  "Medida de riesgo 1 año 3 años 5 años"
+ *  "Volatilidad 12,64 13,82 17,72"
+ *  "Ratio de Sharpe 0,43 0,52 1,25"
+ */
+function parseRatiosFromText(html) {
+  const text = htmlToPlainText(html);
+  const out = { sharpe: {}, volatility: {} };
+  if (!text) return out;
+
+  // Normalize spaces and accents to ease matching
+  const norm = text
+    .replace(/\r/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+  
+  // Find a local block around "Análisis de Rentabilidad/Riesgo" to increase precision
+  const blockMatch = norm.match(/An[aá]lisis de Rentabilidad\/?Riesgo[\s\S]{0,800}/i);
+  const block = blockMatch ? blockMatch[0] : norm;
+
+  // Patterns for the two rows. Accept comma decimals and optional units.
+  const volRe = /Volatilidad\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)/i;
+  const sharpeRe = /Ratio\s+de\s+Sharpe\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)/i;
+
+  const vm = block.match(volRe);
+  if (vm) {
+    out.volatility = { "1Y": vm[1], "3Y": vm[2], "5Y": vm[3] };
+  }
+  const sm = block.match(sharpeRe);
+  if (sm) {
+    out.sharpe = { "1Y": sm[1], "3Y": sm[2], "5Y": sm[3] };
+  }
+  return out;
+}
+
+
+
 
 function parseRatioLegacy(html, keywords) {
   const tables = extractTables(html);
@@ -349,10 +391,16 @@ function parseRatioLegacy(html, keywords) {
 }
 
 
+
 function parseRatio(html, keywords) {
-  // Use only the table-based extractor (no legacy fallback)
-  return parseRatioFromTables(html, keywords);
+  const byText = parseRatiosFromText(html);
+  // Return exactly the requested metric from the text-extracted object
+  const isSharpe = keywords.some((k) => /sharpe/i.test(k));
+  if (isSharpe) return byText.sharpe || {};
+  // Otherwise treat as volatility
+  return byText.volatility || {};
 }
+
 
 
 function parseTerFromTables(html) {
