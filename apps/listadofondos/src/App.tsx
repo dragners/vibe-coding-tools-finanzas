@@ -129,7 +129,6 @@ function formatValue(raw?: string | number) {
   if (raw === null || raw === undefined) return "-";
   if (typeof raw === "number") {
     if (!Number.isFinite(raw)) return "-";
-    // Format with locale using comma decimals for ES and dot for EN later if needed; keep raw to string here
     return String(raw);
   }
   const val = raw.trim();
