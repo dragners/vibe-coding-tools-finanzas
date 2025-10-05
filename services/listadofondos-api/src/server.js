@@ -68,6 +68,14 @@ function sanitizeValue(value) {
   return cleaned;
 }
 
+function normalizeDiacritics(value) {
+  if (typeof value !== "string") return "";
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 function decodeHtml(text) {
   return text
     .replace(/&nbsp;/gi, " ")
@@ -412,12 +420,17 @@ function parseTerFromTables(html) {
     for (const row of rows) {
       const cells = extractCells(row);
       if (!cells.length) continue;
-      const label = sanitizeValue(stripHtml(cells[0] ?? "")).toLowerCase();
+      const labelRaw = sanitizeValue(stripHtml(cells[0] ?? ""));
+      const label = labelRaw.toLowerCase();
+      const normalized = normalizeDiacritics(labelRaw);
       if (
         label.includes("ter") ||
         label.includes("gastos corrientes") ||
         label.includes("ratio de gastos") ||
-        label.includes("total expense")
+        label.includes("total expense") ||
+        label.includes("comisión de gestión") ||
+        label.includes("comision de gestion") ||
+        normalized.includes("comision de gestion")
       ) {
         const value = sanitizeValue(stripHtml(cells[cells.length - 1] ?? ""));
         if (value !== "-") {
@@ -435,8 +448,17 @@ function parseTerLegacy(html) {
   for (const table of tables) {
     const rows = extractRows(table);
     for (const row of rows) {
-      const text = stripHtml(row).toLowerCase();
-      if (text.includes("ter") || text.includes("gastos corrientes") || text.includes("ratio de gastos")) {
+      const raw = stripHtml(row);
+      const text = raw.toLowerCase();
+      const normalized = normalizeDiacritics(raw);
+      if (
+        text.includes("ter") ||
+        text.includes("gastos corrientes") ||
+        text.includes("ratio de gastos") ||
+        text.includes("comisión de gestión") ||
+        text.includes("comision de gestion") ||
+        normalized.includes("comision de gestion")
+      ) {
         const cells = extractCells(row);
         const last = cells[cells.length - 1];
         const value = sanitizeValue(stripHtml(last ?? ""));
@@ -451,6 +473,24 @@ function parseTer(html) {
   const parsed = parseTerFromTables(html);
   if (parsed && parsed !== "-") return parsed;
   return parseTerLegacy(html);
+}
+
+function parseMorningstarRating(html) {
+  if (!html) return null;
+
+  const byAlt = html.match(/<img[^>]*class="[^"]*starsImg[^"]*"[^>]*alt="([0-9])\s*star/iu);
+  if (byAlt) {
+    const value = Number.parseInt(byAlt[1], 10);
+    if (Number.isInteger(value)) return value;
+  }
+
+  const bySrc = html.match(/<img[^>]*class="[^"]*starsImg[^"]*"[^>]*src="[^"]*\/(\d)stars\.[^"]*"/i);
+  if (bySrc) {
+    const value = Number.parseInt(bySrc[1], 10);
+    if (Number.isInteger(value)) return value;
+  }
+
+  return null;
 }
 
 async function fetchHtml(url) {
@@ -560,6 +600,7 @@ async function fetchFund(entry) {
     sharpe: parseRatio(statsHtml, ["sharpe"]),
     volatility: parseRatio(statsHtml, ["volat", "volatil", "volat.", "desv", "desviacion"]),
     ter: parseTer(feesHtml),
+    morningstarRating: parseMorningstarRating(perfHtml),
   };
 }
 
@@ -584,6 +625,7 @@ async function buildPayload() {
           sharpe: {},
           volatility: {},
           ter: "-",
+          morningstarRating: null,
         });
       }
     }

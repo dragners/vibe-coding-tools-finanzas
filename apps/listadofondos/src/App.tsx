@@ -28,6 +28,7 @@ type FundRow = {
   sharpe: Partial<Record<RatioPeriod, string>>;
   volatility: Partial<Record<RatioPeriod, string>>;
   ter: string;
+  morningstarRating: number | null;
 };
 
 type ApiPayload = {
@@ -152,6 +153,17 @@ function renderMetricCells<T extends string>(
   ));
 }
 
+function renderRatingStars(rating: number | null) {
+  if (rating == null || Number.isNaN(rating) || rating <= 0) return null;
+  const full = Math.max(0, Math.min(5, Math.round(rating)));
+  const stars = "★".repeat(full).padEnd(5, "☆");
+  return (
+    <span className="mt-1 block text-xs font-semibold text-amber-500" aria-label={`${full} estrellas Morningstar`}>
+      {stars}
+    </span>
+  );
+}
+
 function Section({
   section,
   data,
@@ -241,6 +253,7 @@ function Section({
                     >
                       {row.name}
                     </a>
+                    {renderRatingStars(row.morningstarRating)}
                   </td>
                   <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
                     {formatValue(row.isin)}
