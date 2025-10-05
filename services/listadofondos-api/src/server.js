@@ -53,8 +53,11 @@ const PERFORMANCE_TARGETS = [
   },
 ];
 
+const PERFORMANCE_DATE_REGEX = /Rentabilidades acumuladas %\s*(\d{2}\/\d{2}\/\d{4})/i;
+const PERFORMANCE_BLOCK_REGEX =
   /Rentabilidades acumuladas %[\s\S]*?(?:Rentabilidad trimestral %?|Rentabilidades anuales %|Cartera|Operaciones|Comparar|©|$)/i;
 
+const DEBUG_PERFORMANCE = process.env.DEBUG_PERFORMANCE === "1";
 
 const RATIO_PERIODS = ["1Y", "3Y", "5Y"];
 
@@ -99,6 +102,44 @@ function htmlToPlainText(html) {
     .trim();
 }
 
+/** Extrae el número de estrellas (1-5) del bloque de "Rating Morningstar" (tab=1). */
+function parseStarRating(html) {
+  if (!html) return null;
+
+  // 1) Intento por atributos accesibles (alt/aria-label) con número de estrellas
+  const altMatch = html.match(/Rating\s*Morningstar[^>]{0,80}?(?:alt|aria-label)=[\"\'].*?(\d)\s*estrella/i);
+  if (altMatch) {
+    const n = parseInt(altMatch[1], 10);
+    if (n >= 1 && n <= 5) return n;
+  }
+
+  // 2) Clases de estrellas típico: "stars-1".."stars-5" o "rating--stars-4"
+  const classMatch = html.match(/stars[-_ ]?([1-5])\b/i);
+  if (classMatch) {
+    const n = parseInt(classMatch[1], 10);
+    if (n >= 1 && n <= 5) return n;
+  }
+
+  // 3) Versión texto plano: contar "★" (rellenas). Si trae "☆" vacías, ignoramos.
+  const text = htmlToPlainText(html);
+  if (text) {
+    const blockMatch = text.match(/Rating\s*Morningstar[\s\S]{0,120}/i);
+    const block = blockMatch ? blockMatch[0] : text;
+    const filled = (block.match(/★/g) || []).length;
+    if (filled >= 1 && filled <= 5) return filled;
+    // Alternativa: "4 de 5", "4/5", "4 estrellas"
+    const numMatch = block.match(/(\b[1-5]\b)\s*(?:de\s*5|\/5|estrellas?)/i);
+    if (numMatch) {
+      const n = parseInt(numMatch[1], 10);
+      if (n >= 1 && n <= 5) return n;
+    }
+  }
+
+  return null;
+}
+
+
+
 function extractTables(html) {
   return html.match(/<table[\s\S]*?<\/table>/gi) ?? [];
 }
@@ -134,7 +175,10 @@ function normalizeSpanishNumber(value) {
   return { number, normalized };
 }
 
-
+function logPerformanceDebug(message, details) {
+  if (!DEBUG_PERFORMANCE) return;
+  console.log(`[performance] ${message}`, details);
+}
 
 function normalizePerformanceText(text) {
   return text
@@ -168,207 +212,153 @@ function parsePerformanceNumber(raw) {
   return { number, normalized };
 }
 
-/** Extract ONLY "Rentabilidades acumuladas (%)" -> column "Rentabilidad" (2nd column) */
-function parseAccumulatedRentOnly(html) {
-  const values = {};
+function parsePerformance(html) {
   const debug = {
-    mode: "table_only",
-    tableHit: null,
-    rowsParsed: 0,
+    blockFound: false,
+    rawBlock: null,
+    normalizedBlock: null,
     matches: [],
     missing: [],
+    sampleText: null,
+    reason: null,
+    date: null,
+    blockIndex: null,
+    htmlSample: null,
   };
+  const values = {};
 
   if (!html) {
     debug.reason = "empty_html";
+    logPerformanceDebug("Empty HTML received", debug);
     return { values, debug };
   }
 
-  const tables = extractTables(html);
-  outer: for (const table of tables) {
-    const rows = extractRows(table);
-    if (!rows.length) continue;
+  debug.htmlSample = html.slice(0, 500);
 
-    const parsedRows = rows.map((rowHtml) => {
-      const cells = extractCells(rowHtml).map((c) => sanitizeValue(stripHtml(c)));
-      return cells;
-    });
+  const text = htmlToPlainText(html);
+  if (!text) {
+    debug.reason = "empty_text";
+    logPerformanceDebug("Unable to convert HTML to plain text", debug);
+    return { values, debug };
+  }
 
-    let startIndex = 0;
-    if (parsedRows[0] && parsedRows[0].join(" ").toLowerCase().includes("rentabilidad")) {
-      startIndex = 1;
-    }
+  const normalizedText = normalizePerformanceText(text);
+  debug.sampleText = normalizedText.slice(0, 600);
 
-    const candidate = {};
-    let hits = 0;
+  const dateMatch = normalizedText.match(PERFORMANCE_DATE_REGEX);
+  if (dateMatch) {
+    debug.date = dateMatch[1];
+  }
 
-    for (let i = startIndex; i < parsedRows.length; i++) {
-      const cells = parsedRows[i];
-      if (!cells || cells.length < 2) continue;
-      const label = (cells[0] || "").toLowerCase();
+  const match = normalizedText.match(PERFORMANCE_BLOCK_REGEX);
+  if (!match) {
+    debug.reason = "block_not_found";
+    logPerformanceDebug("Performance block not found", debug);
+    return { values, debug };
+  }
 
-      const target = PERFORMANCE_TARGETS.find(({ variants }) =>
-        variants.some((v) => label.includes(v.toLowerCase()))
+  const block = match[0];
+  debug.blockFound = true;
+  debug.blockIndex = match.index ?? null;
+  debug.rawBlock = block.slice(0, 2000);
+  debug.normalizedBlock = block.replace(/[ \t]+/g, " ").trim().slice(0, 2000);
+
+  for (const { key, variants } of PERFORMANCE_TARGETS) {
+    let captured = null;
+    let usedVariant = null;
+    for (const variant of variants) {
+      const variantPattern = escapeRegExp(variant);
+      const variantRegex = new RegExp(
+        `${variantPattern}(?:[\s:\u00a0])+(-?[0-9]+(?:[.,][0-9]+)?)` +
+          `(?:[\s\u00a0]+[-+−—–0-9.,%]+)?(?:[\s\u00a0]+[-+−—–0-9.,%]+)?`,
+        "i",
       );
-      if (!target) continue;
-
-      const raw = cells[1];
-      const { number, normalized } = parsePerformanceNumber(raw);
-      if (number !== null) {
-        candidate[target.key] = number;
-        debug.matches.push({ key: target.key, label: cells[0], raw, normalized, number });
-        hits++;
-      }
-    }
-
-    if (hits >= 5) {
-      debug.tableHit = table.slice(0, 200);
-      debug.rowsParsed = parsedRows.length;
-
-      for (const { key, variants } of PERFORMANCE_TARGETS) {
-        if (!(key in candidate)) debug.missing.push({ key, variants });
-      }
-
-      Object.assign(values, candidate);
-      break outer;
-    }
-  }
-
-  if (!Object.keys(values).length) {
-    for (const { key, variants } of PERFORMANCE_TARGETS) {
-      debug.missing.push({ key, variants });
-    }
-  }
-
-  return { values, debug };
-}
-
-
-
-
-
-
-function resolveRatioPeriod(label) {
-  if (!label) return null;
-  const norm = label
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip accents
-    .replace(/[^a-z0-9]/g, "");
-  if (/(^|[^0-9])1(a|y|ano|anos)/.test(norm)) return "1Y";
-  if (/(^|[^0-9])3(a|y|ano|anos)/.test(norm)) return "3Y";
-  if (/(^|[^0-9])5(a|y|ano|anos)/.test(norm)) return "5Y";
-  return null;
-}
-
-
-
-function parseRatioFromTables(html, keywords) {
-  const tables = extractTables(html);
-
-  const makePeriodMap = (headerCells) => {
-    // Build a map period -> column index, skipping the first column (row label)
-    const map = {};
-    headerCells.forEach((label, idx) => {
-      const period = resolveRatioPeriod(label);
-      if (period && !(period in map)) {
-        map[period] = idx; // keep actual index (may not be 1..N)
-      }
-    });
-    return map;
-  };
-
-  // Iterate tables to find one that has period columns and matching rows
-  for (const table of tables) {
-    const rows = extractRows(table);
-    if (!rows.length) continue;
-
-    // Header: take first row cells as header candidates
-    const headerCells = extractCells(rows[0]).map((cell) => sanitizeValue(stripHtml(cell)));
-    const periodIdxMap = makePeriodMap(headerCells);
-
-    // Require at least one of the target periods present
-    const periodsPresent = Object.keys(periodIdxMap);
-    if (!periodsPresent.length) continue;
-
-    // Try to collect both sharpe/volat (or the requested keywords row)
-    let foundValues = null;
-
-    // Iterate data rows (skip header)
-    for (let r = 1; r < rows.length; r++) {
-      const cells = extractCells(rows[r]).map((c) => sanitizeValue(stripHtml(c)));
-      if (!cells.length) continue;
-
-      const rowLabel = (cells[0] || "").toLowerCase();
-      if (!rowLabel) continue;
-
-      // Check row label has one of the keywords
-      if (!keywords.some((k) => rowLabel.includes(k))) continue;
-
-      // Build values object using the detected column indices
-      const values = {};
-      (["1Y","3Y","5Y"]).forEach((p) => {
-        if (periodIdxMap[p] != null) {
-          const idx = periodIdxMap[p];
-          const val = cells[idx] ?? "";
-          values[p] = sanitizeValue(val);
-        }
-      });
-
-      // If at least one non "-" value, accept and return
-      if (Object.values(values).some((v) => v && v !== "-")) {
-        foundValues = values;
+      const found = block.match(variantRegex);
+      if (found) {
+        captured = found[1];
+        usedVariant = variant;
         break;
       }
     }
 
-    if (foundValues) return foundValues;
+    if (!captured) {
+      debug.missing.push({ key, variants });
+      continue;
+    }
+
+    const { number, normalized } = parsePerformanceNumber(captured);
+    debug.matches.push({ key, variant: usedVariant, raw: captured, normalized, number });
+    if (number === null) {
+      continue;
+    }
+    values[key] = number;
   }
 
-  return {};
+  if (!Object.keys(values).length) {
+    debug.reason = "values_not_found";
+    logPerformanceDebug("No performance values extracted", debug);
+    return { values, debug };
+  }
+
+  debug.reason = null;
+  logPerformanceDebug("Parsed performance metrics", {
+    values,
+    matches: debug.matches,
+    missing: debug.missing,
+    date: debug.date,
+    blockIndex: debug.blockIndex,
+  });
+
+  return { values, debug };
 }
 
-/**
- * Deterministic extractor for "Análisis de Rentabilidad/Riesgo" (tab=2) from plain text.
- * Looks for the block that starts at "Análisis de Rentabilidad/Riesgo" and then
- * parses lines like:
- *  "Medida de riesgo 1 año 3 años 5 años"
- *  "Volatilidad 12,64 13,82 17,72"
- *  "Ratio de Sharpe 0,43 0,52 1,25"
- */
-function parseRatiosFromText(html) {
-  const text = htmlToPlainText(html);
-  const out = { sharpe: {}, volatility: {} };
-  if (!text) return out;
-
-  // Normalize spaces and accents to ease matching
-  const norm = text
-    .replace(/\r/g, "")
-    .replace(/\u00a0/g, " ")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{2,}/g, "\n")
-    .trim();
-  
-  // Find a local block around "Análisis de Rentabilidad/Riesgo" to increase precision
-  const blockMatch = norm.match(/An[aá]lisis de Rentabilidad\/?Riesgo[\s\S]{0,800}/i);
-  const block = blockMatch ? blockMatch[0] : norm;
-
-  // Patterns for the two rows. Accept comma decimals and optional units.
-  const volRe = /Volatilidad\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)/i;
-  const sharpeRe = /Ratio\s+de\s+Sharpe\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)/i;
-
-  const vm = block.match(volRe);
-  if (vm) {
-    out.volatility = { "1Y": vm[1], "3Y": vm[2], "5Y": vm[3] };
-  }
-  const sm = block.match(sharpeRe);
-  if (sm) {
-    out.sharpe = { "1Y": sm[1], "3Y": sm[2], "5Y": sm[3] };
-  }
-  return out;
+function resolveRatioPeriod(label) {
+  if (!label) return null;
+  const normalized = label.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (normalized.includes("1a") || normalized.includes("1y")) return "1Y";
+  if (normalized.includes("3a") || normalized.includes("3y")) return "3Y";
+  if (normalized.includes("5a") || normalized.includes("5y")) return "5Y";
+  return null;
 }
 
+function parseRatioFromTables(html, keywords) {
+  const tables = extractTables(html);
+  let found = {};
 
+  for (const table of tables) {
+    const rows = extractRows(table);
+    if (!rows.length) continue;
 
+    const headerCells = extractCells(rows[0]).map((cell) =>
+      sanitizeValue(stripHtml(cell)),
+    );
+    const periods = headerCells.map((label) => resolveRatioPeriod(label));
+    if (!periods.some(Boolean)) continue;
+
+    for (let i = 1; i < rows.length; i++) {
+      const cells = extractCells(rows[i]);
+      if (!cells.length) continue;
+      const label = sanitizeValue(stripHtml(cells[0] ?? ""));
+      const normalized = label.toLowerCase();
+      if (!keywords.some((keyword) => normalized.includes(keyword))) continue;
+
+      const values = {};
+      for (let j = 1; j < cells.length && j < periods.length; j++) {
+        const key = periods[j];
+        if (!key) continue;
+        const value = sanitizeValue(stripHtml(cells[j] ?? ""));
+        if (value !== "-") {
+          values[key] = value;
+        }
+      }
+      if (Object.keys(values).length) {
+        found = values;
+      }
+    }
+  }
+
+  return found;
+}
 
 function parseRatioLegacy(html, keywords) {
   const tables = extractTables(html);
@@ -390,18 +380,11 @@ function parseRatioLegacy(html, keywords) {
   return {};
 }
 
-
-
 function parseRatio(html, keywords) {
-  const byText = parseRatiosFromText(html);
-  // Return exactly the requested metric from the text-extracted object
-  const isSharpe = keywords.some((k) => /sharpe/i.test(k));
-  if (isSharpe) return byText.sharpe || {};
-  // Otherwise treat as volatility
-  return byText.volatility || {};
+  const parsed = parseRatioFromTables(html, keywords);
+  if (Object.keys(parsed).length) return parsed;
+  return parseRatioLegacy(html, keywords);
 }
-
-
 
 function parseTerFromTables(html) {
   const tables = extractTables(html);
@@ -546,7 +529,7 @@ async function fetchFund(entry) {
     fetchHtml(urlFees),
   ]);
 
-  let { values: performanceValues, debug: performanceDebug } = parseAccumulatedRentOnly(perfHtml);
+  const { values: performanceValues, debug: performanceDebug } = parsePerformance(perfHtml);
 
   return {
     name: entry.name,
@@ -555,10 +538,11 @@ async function fetchFund(entry) {
     morningstarId: entry.morningstarId,
     comment: entry.comment ?? "-",
     url: urlPerf,
-    performance: performanceValues,
+    ratingStars: parseStarRating(perfHtml),
+      performance: performanceValues,
     performanceDebug,
     sharpe: parseRatio(statsHtml, ["sharpe"]),
-    volatility: parseRatio(statsHtml, ["volat", "volatil", "volat.", "desv", "desviacion"]),
+    volatility: parseRatio(statsHtml, ["volat", "desv"]),
     ter: parseTer(feesHtml),
   };
 }
