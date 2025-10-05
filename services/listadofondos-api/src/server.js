@@ -348,11 +348,12 @@ function parseRatioLegacy(html, keywords) {
   return {};
 }
 
+
 function parseRatio(html, keywords) {
-  const parsed = parseRatioFromTables(html, keywords);
-  if (Object.keys(parsed).length) return parsed;
-  return parseRatioLegacy(html, keywords);
+  // Use only the table-based extractor (no legacy fallback)
+  return parseRatioFromTables(html, keywords);
 }
+
 
 function parseTerFromTables(html) {
   const tables = extractTables(html);
@@ -509,7 +510,7 @@ async function fetchFund(entry) {
     performance: performanceValues,
     performanceDebug,
     sharpe: parseRatio(statsHtml, ["sharpe"]),
-    volatility: parseRatio(statsHtml, ["volat", "desv"]),
+    volatility: parseRatio(statsHtml, ["volat", "volatil", "volat.", "desv", "desviacion"]),
     ter: parseTer(feesHtml),
   };
 }
