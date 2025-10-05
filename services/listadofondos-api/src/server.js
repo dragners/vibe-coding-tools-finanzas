@@ -403,31 +403,96 @@ function parseRatio(html, keywords) {
 
 
 
+function normalizeForMatching(text) {
+  if (typeof text !== "string") return "";
+  return text
+    .replace(/\r/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9% ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function parseTerFromTables(html) {
   const tables = extractTables(html);
-  let found = "-";
+  const targetHeader = normalizeForMatching("Comisiones anuales");
+  const targetRowLabels = [
+    normalizeForMatching("Comisiones de gestión"),
+    normalizeForMatching("Comisión de gestión"),
+  ].filter(Boolean);
 
   for (const table of tables) {
     const rows = extractRows(table);
+    if (!rows.length) continue;
+
+    let matchesHeader = false;
+
+    const captionMatch = table.match(/<caption[^>]*>([\s\S]*?)<\/caption>/i);
+    if (captionMatch) {
+      const captionNormalized = normalizeForMatching(stripHtml(captionMatch[1]));
+      if (captionNormalized.includes(targetHeader)) {
+        matchesHeader = true;
+      }
+    }
+
+    if (!matchesHeader) {
+      for (const row of rows) {
+        const cells = extractCells(row);
+        if (!cells.length) continue;
+        for (const cell of cells) {
+          const isHeaderCell =
+            /<th/i.test(cell) || /class\s*=\s*"[^"]*heading[^"]*"/i.test(cell);
+          if (!isHeaderCell) continue;
+          const cellNormalized = normalizeForMatching(stripHtml(cell));
+          if (cellNormalized.includes(targetHeader)) {
+            matchesHeader = true;
+            break;
+          }
+        }
+        if (matchesHeader) break;
+      }
+    }
+
+    if (!matchesHeader) continue;
+
     for (const row of rows) {
       const cells = extractCells(row);
       if (!cells.length) continue;
-      const label = sanitizeValue(stripHtml(cells[0] ?? "")).toLowerCase();
+      const labelNormalized = normalizeForMatching(stripHtml(cells[0] ?? ""));
+      if (!labelNormalized) continue;
       if (
-        label.includes("ter") ||
-        label.includes("gastos corrientes") ||
-        label.includes("ratio de gastos") ||
-        label.includes("total expense")
+        targetRowLabels.some(
+          (target) =>
+            labelNormalized === target ||
+            labelNormalized.startsWith(`${target} `) ||
+            labelNormalized.includes(`${target} (`)
+        )
       ) {
-        const value = sanitizeValue(stripHtml(cells[cells.length - 1] ?? ""));
-        if (value !== "-") {
-          found = value;
+        for (let idx = 1; idx < cells.length; idx += 1) {
+          const rawValue = stripHtml(cells[idx] ?? "");
+          const sanitized = sanitizeValue(rawValue);
+          if (!sanitized || sanitized === "-") continue;
+          const { number, normalized } = normalizeSpanishNumber(sanitized);
+          if (number !== null) {
+            if (/%/.test(sanitized)) {
+              return sanitized.replace(/\s*%$/, "%");
+            }
+            if (normalized) {
+              return `${normalized}%`;
+            }
+            return `${number}%`;
+          }
         }
       }
     }
   }
 
-  return found;
+  return "-";
 }
 
 function parseTerLegacy(html) {
