@@ -53,7 +53,11 @@ const PERFORMANCE_TARGETS = [
   },
 ];
 
+const PERFORMANCE_DATE_REGEX = /Rentabilidades acumuladas %\s*(\d{2}\/\d{2}\/\d{4})/i;
+const PERFORMANCE_BLOCK_REGEX =
+  /Rentabilidades acumuladas %[\s\S]*?(?:Rentabilidad trimestral %?|Rentabilidades anuales %|Cartera|Operaciones|Comparar|©|$)/i;
 
+const DEBUG_PERFORMANCE = process.env.DEBUG_PERFORMANCE === "1";
 
 const RATIO_PERIODS = ["1Y", "3Y", "5Y"];
 
@@ -66,30 +70,6 @@ function sanitizeValue(value) {
   if (!cleaned || cleaned === "NaN" || /n\/a/i.test(cleaned)) return "-";
   return cleaned;
 }
-
-function parsePerformanceNumber(raw) {
-  if (typeof raw !== "string") {
-    return { number: null, normalized: null };
-  }
-
-  const sanitized = raw
-    .replace(/[%\u00a0]/g, "")
-    .replace(/[−–—]/g, "-")
-    .trim();
-  const compact = sanitized.replace(/\s+/g, "");
-
-  if (!compact || compact === "-") {
-    return { number: null, normalized: null };
-  }
-
-  const normalized = compact.replace(/\./g, "").replace(/,/g, ".");
-  const number = Number.parseFloat(normalized);
-  if (Number.isNaN(number)) {
-    return { number: null, normalized };
-  }
-  return { number, normalized };
-}
-
 
 function decodeHtml(text) {
   return text
@@ -157,7 +137,10 @@ function normalizeSpanishNumber(value) {
   return { number, normalized };
 }
 
-
+function logPerformanceDebug(message, details) {
+  if (!DEBUG_PERFORMANCE) return;
+  console.log(`[performance] ${message}`, details);
+}
 
 function normalizePerformanceText(text) {
   return text
@@ -168,91 +151,128 @@ function normalizePerformanceText(text) {
     .trim();
 }
 
+function parsePerformanceNumber(raw) {
+  if (typeof raw !== "string") {
+    return { number: null, normalized: null };
+  }
 
+  const sanitized = raw
+    .replace(/[%\u00a0]/g, "")
+    .replace(/[−–—]/g, "-")
+    .trim();
+  const compact = sanitized.replace(/\s+/g, "");
 
+  if (!compact || compact === "-") {
+    return { number: null, normalized: null };
+  }
 
-/** Extract ONLY "Rentabilidades acumuladas (%)" -> column "Rentabilidad" (2nd column) */
-function parseAccumulatedRentOnly(html) {
-  const values = {};
+  const normalized = compact.replace(/\./g, "").replace(/,/g, ".");
+  const number = Number.parseFloat(normalized);
+  if (Number.isNaN(number)) {
+    return { number: null, normalized };
+  }
+  return { number, normalized };
+}
+
+function parsePerformance(html) {
   const debug = {
-    mode: "table_only",
-    tableHit: null,
-    rowsParsed: 0,
+    blockFound: false,
+    rawBlock: null,
+    normalizedBlock: null,
     matches: [],
     missing: [],
+    sampleText: null,
+    reason: null,
+    date: null,
+    blockIndex: null,
+    htmlSample: null,
   };
+  const values = {};
 
   if (!html) {
     debug.reason = "empty_html";
+    logPerformanceDebug("Empty HTML received", debug);
     return { values, debug };
   }
 
-  const tables = extractTables(html);
-  outer: for (const table of tables) {
-    const rows = extractRows(table);
-    if (!rows.length) continue;
+  debug.htmlSample = html.slice(0, 500);
 
-    // Convert rows to array of sanitized cell texts
-    const parsedRows = rows.map((rowHtml) => {
-      const cells = extractCells(rowHtml).map((c) => sanitizeValue(stripHtml(c)));
-      return cells;
-    });
+  const text = htmlToPlainText(html);
+  if (!text) {
+    debug.reason = "empty_text";
+    logPerformanceDebug("Unable to convert HTML to plain text", debug);
+    return { values, debug };
+  }
 
-    // If header row contains "Rentabilidades acumuladas" or "Rentabilidad", skip it
-    let startIndex = 0;
-    if (parsedRows[0] && parsedRows[0].join(" ").toLowerCase().includes("rentabilidad")) {
-      startIndex = 1;
-    }
+  const normalizedText = normalizePerformanceText(text);
+  debug.sampleText = normalizedText.slice(0, 600);
 
-    // Candidate results for this table
-    const candidate = {};
-    let hits = 0;
+  const dateMatch = normalizedText.match(PERFORMANCE_DATE_REGEX);
+  if (dateMatch) {
+    debug.date = dateMatch[1];
+  }
 
-    for (let i = startIndex; i < parsedRows.length; i++) {
-      const cells = parsedRows[i];
-      if (!cells || cells.length < 2) continue;
-      const label = (cells[0] || "").toLowerCase();
+  const match = normalizedText.match(PERFORMANCE_BLOCK_REGEX);
+  if (!match) {
+    debug.reason = "block_not_found";
+    logPerformanceDebug("Performance block not found", debug);
+    return { values, debug };
+  }
 
-      const target = PERFORMANCE_TARGETS.find(({ variants }) =>
-        variants.some((v) => label.includes(v.toLowerCase()))
+  const block = match[0];
+  debug.blockFound = true;
+  debug.blockIndex = match.index ?? null;
+  debug.rawBlock = block.slice(0, 2000);
+  debug.normalizedBlock = block.replace(/[ \t]+/g, " ").trim().slice(0, 2000);
+
+  for (const { key, variants } of PERFORMANCE_TARGETS) {
+    let captured = null;
+    let usedVariant = null;
+    for (const variant of variants) {
+      const variantPattern = escapeRegExp(variant);
+      const variantRegex = new RegExp(
+        `${variantPattern}(?:[\s:\u00a0])+(-?[0-9]+(?:[.,][0-9]+)?)` +
+          `(?:[\s\u00a0]+[-+−—–0-9.,%]+)?(?:[\s\u00a0]+[-+−—–0-9.,%]+)?`,
+        "i",
       );
-      if (!target) continue;
-
-      // Second column is "Rentabilidad"
-      const raw = cells[1];
-      const { number, normalized } = parsePerformanceNumber(raw);
-      if (number !== null) {
-        candidate[target.key] = number;
-        debug.matches.push({ key: target.key, label: cells[0], raw, normalized, number });
-        hits++;
+      const found = block.match(variantRegex);
+      if (found) {
+        captured = found[1];
+        usedVariant = variant;
+        break;
       }
     }
 
-    if (hits >= 5) {
-      debug.tableHit = table.slice(0, 200);
-      debug.rowsParsed = parsedRows.length;
-
-      // Fill missing for visibility
-      for (const { key, variants } of PERFORMANCE_TARGETS) {
-        if (!(key in candidate)) debug.missing.push({ key, variants });
-      }
-
-      Object.assign(values, candidate);
-      break outer;
+    if (!captured) {
+      debug.missing.push({ key, variants });
+      continue;
     }
+
+    const { number, normalized } = parsePerformanceNumber(captured);
+    debug.matches.push({ key, variant: usedVariant, raw: captured, normalized, number });
+    if (number === null) {
+      continue;
+    }
+    values[key] = number;
   }
 
   if (!Object.keys(values).length) {
-    for (const { key, variants } of PERFORMANCE_TARGETS) {
-      debug.missing.push({ key, variants });
-    }
+    debug.reason = "values_not_found";
+    logPerformanceDebug("No performance values extracted", debug);
+    return { values, debug };
   }
+
+  debug.reason = null;
+  logPerformanceDebug("Parsed performance metrics", {
+    values,
+    matches: debug.matches,
+    missing: debug.missing,
+    date: debug.date,
+    blockIndex: debug.blockIndex,
+  });
 
   return { values, debug };
 }
-
-
-
 
 function resolveRatioPeriod(label) {
   if (!label) return null;
@@ -471,9 +491,7 @@ async function fetchFund(entry) {
     fetchHtml(urlFees),
   ]);
 
-  // Prefer table-based extraction of only 'Rentabilidad' for 'Rentabilidades acumuladas (%)'
-let { values: performanceValues, debug: performanceDebug } = parseAccumulatedRentOnly(perfHtml);
-
+  const { values: performanceValues, debug: performanceDebug } = parsePerformance(perfHtml);
 
   return {
     name: entry.name,
