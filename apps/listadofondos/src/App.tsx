@@ -57,9 +57,9 @@ type TableSection = "funds" | "plans";
 
 const TEXTS = {
   es: {
-    title: "Listado y Comparativa de Fondos",
+    title: "Listado y Comparativa de Fondos y Planes de Pensiones",
     subtitle:
-      "Estos son mis fondos favoritos, que sigo e invierto en ellos desde hace años.",
+      "Estos son mis fondos favoritos y planes de pensiones, que sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
     refreshing: "Actualizando...",
     lastUpdated: "Última actualización",
@@ -89,7 +89,7 @@ const TEXTS = {
       "Mostrando datos de ejemplo por falta de conexión con la API. Las cifras pueden no coincidir con los últimos datos reales.",
   },
   en: {
-    title: "Fund List and Comparison",
+    title: "Fund and Pension Plan List and Comparison",
     subtitle:
       "Review performance, Sharpe ratios, volatility and TER for each fund or pension plan.",
     refresh: "Refresh data",
@@ -191,19 +191,140 @@ function renderStars(rating?: number | null) {
   return "★".repeat(normalized);
 }
 
+function getMetricNumber(raw?: MetricValue): number | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === "number") {
+    return Number.isFinite(raw) ? raw : null;
+  }
+  if (typeof raw === "string") {
+    const cleaned = raw.replace(/[%\s]/g, "").replace(/,/g, ".");
+    if (!cleaned) return null;
+    const parsed = Number.parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  if (typeof raw === "object") {
+    if ("value" in raw && raw.value !== undefined) {
+      return getMetricNumber(raw.value as MetricValue);
+    }
+    if ("label" in raw && raw.label !== undefined) {
+      return getMetricNumber(raw.label as MetricValue);
+    }
+  }
+  return null;
+}
+
+type ColumnStats = {
+  min: number | null;
+  max: number | null;
+  maxPositive: number | null;
+  minNegative: number | null;
+};
+
+type MetricAccessor = "performance" | "sharpe" | "volatility";
+
+type ColumnStatsMap<T extends string> = Record<T, ColumnStats>;
+
+function collectColumnStats<T extends string>(
+  rows: FundRow[],
+  accessor: MetricAccessor,
+  labels: readonly T[],
+): ColumnStatsMap<T> {
+  const stats = {} as ColumnStatsMap<T>;
+  labels.forEach((label) => {
+    stats[label] = { min: null, max: null, maxPositive: null, minNegative: null };
+  });
+
+  rows.forEach((row) => {
+    const record = row[accessor] as MetricRecord<T> | undefined;
+    if (!record) return;
+
+    labels.forEach((label) => {
+      const value = getMetricNumber(record[label]);
+      if (value === null) return;
+      const column = stats[label];
+      column.min = column.min === null ? value : Math.min(column.min, value);
+      column.max = column.max === null ? value : Math.max(column.max, value);
+      if (value > 0) {
+        column.maxPositive =
+          column.maxPositive === null ? value : Math.max(column.maxPositive, value);
+      } else if (value < 0) {
+        column.minNegative =
+          column.minNegative === null ? value : Math.min(column.minNegative, value);
+      }
+    });
+  });
+
+  return stats;
+}
+
+type RGB = { r: number; g: number; b: number };
+
+const COLOR_NEGATIVE: RGB = { r: 220, g: 38, b: 38 };
+const COLOR_POSITIVE: RGB = { r: 16, g: 185, b: 129 };
+const COLOR_NEUTRAL: RGB = { r: 226, g: 232, b: 240 };
+const COLOR_ALPHA = 0.82;
+const ZERO_TOLERANCE = 0.0001;
+
+function blendColors(start: RGB, end: RGB, ratio: number): RGB {
+  const clamped = Math.max(0, Math.min(1, ratio));
+  return {
+    r: Math.round(start.r + (end.r - start.r) * clamped),
+    g: Math.round(start.g + (end.g - start.g) * clamped),
+    b: Math.round(start.b + (end.b - start.b) * clamped),
+  };
+}
+
+function colorToRgba(color: RGB, alpha = COLOR_ALPHA) {
+  return `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+}
+
+function getBackgroundColor(value: number | null, stats: ColumnStats): string | undefined {
+  if (value === null || Number.isNaN(value)) return undefined;
+  if (Math.abs(value) <= ZERO_TOLERANCE) {
+    return colorToRgba(COLOR_NEUTRAL, 0.45);
+  }
+
+  if (value > 0) {
+    const { maxPositive } = stats;
+    if (!maxPositive || maxPositive <= 0) return colorToRgba(COLOR_NEUTRAL, 0.45);
+    const ratio = value / maxPositive;
+    const blended = blendColors(COLOR_NEUTRAL, COLOR_POSITIVE, ratio);
+    return colorToRgba(blended);
+  }
+
+  if (value < 0) {
+    const { minNegative } = stats;
+    if (!minNegative || minNegative >= 0) return colorToRgba(COLOR_NEUTRAL, 0.45);
+    const ratio = value / minNegative; // both negative, results between 0 and 1
+    const blended = blendColors(COLOR_NEUTRAL, COLOR_NEGATIVE, ratio);
+    return colorToRgba(blended);
+  }
+
+  return undefined;
+}
+
 function renderMetricCells<T extends string>(
   columns: readonly T[],
   values: MetricRecord<T>,
   keyPrefix: string,
+  stats?: ColumnStatsMap<T>,
 ) {
-  return columns.map((label) => (
-    <td
-      key={`${keyPrefix}-${label}`}
-      className="px-1.5 py-2 text-sm font-semibold text-gray-700 text-center"
-    >
-      {formatValue(values[label])}
-    </td>
-  ));
+  return columns.map((label) => {
+    const numericValue = getMetricNumber(values[label]);
+    const columnStats = stats?.[label];
+    const background = columnStats
+      ? getBackgroundColor(numericValue, columnStats)
+      : undefined;
+    return (
+      <td
+        key={`${keyPrefix}-${label}`}
+        className="px-1.5 py-2 text-sm font-semibold text-gray-700 text-center"
+        style={background ? { backgroundColor: background } : undefined}
+      >
+        {formatValue(values[label])}
+      </td>
+    );
+  });
 }
 
 function getMorningstarUrl(id?: string, lang: Lang = "es") {
@@ -287,6 +408,19 @@ function Section({
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
 
+  const performanceStats = useMemo(
+    () => collectColumnStats(data, "performance", PERFORMANCE_LABELS),
+    [data],
+  );
+  const sharpeStats = useMemo(
+    () => collectColumnStats(data, "sharpe", RATIO_LABELS),
+    [data],
+  );
+  const volatilityStats = useMemo(
+    () => collectColumnStats(data, "volatility", RATIO_LABELS),
+    [data],
+  );
+
   const handleToggleTooltip = (id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
   };
@@ -369,6 +503,10 @@ function Section({
                 const tooltipOpen = openTooltipId === tooltipId;
                 const categoryDisplay = categoryValue !== "-" ? categoryValue : texts.noData;
                 const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
+                const tooltipLabel =
+                  categoryDisplay && categoryDisplay !== texts.noData
+                    ? `${row.name} · ${categoryDisplay}`
+                    : row.name;
                 return (
                   <tr key={tooltipId} className="align-top">
                     <td className="px-3 py-2 bg-white/95 backdrop-blur">
@@ -378,11 +516,10 @@ function Section({
                           target="_blank"
                           rel="noreferrer"
                           className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
+                          title={row.name}
                         >
-                          {row.name}
-                        </a>
-                        {(stars || badges.length > 0) && (
-                          <div className="flex flex-wrap items-center gap-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span>{row.name}</span>
                             {stars ? (
                               <span
                                 className="text-xs font-semibold text-amber-500 leading-none"
@@ -391,50 +528,52 @@ function Section({
                                 {stars}
                               </span>
                             ) : null}
-                            {badges.length > 0 ? (
-                              <div
-                                className="relative group"
-                                onMouseLeave={() => handleCloseTooltip(tooltipId)}
+                          </span>
+                        </a>
+                        {badges.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1">
+                            <div
+                              className="relative group"
+                              onMouseLeave={() => handleCloseTooltip(tooltipId)}
+                            >
+                              <button
+                                type="button"
+                                className="inline-flex flex-wrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
+                                onClick={() => handleToggleTooltip(tooltipId)}
+                                onBlur={() => handleCloseTooltip(tooltipId)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Escape") {
+                                    event.stopPropagation();
+                                    handleCloseTooltip(tooltipId);
+                                  }
+                                }}
+                                aria-haspopup="true"
+                                aria-expanded={tooltipOpen}
+                                aria-label={`${row.name}: ${categoryDisplay}`}
+                                title={tooltipLabel}
                               >
-                                <button
-                                  type="button"
-                                  className="inline-flex flex-wrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
-                                  onClick={() => handleToggleTooltip(tooltipId)}
-                                  onBlur={() => handleCloseTooltip(tooltipId)}
-                                  onKeyDown={(event) => {
-                                    if (event.key === "Escape") {
-                                      event.stopPropagation();
-                                      handleCloseTooltip(tooltipId);
-                                    }
-                                  }}
-                                  aria-haspopup="true"
-                                  aria-expanded={tooltipOpen}
-                                  aria-label={`${texts.category}: ${categoryDisplay}`}
-                                  title={categoryDisplay}
-                                >
-                                  {badges.map((badge) => (
-                                    <span
-                                      key={`${rowKey}-${badge.text}`}
-                                      className={`text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
-                                        BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
-                                      }`}
-                                    >
-                                      {badge.text}
-                                    </span>
-                                  ))}
-                                </button>
-                                <div
-                                  className={`pointer-events-none absolute left-0 top-full z-20 mt-1 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
-                                    tooltipOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                                  }`}
-                                  role="tooltip"
-                                >
-                                  {categoryDisplay}
-                                </div>
+                                {badges.map((badge) => (
+                                  <span
+                                    key={`${rowKey}-${badge.text}`}
+                                    className={`text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
+                                      BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
+                                    }`}
+                                  >
+                                    {badge.text}
+                                  </span>
+                                ))}
+                              </button>
+                              <div
+                                className={`pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
+                                  tooltipOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                }`}
+                                role="tooltip"
+                              >
+                                {tooltipLabel}
                               </div>
-                            ) : null}
+                            </div>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
@@ -443,9 +582,19 @@ function Section({
                     <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center">
                       {formatValue(row.ter)}
                     </td>
-                    {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
-                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe")}
-                    {renderMetricCells(RATIO_LABELS, row.volatility, "vol")}
+                    {renderMetricCells(
+                      PERFORMANCE_LABELS,
+                      row.performance,
+                      "perf",
+                      performanceStats,
+                    )}
+                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe", sharpeStats)}
+                    {renderMetricCells(
+                      RATIO_LABELS,
+                      row.volatility,
+                      "vol",
+                      volatilityStats,
+                    )}
                     <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600">
                       {formatValue(row.comment) || texts.commentPlaceholder}
                     </td>
