@@ -192,14 +192,14 @@ function Section({
 }) {
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
   return (
-    <section className="mt-12">
+    <section className="mt-10 sm:mt-12">
       <div className="mb-6 space-y-1">
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">{title}</h2>
         {texts.sectionDescription ? (
           <p className="text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
         ) : null}
       </div>
-      <div className="overflow-x-auto">
+      <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
         <table className="min-w-full border-separate border-spacing-y-1 text-sm text-gray-800">
           <thead>
             <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
@@ -209,10 +209,10 @@ function Section({
               <th rowSpan={2} className="px-3 py-2 whitespace-nowrap bg-white/70">
                 {texts.isin}
               </th>
-              <th rowSpan={2} className="px-3 py-2 min-w-[180px] bg-white/70">
+              <th rowSpan={2} className="px-2 py-2 min-w-[150px] bg-white/70">
                 {texts.category}
               </th>
-              <th rowSpan={2} className="px-3 py-2 whitespace-nowrap bg-white/70">
+              <th rowSpan={2} className="px-2 py-2 whitespace-nowrap bg-white/70">
                 {texts.ter}
               </th>
               <th colSpan={PERFORMANCE_LABELS.length} className="px-3 py-2 bg-white/70 text-center">
@@ -264,13 +264,7 @@ function Section({
                 return (
                   <tr key={`${section}-${row.morningstarId}`} className="align-top">
                     <td className="px-3 py-2 bg-white/95 backdrop-blur">
-                      <div
-                        className={
-                          stars
-                            ? "grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-1"
-                            : "flex flex-col items-start gap-1"
-                        }
-                      >
+                      <div className="flex flex-col items-start gap-1">
                         <a
                           href={row.url}
                           target="_blank"
@@ -292,8 +286,8 @@ function Section({
                     <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
                       {formatValue(row.isin)}
                     </td>
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
+                    <td className="px-2 py-2 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
+                    <td className="px-2 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
                       {formatValue(row.ter)}
                     </td>
                     {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
@@ -364,8 +358,8 @@ export default function App() {
       `}</style>
       <div className="landing-bg" aria-hidden="true" />
 
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="sticky top-0 z-10 bg-white/85 backdrop-blur border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <a
               href="/"
@@ -379,10 +373,10 @@ export default function App() {
               <p className="mt-1 text-sm md:text-base text-gray-700 max-w-3xl">{texts.subtitle}</p>
             </div>
           </div>
-          <div className="flex flex-col items-stretch md:items-end gap-2">
-            <div className="flex flex-wrap items-center justify-end gap-3">
+          <div className="flex flex-col items-stretch md:items-end gap-2 sm:gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
               <div
-                className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1"
+                className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white/90 p-1 shadow-sm"
                 role="radiogroup"
                 aria-label="Language"
               >
@@ -415,7 +409,7 @@ export default function App() {
                 type="button"
                 onClick={onRefresh}
                 disabled={refreshing}
-                className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto w-full"
               >
                 {refreshing ? texts.refreshing : texts.refresh}
               </button>
@@ -432,7 +426,7 @@ export default function App() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto p-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 space-y-6">
         {status === "loading" && (
           <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-gray-600 shadow-sm backdrop-blur">
             {texts.loading}
