@@ -243,7 +243,13 @@ function Section({
                 return (
                   <tr key={`${section}-${row.morningstarId}`} className="align-top">
                     <td className="px-4 py-2.5 bg-white/95 backdrop-blur">
-                      <div className="flex flex-col items-start gap-1">
+                      <div
+                        className={
+                          stars
+                            ? "grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-1"
+                            : "flex flex-col items-start gap-1"
+                        }
+                      >
                         <a
                           href={row.url}
                           target="_blank"
