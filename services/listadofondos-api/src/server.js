@@ -527,6 +527,37 @@ async function fetchHtml(url) {
   return await response.text();
 }
 
+function parseMorningstarRating(html) {
+  if (!html) return null;
+
+  const ratingBlockMatch = html.match(
+    /Rating\s+Morningstar[\s\S]{0,400}?<img[^>]*class\s*=\s*"[^"]*starsImg[^"]*"[^>]*>/i,
+  );
+  const targetHtml = ratingBlockMatch ? ratingBlockMatch[0] : html;
+
+  const altMatch = targetHtml.match(
+    /class\s*=\s*"[^"]*starsImg[^"]*"[^>]*alt\s*=\s*"([^"]+)"/i,
+  );
+  const altNumber = altMatch?.[1]?.match(/(\d+)/)?.[1];
+
+  let rating = altNumber ? Number.parseInt(altNumber, 10) : null;
+
+  if (!rating || Number.isNaN(rating)) {
+    const srcMatch = targetHtml.match(
+      /class\s*=\s*"[^"]*starsImg[^"]*"[^>]*src\s*=\s*"[^"']*?([0-9])stars\.[^"]*"/i,
+    );
+    const srcNumber = srcMatch?.[1];
+    if (srcNumber) {
+      rating = Number.parseInt(srcNumber, 10);
+    }
+  }
+
+  if (rating === null || Number.isNaN(rating)) return null;
+  if (!Number.isFinite(rating)) return null;
+
+  return Math.max(0, Math.min(5, rating));
+}
+
 function isSameDay(isoA, isoB) {
   if (!isoA || !isoB) return false;
   const a = new Date(isoA);
@@ -625,6 +656,7 @@ async function fetchFund(entry) {
     sharpe: parseRatio(statsHtml, ["sharpe"]),
     volatility: parseRatio(statsHtml, ["volat", "volatil", "volat.", "desv", "desviacion"]),
     ter: parseTer(feesHtml),
+    morningstarRating: parseMorningstarRating(feesHtml),
   };
 }
 
@@ -649,6 +681,7 @@ async function buildPayload() {
           sharpe: {},
           volatility: {},
           ter: "-",
+          morningstarRating: null,
         });
       }
     }
