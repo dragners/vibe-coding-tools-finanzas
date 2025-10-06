@@ -19,12 +19,12 @@ funds:
   category: ''
   morningstarId: ''
   comment: Pendiente, nuevo fondo Julio 25 Luxemburgo
-- name: Cobas International P Acc EUR
+- name: Cobas International P (Acc)
   isin: LU1598719752
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000YU4F
   comment: Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional
-- name: Cobas Selection P Acc EUR
+- name: Cobas Selection P (Acc)
   isin: LU1372006947
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000YXEW
@@ -39,7 +39,7 @@ funds:
   category: Global Small Equity
   morningstarId: F000016XFO
   comment: Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record
-- name: GQG Partners Global Equity A EUR Acc
+- name: GQG Partners Global Equity A (Acc)
   isin: IE00BH481053
   category: Global Large-Cap Growth Equity
   morningstarId: F000011K3W
@@ -54,19 +54,19 @@ funds:
   category: EUR Flexible Allocation - Global
   morningstarId: F00001B0AP
   comment: ''
-- name: Fundsmith Equity T EUR Inc
+- name: Fundsmith Equity T 
   isin: LU0690375422
   category: Global Large-Cap Growth Equity
   morningstarId: F00000OHVX
   comment: ''
-- name: JPM Euroland Dynamic D perf (acc) EUR
+- name: JPM Euroland Dynamic D  (Acc)
   isin: LU0661986348
-  category: Eurozone Large-Cap Equity
+  category: Europe Large-Cap Equity
   morningstarId: F00000MZB1
   comment: No disponible MyInvestor
 - name: Alken European Opportunities R
   isin: LU0235308482
-  category: RV Europa Cap. Mediana
+  category: Europe Flex-Cap Equity
   morningstarId: F0GBR06MIL
   comment: Nicolas Walewski
 - name: Alken Small Cap Europe A
@@ -74,48 +74,47 @@ funds:
   category: Europe Small-Cap Equity
   morningstarId: F00000Q3YK
   comment: Nicolas Walewski
-- name: Fidelity Global Technology A-Acc-EUR
+- name: Fidelity Global Technology (Acc)
   isin: LU1213836080
   category: Sector Equity Technology
   morningstarId: F00000VKNA
   comment: ''
-- name: Fidelity Global Dividend A-Acc-EUR
+- name: Fidelity Global Dividend (Acc)
   isin: LU1261431768
   category: Global Equity Income
   morningstarId: F00000W42B
-  comment: ''
-- name: Heptagon Kopernik Glb AllCp Eq AE € Acc
+  comment: Empresas de Dividendos - Tambien existe en distribución 
+- name: Heptagon Kopernik Glb AllCp (Acc)
   isin: IE00BH6XSF26
   category: Global Flex-Cap Equity
   morningstarId: F00000YZS6
   comment: David B. Iben
-- name: Capital Group New Pers (LUX) Bh-EUR
+- name: Capital Group New Pers 
   isin: LU1295552621
   category: Global Equity
   morningstarId: F00000WDSD
   comment: ''
-- name: Pictet-China Index P EUR
+- name: Pictet-China Index P 
   isin: LU0625737910
   category: China Equity
   morningstarId: F00000MO6Y
   comment: ''
-  indexed: true
-- name: Jupiter India Select L EUR Acc
+- name: Jupiter India Select L (Acc)
   isin: LU0329070915
   category: India Equity
   morningstarId: F00000MHIV
   comment: Avinash Vazirani, desde 2008
-- name: Robeco Indian Equities D €
+- name: Robeco Indian Equities D 
   isin: LU0491217419
   category: India Equity
   morningstarId: F00000JQCY
   comment: ESG - Equipo de gestores
-- name: Robeco BP Global Premium Eqs D EUR
+- name: Robeco BP Global Premium Eqs D 
   isin: LU0203975437
   category: Global Large-Cap Value Equity
   morningstarId: F0GBR05VCE
   comment: ESG - Equipo de gestores
-- name: Robeco Circular Economy D € Cap
+- name: Robeco Circular Economy D 
   isin: LU2092758726
   category: Sector Equity Ecology (ESG)
   morningstarId: F000014SSQ
@@ -125,47 +124,42 @@ funds:
   category: Global Large-Cap Blend Equity
   morningstarId: F00001QFKV
   comment: No disponible MyInvestor
-  indexed: true
-- name: Vanguard Glb Stk Idx (Acc)
+Activ- name: Vanguard Glb Stk Idx (Acc)
   isin: IE00B03HD191
   category: Global Large-Cap Blend Equity
   morningstarId: F0GBR052TN
-  comment: MSCI World - Acumulación
-  indexed: true
+  comment: MSCI World - Acumulación 
 - name: Vanguard Glb Small-Cp Idx (Acc)
   isin: IE00B42W4L06
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000PA9N
-  comment: MSCI Small Cap - Acumulación
-  indexed: true
-- name: Vanguard Em Mkts Stk Idx (Acc)
+  comment: MSCI Small Cap - Acumulación 
+- name: Vanguard Em Mkts Stk Idx (Acc) 
   isin: IE0031786696
   category: Global Emerging Markets Equity
   morningstarId: F00000T1HU
-  comment: MSCI Emerging Markets - Acumulación
-  indexed: true
-- name: Vanguard Global Bd Idx EUR H Acc
+  comment: MSCI Emerging Markets - Acumulación 
+- name: Vanguard Global Bd Idx H (Acc)
   isin: IE00B18GC888
-  category: Global Diversified Bond - EUR Hedged
+  category: Global Diversified Bond (Hedged)
   morningstarId: F00000T1HT
-  comment: Cubierto a Euro lleva un porcentage en deuda corporativa
-  indexed: true
-- name: AXAWF Euro Credit Total Ret A Cap EUR
+  comment: Cubierto a Euro lleva un porcentage en deuda corporativa 
+- name: AXAWF Euro Credit Total Ret A
   isin: LU1164219682
   category: EUR Flexible Bond
   morningstarId: F00000VPP7
   comment: ''
-- name: DNCA Invest Alpha Bonds B EUR
+- name: DNCA Invest Alpha Bonds B 
   isin: LU1694789535
   category: Global Flexible Bond
   morningstarId: F00000ZY7M
   comment: ''
-- name: Lazard Emerging Markets Eq C Acc EUR
+- name: Lazard Emerging Markets Eq C (Acc)
   isin: IE00BYWPGP72
   category: Global Emerging Markets Equity
   morningstarId: F00000ZYZI
   comment: No disponible MyInv - https://x.com/Fondos_A_Fondo/status/1950275153964724251
-- name: Incometric Nartex Equity R Cap EUR Acc
+- name: Incometric Nartex Equity R (Acc)
   isin: LU2357235576
   category: Global Large-Cap Growth Equity
   morningstarId: F00001DB42
@@ -176,19 +170,16 @@ plans:
   category: Global Large-Cap Blend Equity
   morningstarId: F000016CB6
   comment: ''
-  indexed: true
 - name: Indexa Más Rentabilidad Acciones PP
   isin: N5138
   category: Global Large-Cap Blend Equity
   morningstarId: F00000Y5QI
   comment: Accesible desde MyInvestor
-  indexed: true
 - name: Finanbest Eficiente Bolsa Global PP
   isin: N5270
   category: Global Large-Cap Blend Equity
   morningstarId: F00001278R
   comment: ''
-  indexed: true
 - name: Horos Internacional PP
   isin: N5263
   category: Global Small/Mid-Cap Equity
