@@ -99,6 +99,7 @@ funds:
   category: China Equity
   morningstarId: F00000MO6Y
   comment: ''
+  indexed: true
 - name: Jupiter India Select L EUR Acc
   isin: LU0329070915
   category: India Equity
@@ -124,26 +125,31 @@ funds:
   category: Global Large-Cap Blend Equity
   morningstarId: F00001QFKV
   comment: No disponible MyInvestor
+  indexed: true
 - name: Vanguard Glb Stk Idx (Acc)
   isin: IE00B03HD191
   category: Global Large-Cap Blend Equity
   morningstarId: F0GBR052TN
-  comment: MSCI World - Acumulación 
+  comment: MSCI World - Acumulación
+  indexed: true
 - name: Vanguard Glb Small-Cp Idx (Acc)
   isin: IE00B42W4L06
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000PA9N
-  comment: MSCI Small Cap - Acumulación 
-- name: Vanguard Em Mkts Stk Idx (Acc) 
+  comment: MSCI Small Cap - Acumulación
+  indexed: true
+- name: Vanguard Em Mkts Stk Idx (Acc)
   isin: IE0031786696
   category: Global Emerging Markets Equity
   morningstarId: F00000T1HU
-  comment: MSCI Emerging Markets - Acumulación 
+  comment: MSCI Emerging Markets - Acumulación
+  indexed: true
 - name: Vanguard Global Bd Idx EUR H Acc
   isin: IE00B18GC888
   category: Global Diversified Bond - EUR Hedged
   morningstarId: F00000T1HT
-  comment: Cubierto a Euro lleva un porcentage en deuda corporativa 
+  comment: Cubierto a Euro lleva un porcentage en deuda corporativa
+  indexed: true
 - name: AXAWF Euro Credit Total Ret A Cap EUR
   isin: LU1164219682
   category: EUR Flexible Bond
@@ -170,16 +176,19 @@ plans:
   category: Global Large-Cap Blend Equity
   morningstarId: F000016CB6
   comment: ''
+  indexed: true
 - name: Indexa Más Rentabilidad Acciones PP
   isin: N5138
   category: Global Large-Cap Blend Equity
   morningstarId: F00000Y5QI
   comment: Accesible desde MyInvestor
+  indexed: true
 - name: Finanbest Eficiente Bolsa Global PP
   isin: N5270
   category: Global Large-Cap Blend Equity
   morningstarId: F00001278R
   comment: ''
+  indexed: true
 - name: Horos Internacional PP
   isin: N5263
   category: Global Small/Mid-Cap Equity

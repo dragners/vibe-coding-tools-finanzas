@@ -35,6 +35,7 @@ type FundRow = {
   morningstarRating?: number | null;
   comment: string;
   url: string;
+  indexed?: boolean;
   performance: MetricRecord<PerformanceKey>;
   sharpe: MetricRecord<RatioPeriod>;
   volatility: MetricRecord<RatioPeriod>;
@@ -191,15 +192,17 @@ function getMorningstarUrl(id?: string, lang: Lang = "es") {
 const CATEGORY_SECONDARY_LABELS = ["Global", "Europe", "India", "ESG", "China", "Tech"] as const;
 
 const BADGE_STYLES = {
-  equity: "bg-sky-100/80 text-sky-700 border border-sky-200",
+  equity: "bg-rose-100/80 text-rose-700 border border-rose-200",
   bond: "bg-emerald-100/80 text-emerald-700 border border-emerald-200",
   global: "bg-violet-100/80 text-violet-700 border border-violet-200",
-  europe: "bg-indigo-100/80 text-indigo-700 border border-indigo-200",
-  india: "bg-orange-100/80 text-orange-700 border border-orange-200",
-  esg: "bg-emerald-100/70 text-emerald-700 border border-emerald-200",
-  china: "bg-rose-100/80 text-rose-700 border border-rose-200",
-  tech: "bg-sky-100/70 text-sky-700 border border-sky-200",
-  default: "bg-slate-100/80 text-slate-600 border border-slate-200",
+  europe: "bg-blue-100/80 text-blue-700 border border-blue-200",
+  india: "bg-amber-100/80 text-amber-700 border border-amber-200",
+  esg: "bg-teal-100/80 text-teal-700 border border-teal-200",
+  china: "bg-orange-100/80 text-orange-700 border border-orange-200",
+  tech: "bg-sky-100/80 text-sky-700 border border-sky-200",
+  indexed: "bg-cyan-100/80 text-cyan-700 border border-cyan-200",
+  active: "bg-slate-100/80 text-slate-700 border border-slate-200",
+  default: "bg-zinc-100/80 text-zinc-700 border border-zinc-200",
 } as const;
 
 type BadgeVariant = keyof typeof BADGE_STYLES;
@@ -218,7 +221,7 @@ const SECONDARY_BADGE_VARIANTS: Record<(typeof CATEGORY_SECONDARY_LABELS)[number
   Tech: "tech",
 };
 
-function getCategoryLabels(category: string, lang: Lang): CategoryBadge[] {
+function getCategoryBadges(category: string, lang: Lang, indexed?: boolean): CategoryBadge[] {
   const labels: CategoryBadge[] = [];
   const normalized = category.toLowerCase();
   if (normalized.includes("equity")) {
@@ -237,6 +240,11 @@ function getCategoryLabels(category: string, lang: Lang): CategoryBadge[] {
     });
   }
 
+  const strategyBadge: CategoryBadge = indexed
+    ? { text: "Index", variant: "indexed" }
+    : { text: lang === "es" ? "Activa" : "Active", variant: "active" };
+  labels.push(strategyBadge);
+
   return labels;
 }
 
@@ -252,6 +260,16 @@ function Section({
   lang: Lang;
 }) {
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
+  const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+
+  const handleToggleTooltip = (id: string) => {
+    setOpenTooltipId((prev) => (prev === id ? null : id));
+  };
+
+  const handleCloseTooltip = (id: string) => {
+    setOpenTooltipId((prev) => (prev === id ? null : prev));
+  };
+
   return (
     <section className="mt-10 sm:mt-12">
       <div className="mb-6 space-y-1">
@@ -261,7 +279,7 @@ function Section({
         ) : null}
       </div>
       <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
-        <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-1 text-sm text-gray-800">
+        <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
           <thead>
             <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
               <th rowSpan={2} className="px-3 py-2 min-w-[220px] bg-white/70 rounded-tl-2xl">
@@ -269,9 +287,6 @@ function Section({
               </th>
               <th rowSpan={2} className="px-2.5 py-2 whitespace-nowrap bg-white/70">
                 {texts.isin}
-              </th>
-              <th rowSpan={2} className="px-2 py-2 min-w-[150px] bg-white/70">
-                {texts.category}
               </th>
               <th rowSpan={2} className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center">
                 {texts.ter}
@@ -312,7 +327,7 @@ function Section({
               <tr>
                 <td
                   colSpan={
-                    3 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2
+                    2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2
                   }
                   className="px-3 py-6 text-center text-sm font-medium text-gray-500 bg-white/90 rounded-b-2xl"
                 >
@@ -323,11 +338,14 @@ function Section({
               data.map((row) => {
                 const stars = renderStars(row.morningstarRating);
                 const categoryValue = formatValue(row.category);
-                const badges =
-                  categoryValue !== "-" ? getCategoryLabels(categoryValue, lang) : [];
+                const rowKey = row.morningstarId || row.isin || row.name;
+                const badges = getCategoryBadges(categoryValue, lang, row.indexed);
+                const tooltipId = `${section}-${rowKey}`;
+                const tooltipOpen = openTooltipId === tooltipId;
+                const categoryDisplay = categoryValue !== "-" ? categoryValue : texts.noData;
                 const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
                 return (
-                  <tr key={`${section}-${row.morningstarId}`} className="align-top">
+                  <tr key={tooltipId} className="align-top">
                     <td className="px-3 py-2 bg-white/95 backdrop-blur">
                       <div className="flex flex-col items-start gap-1">
                         <a
@@ -348,16 +366,48 @@ function Section({
                                 {stars}
                               </span>
                             ) : null}
-                            {badges.map((badge) => (
-                              <span
-                                key={`${row.morningstarId}-${badge.text}`}
-                                className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 border ${
-                                  BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
-                                }`}
+                            {badges.length > 0 ? (
+                              <div
+                                className="relative group"
+                                onMouseLeave={() => handleCloseTooltip(tooltipId)}
                               >
-                                {badge.text}
-                              </span>
-                            ))}
+                                <button
+                                  type="button"
+                                  className="inline-flex flex-wrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
+                                  onClick={() => handleToggleTooltip(tooltipId)}
+                                  onBlur={() => handleCloseTooltip(tooltipId)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Escape") {
+                                      event.stopPropagation();
+                                      handleCloseTooltip(tooltipId);
+                                    }
+                                  }}
+                                  aria-haspopup="true"
+                                  aria-expanded={tooltipOpen}
+                                  aria-label={`${texts.category}: ${categoryDisplay}`}
+                                  title={categoryDisplay}
+                                >
+                                  {badges.map((badge) => (
+                                    <span
+                                      key={`${rowKey}-${badge.text}`}
+                                      className={`text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
+                                        BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
+                                      }`}
+                                    >
+                                      {badge.text}
+                                    </span>
+                                  ))}
+                                </button>
+                                <div
+                                  className={`pointer-events-none absolute left-0 top-full z-20 mt-1 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
+                                    tooltipOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                  }`}
+                                  role="tooltip"
+                                >
+                                  {categoryDisplay}
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
                         )}
                       </div>
@@ -365,7 +415,6 @@ function Section({
                     <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
                       {formatValue(row.isin)}
                     </td>
-                    <td className="px-2 py-2 bg-white/95 backdrop-blur">{categoryValue}</td>
                     <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center">
                       {formatValue(row.ter)}
                     </td>
