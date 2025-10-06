@@ -3,25 +3,17 @@ funds:
   isin: ES0112611001
   category: Global Flex-Cap Equity
   morningstarId: F00000WI0D
-  comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001
-    a 2020
+  comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020
 - name: Azvalor Managers FI
   isin: ES0112602000
   category: Global Small/Mid-Cap Equity
   morningstarId: F000011HLY
-  comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001
-    a 2020
+  comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020
 - name: Hamco Global Value Fund R FI
   isin: ES0141116030
   category: Global Small/Mid-Cap Equity
   morningstarId: F000014ACV
-  comment: John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20,
-    Lo absorve la SICAV en LUx
-- name: HAMCO SICAV – Global Value Fund
-  isin: ''
-  category: ''
-  morningstarId: ''
-  comment: ''
+  comment: John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, Lo absorve la SICAV en Luxemburgo
 - name: HAMCO SICAV – Quality Fund
   isin: LU3035951048
   category: ''
@@ -36,20 +28,17 @@ funds:
   isin: LU1372006947
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000YXEW
-  comment: Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional
-    - Parames suele invetir en este fondo
+  comment: Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional. Parames suele invetir en este fondo
 - name: Horos Value Internacional FI
   isin: ES0146309002
   category: Global Small/Mid-Cap Equity
   morningstarId: F000010KY6
-  comment: Javier Ruiz Miguel Rodríguez y Alejandro Martín (ex Fondo Metagestión)
-    - ~12 años de resultados con +11,6% anual
+  comment: Javier Ruiz Miguel Rodríguez y Alejandro Martín (ex Fondo Metagestión). ~12 años de resultados con +11,6% anual
 - name: Sigma Internacional A FI
   isin: ES0175902008
   category: ''
   morningstarId: F000016XFO
-  comment: Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track
-    record
+  comment: Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record
 - name: GQG Partners Global Equity A EUR Acc
   isin: IE00BH481053
   category: Global Large-Cap Growth Equity
