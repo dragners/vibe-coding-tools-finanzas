@@ -1,0 +1,167 @@
+{
+  "lastUpdated": "2024-05-01T09:00:00.000Z",
+  "funds": [
+    {
+      "name": "Vanguard Global Stock Index Fund Investor EUR Acc",
+      "isin": "IE00B03HCZ61",
+      "category": "Renta Variable Global",
+      "morningstarId": "F0GBR04GZV",
+      "morningstarRating": 5,
+      "comment": "Indexado global con bajas comisiones.",
+      "url": "https://www.morningstar.es/es/funds/snapshot/snapshot.aspx?id=F0GBR04GZV",
+      "performance": {
+        "1D": "-0,12%",
+        "1W": "1,10%",
+        "1M": "2,45%",
+        "3M": "6,72%",
+        "6M": "11,30%",
+        "YTD": "9,84%",
+        "1Y": "14,21%",
+        "3Y Anual": "9,87%",
+        "5Y Anual": "10,35%",
+        "10Y Anual": "9,12%"
+      },
+      "sharpe": {
+        "1Y": "1,44",
+        "3Y": "0,94",
+        "5Y": "0,91"
+      },
+      "volatility": {
+        "1Y": "11,3",
+        "3Y": "13,9",
+        "5Y": "14,2"
+      },
+      "ter": "0,25%"
+    },
+    {
+      "name": "Amundi Index MSCI Emerging Markets AE-C",
+      "isin": "LU1681045370",
+      "category": "Renta Variable Emergente",
+      "morningstarId": "F00000W4RT",
+      "morningstarRating": 4,
+      "comment": "Exposición diversificada a emergentes.",
+      "url": "https://www.morningstar.es/es/funds/snapshot/snapshot.aspx?id=F00000W4RT",
+      "performance": {
+        "1D": "0,08%",
+        "1W": "1,62%",
+        "1M": "3,04%",
+        "3M": "4,55%",
+        "6M": "8,13%",
+        "YTD": "6,44%",
+        "1Y": "10,02%",
+        "3Y Anual": "1,90%",
+        "5Y Anual": "3,55%",
+        "10Y Anual": "4,10%"
+      },
+      "sharpe": {
+        "1Y": "0,81",
+        "3Y": "0,27",
+        "5Y": "0,34"
+      },
+      "volatility": {
+        "1Y": "13,8",
+        "3Y": "16,5",
+        "5Y": "17,1"
+      },
+      "ter": "0,20%"
+    },
+    {
+      "name": "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged",
+      "isin": "IE00BDBRDM35",
+      "category": "Renta Fija Global",
+      "morningstarId": "F00000ZQ9H",
+      "morningstarRating": 4,
+      "comment": "Cobertura a euros para renta fija global.",
+      "url": "https://www.morningstar.es/es/etf/snapshot/snapshot.aspx?id=0P00017I6O",
+      "performance": {
+        "1D": "0,03%",
+        "1W": "0,41%",
+        "1M": "1,06%",
+        "3M": "2,18%",
+        "6M": "3,95%",
+        "YTD": "2,74%",
+        "1Y": "5,12%",
+        "3Y Anual": "-0,42%",
+        "5Y Anual": "0,75%",
+        "10Y Anual": "2,11%"
+      },
+      "sharpe": {
+        "1Y": "0,67",
+        "3Y": "-0,11",
+        "5Y": "0,08"
+      },
+      "volatility": {
+        "1Y": "4,5",
+        "3Y": "5,3",
+        "5Y": "5,1"
+      },
+      "ter": "0,10%"
+    }
+  ],
+  "plans": [
+    {
+      "name": "Indexa Más Rentable 75 (ES) PP",
+      "isin": "ES0126021002",
+      "category": "Mixto Global",
+      "morningstarId": "F00000XJ6A",
+      "morningstarRating": 5,
+      "comment": "Plan automatizado orientado a largo plazo.",
+      "url": "https://www.morningstar.es/es/funds/snapshot/snapshot.aspx?id=F00000XJ6A",
+      "performance": {
+        "1D": "-0,05%",
+        "1W": "0,92%",
+        "1M": "2,11%",
+        "3M": "5,34%",
+        "6M": "9,02%",
+        "YTD": "7,85%",
+        "1Y": "12,63%",
+        "3Y Anual": "6,45%",
+        "5Y Anual": "7,28%",
+        "10Y Anual": "-"
+      },
+      "sharpe": {
+        "1Y": "1,24",
+        "3Y": "0,76",
+        "5Y": "0,82"
+      },
+      "volatility": {
+        "1Y": "8,9",
+        "3Y": "10,7",
+        "5Y": "10,4"
+      },
+      "ter": "0,65%"
+    },
+    {
+      "name": "Pension Caser Moderado",
+      "isin": "N5156",
+      "category": "Mixto Moderado",
+      "morningstarId": "F00000L37H",
+      "morningstarRating": 3,
+      "comment": "Estrategia conservadora para diversificación.",
+      "url": "https://www.morningstar.es/es/funds/snapshot/snapshot.aspx?id=F00000L37H",
+      "performance": {
+        "1D": "0,01%",
+        "1W": "0,35%",
+        "1M": "0,88%",
+        "3M": "2,04%",
+        "6M": "3,96%",
+        "YTD": "3,12%",
+        "1Y": "5,44%",
+        "3Y Anual": "1,92%",
+        "5Y Anual": "2,34%",
+        "10Y Anual": "3,01%"
+      },
+      "sharpe": {
+        "1Y": "0,61",
+        "3Y": "0,28",
+        "5Y": "0,32"
+      },
+      "volatility": {
+        "1Y": "4,3",
+        "3Y": "5,1",
+        "5Y": "5,0"
+      },
+      "ter": "1,10%"
+    }
+  ]
+}

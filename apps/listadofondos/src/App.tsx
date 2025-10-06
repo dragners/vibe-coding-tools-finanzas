@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./index.css";
+import fallbackData from "./fallback-data.json";
 
 type Lang = "es" | "en";
 
@@ -74,6 +75,8 @@ const TEXTS = {
     noData: "Sin datos",
     loading: "Cargando datos...",
     error: "No se han podido cargar los datos. Inténtalo de nuevo más tarde.",
+    fallbackNotice:
+      "Se muestran datos de ejemplo porque la API no está disponible en este momento.",
     fundsTitle: "Fondos de Inversión",
     plansTitle: "Planes de Pensiones",
     sectionDescription: "",
@@ -104,6 +107,7 @@ const TEXTS = {
     noData: "No data",
     loading: "Loading data...",
     error: "Data could not be loaded. Please try again later.",
+    fallbackNotice: "Showing sample data because the API is not available right now.",
     fundsTitle: "Mutual Funds",
     plansTitle: "Pension Plans",
     sectionDescription: "",
@@ -133,6 +137,11 @@ const PERFORMANCE_LABELS: readonly PerformanceKey[] = [
 const RATIO_LABELS: readonly RatioPeriod[] = ["1Y", "3Y", "5Y"];
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
+const FALLBACK_DATA: ApiPayload = fallbackData as ApiPayload;
+
+function cloneFallbackData(): ApiPayload {
+  return JSON.parse(JSON.stringify(FALLBACK_DATA));
+}
 
 function useTexts(lang: Lang) {
   return useMemo(() => TEXTS[lang], [lang]);
@@ -314,6 +323,16 @@ export default function App() {
   const [data, setData] = useState<ApiPayload | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usingFallback, setUsingFallback] = useState(false);
+  const fallbackAppliedRef = useRef(false);
+
+  const applyFallbackData = () => {
+    fallbackAppliedRef.current = true;
+    setUsingFallback(true);
+    setError(null);
+    setData(cloneFallbackData());
+    setStatus("ready");
+  };
 
   const fetchData = async (force = false) => {
     setStatus((prev) => (prev === "ready" ? prev : "loading"));
@@ -325,11 +344,25 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!/application\/json/i.test(contentType)) {
+        throw new Error(
+          contentType
+            ? `Unexpected response type: ${contentType}`
+            : "Missing content-type header",
+        );
+      }
       const payload: ApiPayload = await response.json();
       setData(payload);
       setStatus("ready");
+      setUsingFallback(false);
+      fallbackAppliedRef.current = false;
     } catch (err) {
       console.error(err);
+      if (!fallbackAppliedRef.current) {
+        applyFallbackData();
+        return;
+      }
       setError((err as Error).message);
       setStatus("error");
     }
@@ -436,6 +469,11 @@ export default function App() {
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
             {texts.error}
             {error ? ` (${error})` : null}
+          </div>
+        )}
+        {usingFallback && (
+          <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-800 shadow-sm">
+            {texts.fallbackNotice}
           </div>
         )}
 
