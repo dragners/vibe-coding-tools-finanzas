@@ -144,28 +144,40 @@ function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
 function renderRatingStars(rating?: number | string | null) {
   if (rating === null || rating === undefined) return null;
 
-  const value =
-    typeof rating === "string" && rating.trim()
-      ? Number.parseFloat(rating)
-      : typeof rating === "number"
-      ? rating
-      : null;
-
-  if (value === null || Number.isNaN(value) || value <= 0) return null;
-
-  const maxStars = 5;
-  const fullStars = Math.max(0, Math.min(maxStars, Math.floor(value)));
-  const hasHalfStar = value - fullStars >= 0.5 && fullStars < maxStars;
-
-  const stars = `${"★".repeat(fullStars)}${hasHalfStar ? "½" : ""}`;
-
-  if (!stars) return null;
-
-  return (
+  const renderSpan = (content: string) => (
     <span className="ml-2 text-xs font-semibold text-amber-500 whitespace-nowrap">
-      {stars}
+      {content}
     </span>
   );
+
+  if (typeof rating === "number") {
+    if (!Number.isFinite(rating) || rating <= 0) return null;
+
+    const maxStars = 5;
+    const fullStars = Math.max(0, Math.min(maxStars, Math.floor(rating)));
+    const hasHalfStar = rating - fullStars >= 0.5 && fullStars < maxStars;
+    const stars = `${"★".repeat(fullStars)}${hasHalfStar ? "½" : ""}`;
+
+    return stars ? renderSpan(stars) : null;
+  }
+
+  const value = rating.trim();
+  if (!value) return null;
+
+  if (/[★☆⭐]/u.test(value)) {
+    return renderSpan(value);
+  }
+
+  const parsed = Number.parseFloat(value.replace(",", "."));
+  if (!Number.isNaN(parsed) && parsed > 0) {
+    const maxStars = 5;
+    const fullStars = Math.max(0, Math.min(maxStars, Math.floor(parsed)));
+    const hasHalfStar = parsed - fullStars >= 0.5 && fullStars < maxStars;
+    const stars = `${"★".repeat(fullStars)}${hasHalfStar ? "½" : ""}`;
+    return stars ? renderSpan(stars) : null;
+  }
+
+  return null;
 }
 
 function renderMetricCells<T extends string>(
