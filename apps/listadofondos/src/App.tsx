@@ -6,8 +6,6 @@ type Lang = "es" | "en";
 type RatioPeriod = "1Y" | "3Y" | "5Y";
 
 type PerformanceKey =
-  | "1D"
-  | "1W"
   | "1M"
   | "3M"
   | "6M"
@@ -118,8 +116,6 @@ const TEXTS = {
 } as const;
 
 const PERFORMANCE_LABELS: readonly PerformanceKey[] = [
-  "1D",
-  "1W",
   "1M",
   "3M",
   "6M",
@@ -175,20 +171,54 @@ function renderMetricCells<T extends string>(
   keyPrefix: string,
 ) {
   return columns.map((label) => (
-    <td key={`${keyPrefix}-${label}`} className="px-2 py-2 text-sm font-medium text-gray-700">
+    <td
+      key={`${keyPrefix}-${label}`}
+      className="px-1.5 py-2 text-sm font-semibold text-gray-700 text-center"
+    >
       {formatValue(values[label])}
     </td>
   ));
+}
+
+function getMorningstarUrl(id?: string, lang: Lang = "es") {
+  if (!id) return null;
+  const langId = lang === "es" ? "es-ES" : "en-EN";
+  return `https://lt.morningstar.com/xgnfa0k0aw/snapshot/snapshot.aspx?tab=0&Id=${encodeURIComponent(
+    id,
+  )}&ClientFund=0&BaseCurrencyId=EUR&CurrencyId=EUR&LanguageId=${langId}`;
+}
+
+const CATEGORY_SECONDARY_LABELS = ["Global", "Europe", "India", "ESG", "China", "Tech"] as const;
+
+function getCategoryLabels(category: string, lang: Lang) {
+  const labels: string[] = [];
+  const normalized = category.toLowerCase();
+  if (normalized.includes("equity")) {
+    labels.push(lang === "es" ? "Acciones" : "Equity");
+  } else if (normalized.includes("bond")) {
+    labels.push(lang === "es" ? "Bonos" : "Bonds");
+  }
+
+  const secondary = CATEGORY_SECONDARY_LABELS.find((label) =>
+    normalized.includes(label.toLowerCase()),
+  );
+  if (secondary) {
+    labels.push(secondary);
+  }
+
+  return labels;
 }
 
 function Section({
   section,
   data,
   texts,
+  lang,
 }: {
   section: TableSection;
   data: FundRow[];
   texts: Record<TextKey, string>;
+  lang: Lang;
 }) {
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
   return (
@@ -200,28 +230,28 @@ function Section({
         ) : null}
       </div>
       <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
-        <table className="min-w-full border-separate border-spacing-y-1 text-sm text-gray-800">
+        <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-1 text-sm text-gray-800">
           <thead>
             <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
               <th rowSpan={2} className="px-3 py-2 min-w-[220px] bg-white/70 rounded-tl-2xl">
                 {texts.name}
               </th>
-              <th rowSpan={2} className="px-3 py-2 whitespace-nowrap bg-white/70">
+              <th rowSpan={2} className="px-2.5 py-2 whitespace-nowrap bg-white/70">
                 {texts.isin}
               </th>
               <th rowSpan={2} className="px-2 py-2 min-w-[150px] bg-white/70">
                 {texts.category}
               </th>
-              <th rowSpan={2} className="px-2 py-2 whitespace-nowrap bg-white/70">
+              <th rowSpan={2} className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center">
                 {texts.ter}
               </th>
-              <th colSpan={PERFORMANCE_LABELS.length} className="px-3 py-2 bg-white/70 text-center">
+              <th colSpan={PERFORMANCE_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
                 {texts.performance}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-3 py-2 bg-white/70 text-center">
+              <th colSpan={RATIO_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
                 {texts.sharpe}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-3 py-2 bg-white/70 text-center">
+              <th colSpan={RATIO_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
                 {texts.volatility}
               </th>
               <th rowSpan={2} className="px-3 py-2 min-w-[200px] bg-white/70 rounded-tr-2xl">
@@ -230,17 +260,17 @@ function Section({
             </tr>
             <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
               {PERFORMANCE_LABELS.map((label) => (
-                <th key={`perf-${label}`} className="px-2 py-1.5 bg-white/70 text-center">
+                <th key={`perf-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
                   {displayMetricLabel(label)}
                 </th>
               ))}
               {RATIO_LABELS.map((label) => (
-                <th key={`sharpe-${label}`} className="px-2 py-1.5 bg-white/70 text-center">
+                <th key={`sharpe-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
                   {displayMetricLabel(label)}
                 </th>
               ))}
               {RATIO_LABELS.map((label) => (
-                <th key={`vol-${label}`} className="px-2 py-1.5 bg-white/70 text-center">
+                <th key={`vol-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
                   {displayMetricLabel(label)}
                 </th>
               ))}
@@ -261,33 +291,48 @@ function Section({
             ) : (
               data.map((row) => {
                 const stars = renderStars(row.morningstarRating);
+                const categoryValue = formatValue(row.category);
+                const labels = categoryValue !== "-" ? getCategoryLabels(categoryValue, lang) : [];
+                const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
                 return (
                   <tr key={`${section}-${row.morningstarId}`} className="align-top">
                     <td className="px-3 py-2 bg-white/95 backdrop-blur">
                       <div className="flex flex-col items-start gap-1">
                         <a
-                          href={row.url}
+                          href={link}
                           target="_blank"
                           rel="noreferrer"
                           className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
                         >
                           {row.name}
                         </a>
-                        {stars ? (
-                          <span
-                            className="text-xs font-semibold text-amber-500 leading-none"
-                            aria-label={`${stars.length} estrellas Morningstar`}
-                          >
-                            {stars}
-                          </span>
-                        ) : null}
+                        {(stars || labels.length > 0) && (
+                          <div className="flex flex-wrap items-center gap-1">
+                            {stars ? (
+                              <span
+                                className="text-xs font-semibold text-amber-500 leading-none"
+                                aria-label={`${stars.length} estrellas Morningstar`}
+                              >
+                                {stars}
+                              </span>
+                            ) : null}
+                            {labels.map((label) => (
+                              <span
+                                key={`${row.morningstarId}-${label}`}
+                                className="text-[10px] uppercase tracking-wide rounded-full bg-gray-100 px-1.5 py-0.5 font-semibold text-gray-600"
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
                       {formatValue(row.isin)}
                     </td>
-                    <td className="px-2 py-2 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
-                    <td className="px-2 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
+                    <td className="px-2 py-2 bg-white/95 backdrop-blur">{categoryValue}</td>
+                    <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center">
                       {formatValue(row.ter)}
                     </td>
                     {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
@@ -441,8 +486,8 @@ export default function App() {
 
         {data && status === "ready" && (
           <div className="space-y-12 pb-12">
-            <Section section="funds" data={data.funds} texts={texts} />
-            <Section section="plans" data={data.plans} texts={texts} />
+            <Section section="funds" data={data.funds} texts={texts} lang={lang} />
+            <Section section="plans" data={data.plans} texts={texts} lang={lang} />
           </div>
         )}
 
