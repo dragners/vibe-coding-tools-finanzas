@@ -36,7 +36,7 @@ funds:
   comment: Javier Ruiz Miguel Rodríguez y Alejandro Martín (ex Fondo Metagestión). ~12 años de resultados con +11,6% anual
 - name: Sigma Internacional A FI
   isin: ES0175902008
-  category: ''
+  category: Global Small Equity
   morningstarId: F000016XFO
   comment: Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record
 - name: GQG Partners Global Equity A EUR Acc
@@ -48,7 +48,7 @@ funds:
   isin: ES0110407063
   category: Global Small/Mid-Cap Equity
   morningstarId: F0000107JH
-  comment: Andbank, lleva tb BTC y cosas así
+  comment: Andbank, lleva tambien BTC y otros activos alternativos
 - name: Avantage Fund A FI
   isin: ES0112231016
   category: EUR Flexible Allocation - Global
@@ -66,7 +66,7 @@ funds:
   comment: No disponible MyInvestor
 - name: Alken European Opportunities R
   isin: LU0235308482
-  category: ''
+  category: RV Europa Cap. Mediana
   morningstarId: F0GBR06MIL
   comment: Nicolas Walewski
 - name: Alken Small Cap Europe A
@@ -91,7 +91,7 @@ funds:
   comment: David B. Iben
 - name: Capital Group New Pers (LUX) Bh-EUR
   isin: LU1295552621
-  category: Other Equity
+  category: Global Equity
   morningstarId: F00000WDSD
   comment: ''
 - name: Pictet-China Index P EUR
@@ -116,7 +116,7 @@ funds:
   comment: ESG - Equipo de gestores
 - name: Robeco Circular Economy D € Cap
   isin: LU2092758726
-  category: Sector Equity Ecology
+  category: Sector Equity Ecology (ESG)
   morningstarId: F000014SSQ
   comment: ESG - Equipo de gestores
 - name: Indexa RV internacional FI
@@ -124,26 +124,26 @@ funds:
   category: Global Large-Cap Blend Equity
   morningstarId: F00001QFKV
   comment: No disponible MyInvestor
-- name: Vanguard Glb Stk Idx € Acc
+- name: Vanguard Glb Stk Idx (Acc)
   isin: IE00B03HD191
   category: Global Large-Cap Blend Equity
   morningstarId: F0GBR052TN
-  comment: MSCI World
-- name: Vanguard Glb Small-Cp Idx € Acc
+  comment: MSCI World - Acumulación 
+- name: Vanguard Glb Small-Cp Idx (Acc)
   isin: IE00B42W4L06
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000PA9N
-  comment: MSCI Small Cap
-- name: Vanguard Em Mkts Stk Idx € Acc
+  comment: MSCI Small Cap - Acumulación 
+- name: Vanguard Em Mkts Stk Idx (Acc) 
   isin: IE0031786696
   category: Global Emerging Markets Equity
   morningstarId: F00000T1HU
-  comment: MSCI EM
+  comment: MSCI Emerging Markets - Acumulación 
 - name: Vanguard Global Bd Idx EUR H Acc
   isin: IE00B18GC888
   category: Global Diversified Bond - EUR Hedged
   morningstarId: F00000T1HT
-  comment: ''
+  comment: Cubierto a Euro lleva un porcentage en deuda corporativa 
 - name: AXAWF Euro Credit Total Ret A Cap EUR
   isin: LU1164219682
   category: EUR Flexible Bond
@@ -156,42 +156,42 @@ funds:
   comment: ''
 - name: Lazard Emerging Markets Eq C Acc EUR
   isin: IE00BYWPGP72
-  category: ''
+  category: Global Emerging Markets Equity
   morningstarId: F00000ZYZI
   comment: No disponible MyInv - https://x.com/Fondos_A_Fondo/status/1950275153964724251
 - name: Incometric Nartex Equity R Cap EUR Acc
   isin: LU2357235576
-  category: ''
+  category: Global Large-Cap Growth Equity
   morningstarId: F00001DB42
   comment: ''
 plans:
 - name: Myinvestor Indexado Global PP
   isin: N5396
-  category: RVI GLOBAL
+  category: Global Large-Cap Blend Equity
   morningstarId: F000016CB6
   comment: ''
 - name: Indexa Más Rentabilidad Acciones PP
   isin: N5138
-  category: RVI GLOBAL
+  category: Global Large-Cap Blend Equity
   morningstarId: F00000Y5QI
-  comment: ''
+  comment: Accesible desde MyInvestor
 - name: Finanbest Eficiente Bolsa Global PP
   isin: N5270
-  category: RVI GLOBAL
+  category: Global Large-Cap Blend Equity
   morningstarId: F00001278R
   comment: ''
 - name: Horos Internacional PP
   isin: N5263
-  category: RVI GLOBAL
+  category: Global Small/Mid-Cap Equity
   morningstarId: F000010KY6
-  comment: ''
+  comment: Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional FI pero en PP
 - name: Azvalor Global Value PP
   isin: N5116
-  category: RVI GLOBAL
+  category: Global Small-Cap Equity
   morningstarId: F00000XL5T
-  comment: ''
+  comment: Álvaro Guzmán - Plan de pensiones pero similar a los fondos pero no sigue las mismas inversiones
 - name: Cobas Global PP
   isin: N5219
-  category: RVI GLOBAL
+  category: Global Small/Mid-Cap Equity
   morningstarId: F00000ZER6
-  comment: ''
+  comment: Francisco García Paramés 
