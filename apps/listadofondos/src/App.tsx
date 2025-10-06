@@ -518,17 +518,15 @@ function Section({
                           className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
                           title={row.name}
                         >
-                          <span className="flex flex-wrap items-center gap-2">
-                            <span>{row.name}</span>
-                            {stars ? (
-                              <span
-                                className="text-xs font-semibold text-amber-500 leading-none"
-                                aria-label={`${stars.length} estrellas Morningstar`}
-                              >
-                                {stars}
-                              </span>
-                            ) : null}
-                          </span>
+                          {row.name}
+                          {stars ? (
+                            <span
+                              className="ml-2 inline-flex items-center text-xs font-semibold text-amber-500 align-middle"
+                              aria-label={`${stars.length} estrellas Morningstar`}
+                            >
+                              {stars}
+                            </span>
+                          ) : null}
                         </a>
                         {badges.length > 0 ? (
                           <div className="flex flex-wrap items-center gap-1">
