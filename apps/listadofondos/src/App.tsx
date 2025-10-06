@@ -212,44 +212,77 @@ function Section({
         <table className="min-w-full border-separate border-spacing-y-1 text-sm text-gray-800">
           <thead>
             <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-              <th rowSpan={2} className="px-3 py-2 min-w-[220px] bg-white/70 rounded-tl-2xl">
+              <th
+                rowSpan={2}
+                className="px-3 py-2 min-w-[220px] rounded-tl-2xl bg-slate-50/80 text-slate-600 backdrop-blur-sm"
+              >
                 {texts.name}
               </th>
-              <th rowSpan={2} className="px-3 py-2 whitespace-nowrap bg-white/70">
+              <th
+                rowSpan={2}
+                className="px-3 py-2 whitespace-nowrap bg-slate-50/80 text-slate-600 backdrop-blur-sm"
+              >
                 {texts.isin}
               </th>
-              <th rowSpan={2} className="px-2 py-2 min-w-[150px] bg-white/70">
+              <th
+                rowSpan={2}
+                className="px-2 py-2 min-w-[150px] bg-slate-50/80 text-slate-600 backdrop-blur-sm"
+              >
                 {texts.category}
               </th>
-              <th rowSpan={2} className="px-2 py-2 whitespace-nowrap bg-white/70">
+              <th
+                rowSpan={2}
+                className="px-2 py-2 whitespace-nowrap bg-slate-50/80 text-slate-600 backdrop-blur-sm"
+              >
                 {texts.ter}
               </th>
-              <th colSpan={PERFORMANCE_LABELS.length} className="px-3 py-2 bg-white/70 text-center">
+              <th
+                colSpan={PERFORMANCE_LABELS.length}
+                className="px-3 py-2 text-center bg-sky-50/80 text-sky-700 backdrop-blur-sm"
+              >
                 {texts.performance}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-3 py-2 bg-white/70 text-center">
+              <th
+                colSpan={RATIO_LABELS.length}
+                className="px-3 py-2 text-center bg-emerald-50/80 text-emerald-700 backdrop-blur-sm"
+              >
                 {texts.sharpe}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-3 py-2 bg-white/70 text-center">
+              <th
+                colSpan={RATIO_LABELS.length}
+                className="px-3 py-2 text-center bg-indigo-50/80 text-indigo-700 backdrop-blur-sm"
+              >
                 {texts.volatility}
               </th>
-              <th rowSpan={2} className="px-3 py-2 min-w-[200px] bg-white/70 rounded-tr-2xl">
+              <th
+                rowSpan={2}
+                className="px-3 py-2 min-w-[200px] rounded-tr-2xl bg-slate-50/80 text-slate-600 backdrop-blur-sm"
+              >
                 {texts.comment}
               </th>
             </tr>
             <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
               {PERFORMANCE_LABELS.map((label) => (
-                <th key={`perf-${label}`} className="px-2 py-1.5 bg-white/70 text-center">
+                <th
+                  key={`perf-${label}`}
+                  className="px-2 py-1.5 text-center bg-sky-50/80 text-sky-700"
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
               {RATIO_LABELS.map((label) => (
-                <th key={`sharpe-${label}`} className="px-2 py-1.5 bg-white/70 text-center">
+                <th
+                  key={`sharpe-${label}`}
+                  className="px-2 py-1.5 text-center bg-emerald-50/80 text-emerald-700"
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
               {RATIO_LABELS.map((label) => (
-                <th key={`vol-${label}`} className="px-2 py-1.5 bg-white/70 text-center">
+                <th
+                  key={`vol-${label}`}
+                  className="px-2 py-1.5 text-center bg-indigo-50/80 text-indigo-700"
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
