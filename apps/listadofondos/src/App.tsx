@@ -17,6 +17,18 @@ type PerformanceKey =
   | "5Y Anual"
   | "10Y Anual";
 
+type MetricValue =
+  | string
+  | number
+  | null
+  | undefined
+  | {
+      value?: string | number | null;
+      label?: string | number | null;
+    };
+
+type MetricRecord<T extends string> = Partial<Record<T, MetricValue>>;
+
 type FundRow = {
   name: string;
   isin: string;
@@ -25,10 +37,10 @@ type FundRow = {
   morningstarRating?: number | null;
   comment: string;
   url: string;
-  performance: Partial<Record<PerformanceKey, string | number>>;
-  sharpe: Partial<Record<RatioPeriod, string>>;
-  volatility: Partial<Record<RatioPeriod, string>>;
-  ter: string;
+  performance: MetricRecord<PerformanceKey>;
+  sharpe: MetricRecord<RatioPeriod>;
+  volatility: MetricRecord<RatioPeriod>;
+  ter: MetricValue;
 };
 
 type ApiPayload = {
@@ -126,15 +138,24 @@ function useTexts(lang: Lang) {
   return useMemo(() => TEXTS[lang], [lang]);
 }
 
-function formatValue(raw?: string | number) {
+function formatValue(raw?: MetricValue): string {
   if (raw === null || raw === undefined) return "-";
   if (typeof raw === "number") {
     if (!Number.isFinite(raw)) return "-";
     return String(raw);
   }
-  const val = raw.trim();
-  if (!val || val.toUpperCase() === "N/A" || val === "NaN") return "-";
-  return val;
+  if (typeof raw === "string") {
+    const val = raw.trim();
+    if (!val || val.toUpperCase() === "N/A" || val === "NaN") return "-";
+    return val;
+  }
+  if (typeof raw === "object") {
+    const nested =
+      ("value" in raw ? raw.value : undefined) ??
+      ("label" in raw ? raw.label : undefined);
+    return formatValue(nested as MetricValue);
+  }
+  return "-";
 }
 
 function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
@@ -150,7 +171,7 @@ function renderStars(rating?: number | null) {
 
 function renderMetricCells<T extends string>(
   columns: readonly T[],
-  values: Partial<Record<T, string | number>>,
+  values: MetricRecord<T>,
   keyPrefix: string,
 ) {
   return columns.map((label) => (
@@ -191,6 +212,9 @@ function Section({
               <th rowSpan={2} className="px-4 py-2.5 min-w-[180px] bg-white/70">
                 {texts.category}
               </th>
+              <th rowSpan={2} className="px-4 py-2.5 whitespace-nowrap bg-white/70">
+                {texts.ter}
+              </th>
               <th colSpan={PERFORMANCE_LABELS.length} className="px-4 py-2.5 bg-white/70 text-center">
                 {texts.performance}
               </th>
@@ -199,9 +223,6 @@ function Section({
               </th>
               <th colSpan={RATIO_LABELS.length} className="px-4 py-2.5 bg-white/70 text-center">
                 {texts.volatility}
-              </th>
-              <th rowSpan={2} className="px-4 py-2.5 whitespace-nowrap bg-white/70">
-                {texts.ter}
               </th>
               <th rowSpan={2} className="px-4 py-2.5 min-w-[200px] bg-white/70 rounded-tr-2xl">
                 {texts.comment}
@@ -272,12 +293,12 @@ function Section({
                       {formatValue(row.isin)}
                     </td>
                     <td className="px-4 py-2.5 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
-                    {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
-                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe")}
-                    {renderMetricCells(RATIO_LABELS, row.volatility, "vol")}
                     <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
                       {formatValue(row.ter)}
                     </td>
+                    {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
+                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe")}
+                    {renderMetricCells(RATIO_LABELS, row.volatility, "vol")}
                     <td className="px-4 py-2.5 bg-white/95 backdrop-blur text-gray-600">
                       {formatValue(row.comment) || texts.commentPlaceholder}
                     </td>

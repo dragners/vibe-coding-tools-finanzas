@@ -1,22 +1,197 @@
 funds:
-  - name: "Azvalor Internacional FI"
-    isin: "ES0112611001"
-    category: "Global Flex-Cap Equity"
-    morningstarId: "F00000WI0D"
-    comment: "Comentario1"
-  - name: "Azvalor Managers FI"
-    isin: "ES0112602000"
-    category: "Global Small/Mid-Cap Equity"
-    morningstarId: "F000011HLY"
-    comment: "Comentario2"
-  - name: "Hamco Global Value Fund R FI"
-    isin: "ES0141116030"
-    category: "Global Small/Mid-Cap Equity"
-    morningstarId: "F000014ACV"
-    comment: "Comentario3"
+- name: Azvalor Internacional FI
+  isin: ES0112611001
+  category: Global Flex-Cap Equity
+  morningstarId: F00000WI0D
+  comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020
+- name: Azvalor Managers FI
+  isin: ES0112602000
+  category: Global Small/Mid-Cap Equity
+  morningstarId: F000011HLY
+  comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020
+- name: Hamco Global Value Fund R FI
+  isin: ES0141116030
+  category: Global Small/Mid-Cap Equity
+  morningstarId: F000014ACV
+  comment: John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, Lo absorve la SICAV en Luxemburgo
+- name: HAMCO SICAV – Quality Fund
+  isin: LU3035951048
+  category: ''
+  morningstarId: ''
+  comment: Pendiente, nuevo fondo Julio 25 Luxemburgo
+- name: Cobas International P Acc EUR
+  isin: LU1598719752
+  category: Global Small/Mid-Cap Equity
+  morningstarId: F00000YU4F
+  comment: Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional
+- name: Cobas Selection P Acc EUR
+  isin: LU1372006947
+  category: Global Small/Mid-Cap Equity
+  morningstarId: F00000YXEW
+  comment: Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional. Parames suele invetir en este fondo
+- name: Horos Value Internacional FI
+  isin: ES0146309002
+  category: Global Small/Mid-Cap Equity
+  morningstarId: F000010KY6
+  comment: Javier Ruiz Miguel Rodríguez y Alejandro Martín (ex Fondo Metagestión). ~12 años de resultados con +11,6% anual
+- name: Sigma Internacional A FI
+  isin: ES0175902008
+  category: ''
+  morningstarId: F000016XFO
+  comment: Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record
+- name: GQG Partners Global Equity A EUR Acc
+  isin: IE00BH481053
+  category: Global Large-Cap Growth Equity
+  morningstarId: F000011K3W
+  comment: Rajiv Jain (ex-Vontobel)
+- name: Gestión Boutique VI Opportunity A FI
+  isin: ES0110407063
+  category: Global Small/Mid-Cap Equity
+  morningstarId: F0000107JH
+  comment: Andbank, lleva tb BTC y cosas así
+- name: Avantage Fund A FI
+  isin: ES0112231016
+  category: EUR Flexible Allocation - Global
+  morningstarId: F00001B0AP
+  comment: ''
+- name: Fundsmith Equity T EUR Inc
+  isin: LU0690375422
+  category: Global Large-Cap Growth Equity
+  morningstarId: F00000OHVX
+  comment: ''
+- name: JPM Euroland Dynamic D perf (acc) EUR
+  isin: LU0661986348
+  category: Eurozone Large-Cap Equity
+  morningstarId: F00000MZB1
+  comment: No disponible MyInvestor
+- name: Alken European Opportunities R
+  isin: LU0235308482
+  category: ''
+  morningstarId: F0GBR06MIL
+  comment: Nicolas Walewski
+- name: Alken Small Cap Europe A
+  isin: LU0524465548
+  category: Europe Small-Cap Equity
+  morningstarId: F00000Q3YK
+  comment: Nicolas Walewski
+- name: Fidelity Global Technology A-Acc-EUR
+  isin: LU1213836080
+  category: Sector Equity Technology
+  morningstarId: F00000VKNA
+  comment: ''
+- name: Fidelity Global Dividend A-Acc-EUR
+  isin: LU1261431768
+  category: Global Equity Income
+  morningstarId: F00000W42B
+  comment: ''
+- name: Heptagon Kopernik Glb AllCp Eq AE € Acc
+  isin: IE00BH6XSF26
+  category: Global Flex-Cap Equity
+  morningstarId: F00000YZS6
+  comment: David B. Iben
+- name: Capital Group New Pers (LUX) Bh-EUR
+  isin: LU1295552621
+  category: Other Equity
+  morningstarId: F00000WDSD
+  comment: ''
+- name: Pictet-China Index P EUR
+  isin: LU0625737910
+  category: China Equity
+  morningstarId: F00000MO6Y
+  comment: ''
+- name: Jupiter India Select L EUR Acc
+  isin: LU0329070915
+  category: India Equity
+  morningstarId: F00000MHIV
+  comment: Avinash Vazirani, desde 2008
+- name: Robeco Indian Equities D €
+  isin: LU0491217419
+  category: India Equity
+  morningstarId: F00000JQCY
+  comment: ESG - Equipo de gestores
+- name: Robeco BP Global Premium Eqs D EUR
+  isin: LU0203975437
+  category: Global Large-Cap Value Equity
+  morningstarId: F0GBR05VCE
+  comment: ESG - Equipo de gestores
+- name: Robeco Circular Economy D € Cap
+  isin: LU2092758726
+  category: Sector Equity Ecology
+  morningstarId: F000014SSQ
+  comment: ESG - Equipo de gestores
+- name: Indexa RV internacional FI
+  isin: ES0148019005
+  category: Global Large-Cap Blend Equity
+  morningstarId: F00001QFKV
+  comment: No disponible MyInvestor
+- name: Vanguard Glb Stk Idx € Acc
+  isin: IE00B03HD191
+  category: Global Large-Cap Blend Equity
+  morningstarId: F0GBR052TN
+  comment: MSCI World
+- name: Vanguard Glb Small-Cp Idx € Acc
+  isin: IE00B42W4L06
+  category: Global Small/Mid-Cap Equity
+  morningstarId: F00000PA9N
+  comment: MSCI Small Cap
+- name: Vanguard Em Mkts Stk Idx € Acc
+  isin: IE0031786696
+  category: Global Emerging Markets Equity
+  morningstarId: F00000T1HU
+  comment: MSCI EM
+- name: Vanguard Global Bd Idx EUR H Acc
+  isin: IE00B18GC888
+  category: Global Diversified Bond - EUR Hedged
+  morningstarId: F00000T1HT
+  comment: ''
+- name: AXAWF Euro Credit Total Ret A Cap EUR
+  isin: LU1164219682
+  category: EUR Flexible Bond
+  morningstarId: F00000VPP7
+  comment: ''
+- name: DNCA Invest Alpha Bonds B EUR
+  isin: LU1694789535
+  category: Global Flexible Bond
+  morningstarId: F00000ZY7M
+  comment: ''
+- name: Lazard Emerging Markets Eq C Acc EUR
+  isin: IE00BYWPGP72
+  category: ''
+  morningstarId: F00000ZYZI
+  comment: No disponible MyInv - https://x.com/Fondos_A_Fondo/status/1950275153964724251
+- name: Incometric Nartex Equity R Cap EUR Acc
+  isin: LU2357235576
+  category: ''
+  morningstarId: F00001DB42
+  comment: ''
 plans:
-  - name: "Myinvestor Indexado Global PP"
-    isin: "N5396"
-    category: "RVI GLOBAL"
-    morningstarId: "F000016CB6"
-    comment: "Comentario Plan"
+- name: Myinvestor Indexado Global PP
+  isin: N5396
+  category: RVI GLOBAL
+  morningstarId: F000016CB6
+  comment: ''
+- name: Indexa Más Rentabilidad Acciones PP
+  isin: N5138
+  category: RVI GLOBAL
+  morningstarId: F00000Y5QI
+  comment: ''
+- name: Finanbest Eficiente Bolsa Global PP
+  isin: N5270
+  category: RVI GLOBAL
+  morningstarId: F00001278R
+  comment: ''
+- name: Horos Internacional PP
+  isin: N5263
+  category: RVI GLOBAL
+  morningstarId: F000010KY6
+  comment: ''
+- name: Azvalor Global Value PP
+  isin: N5116
+  category: RVI GLOBAL
+  morningstarId: F00000XL5T
+  comment: ''
+- name: Cobas Global PP
+  isin: N5219
+  category: RVI GLOBAL
+  morningstarId: F00000ZER6
+  comment: ''
