@@ -588,6 +588,16 @@ function stripQuotes(value) {
   return value;
 }
 
+function parseBooleanFlag(value) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return ["true", "1", "yes", "y", "si", "sí"].includes(normalized);
+  }
+  return false;
+}
+
 function parseConfigYaml(text) {
   const data = { funds: [], plans: [] };
   let currentSection = null;
@@ -664,6 +674,7 @@ async function fetchFund(entry) {
     morningstarId: entry.morningstarId,
     comment: entry.comment ?? "-",
     url: urlPerf,
+    indexed: parseBooleanFlag(entry.indexed),
     performance: performanceValues,
     performanceDebug,
     sharpe: parseRatio(statsHtml, ["sharpe"]),
@@ -689,6 +700,7 @@ async function buildPayload() {
           morningstarId: entry.morningstarId,
           comment: entry.comment ?? "-",
           url: `https://lt.morningstar.com/xgnfa0k0aw/snapshot/snapshot.aspx?tab=1&Id=${encodeURIComponent(entry.morningstarId)}`,
+          indexed: parseBooleanFlag(entry.indexed),
           performance: {},
           performanceDebug: { error: err?.message ?? "Failed to fetch fund" },
           sharpe: {},
