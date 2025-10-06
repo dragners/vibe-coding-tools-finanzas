@@ -134,6 +134,28 @@ function normalizeSpanishNumber(value) {
   return { number, normalized };
 }
 
+function formatAsPercentage(rawValue) {
+  const sanitized = sanitizeValue(rawValue);
+  if (!sanitized || sanitized === "-") return "-";
+
+  const hasPercent = /%/.test(sanitized);
+  const { number, normalized } = normalizeSpanishNumber(sanitized);
+  if (number === null) {
+    return "-";
+  }
+
+  if (hasPercent) {
+    return sanitized.replace(/\s*%$/, "%");
+  }
+
+  const normalizedDigits = normalized?.replace(/[^0-9+-.]/g, "");
+  if (normalizedDigits) {
+    return `${normalizedDigits}%`;
+  }
+
+  return `${number}%`;
+}
+
 
 
 function normalizePerformanceText(text) {
@@ -474,18 +496,9 @@ function parseTerFromTables(html) {
         )
       ) {
         for (let idx = 1; idx < cells.length; idx += 1) {
-          const rawValue = stripHtml(cells[idx] ?? "");
-          const sanitized = sanitizeValue(rawValue);
-          if (!sanitized || sanitized === "-") continue;
-          const { number, normalized } = normalizeSpanishNumber(sanitized);
-          if (number !== null) {
-            if (/%/.test(sanitized)) {
-              return sanitized.replace(/\s*%$/, "%");
-            }
-            if (normalized) {
-              return `${normalized}%`;
-            }
-            return `${number}%`;
+          const formatted = formatAsPercentage(stripHtml(cells[idx] ?? ""));
+          if (formatted !== "-") {
+            return formatted;
           }
         }
       }
@@ -504,7 +517,7 @@ function parseTerLegacy(html) {
       if (text.includes("ter") || text.includes("gastos corrientes") || text.includes("ratio de gastos")) {
         const cells = extractCells(row);
         const last = cells[cells.length - 1];
-        const value = sanitizeValue(stripHtml(last ?? ""));
+        const value = formatAsPercentage(stripHtml(last ?? ""));
         if (value !== "-") return value;
       }
     }
