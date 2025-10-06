@@ -22,6 +22,7 @@ type FundRow = {
   isin: string;
   category: string;
   morningstarId: string;
+  morningstarRating?: number | null;
   comment: string;
   url: string;
   performance: Partial<Record<PerformanceKey, string | number>>;
@@ -46,7 +47,7 @@ const TEXTS = {
   es: {
     title: "Listado y Comparativa de Fondos",
     subtitle:
-      "Listado y comparativa de mis fondos favoritos que sigo e invierto desde hace años.",
+      "Estos son mis fondos favoritos, que sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
     refreshing: "Actualizando...",
     lastUpdated: "Última actualización",
@@ -140,6 +141,13 @@ function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
   return label.replace(" Anual", "");
 }
 
+function renderStars(rating?: number | null) {
+  if (rating === null || rating === undefined) return null;
+  const normalized = Math.max(0, Math.min(5, Math.round(rating)));
+  if (normalized <= 0) return null;
+  return "★".repeat(normalized);
+}
+
 function renderMetricCells<T extends string>(
   columns: readonly T[],
   values: Partial<Record<T, string | number>>,
@@ -230,33 +238,46 @@ function Section({
                 </td>
               </tr>
             ) : (
-              data.map((row) => (
-                <tr key={`${section}-${row.morningstarId}`} className="align-top">
-                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur">
-                    <a
-                      href={row.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-semibold text-cyan-600 hover:text-cyan-700"
-                    >
-                      {row.name}
-                    </a>
-                  </td>
-                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
-                    {formatValue(row.isin)}
-                  </td>
-                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
-                  {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
-                  {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe")}
-                  {renderMetricCells(RATIO_LABELS, row.volatility, "vol")}
-                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
-                    {formatValue(row.ter)}
-                  </td>
-                  <td className="px-4 py-2.5 bg-white/95 backdrop-blur text-gray-600">
-                    {formatValue(row.comment) || texts.commentPlaceholder}
-                  </td>
-                </tr>
-              ))
+              data.map((row) => {
+                const stars = renderStars(row.morningstarRating);
+                return (
+                  <tr key={`${section}-${row.morningstarId}`} className="align-top">
+                    <td className="px-4 py-2.5 bg-white/95 backdrop-blur">
+                      <div className="flex flex-col items-start gap-1">
+                        <a
+                          href={row.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
+                        >
+                          {row.name}
+                        </a>
+                        {stars ? (
+                          <span
+                            className="text-xs font-semibold text-amber-500 leading-none"
+                            aria-label={`${stars.length} estrellas Morningstar`}
+                          >
+                            {stars}
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
+                      {formatValue(row.isin)}
+                    </td>
+                    <td className="px-4 py-2.5 bg-white/95 backdrop-blur">{formatValue(row.category)}</td>
+                    {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
+                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe")}
+                    {renderMetricCells(RATIO_LABELS, row.volatility, "vol")}
+                    <td className="px-4 py-2.5 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700">
+                      {formatValue(row.ter)}
+                    </td>
+                    <td className="px-4 py-2.5 bg-white/95 backdrop-blur text-gray-600">
+                      {formatValue(row.comment) || texts.commentPlaceholder}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
