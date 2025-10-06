@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./index.css";
+import { MOCK_PAYLOAD } from "./mockData";
 
 type Lang = "es" | "en";
 
@@ -27,7 +28,7 @@ type MetricValue =
 
 type MetricRecord<T extends string> = Partial<Record<T, MetricValue>>;
 
-type FundRow = {
+export type FundRow = {
   name: string;
   isin: string;
   category: string;
@@ -42,7 +43,7 @@ type FundRow = {
   ter: MetricValue;
 };
 
-type ApiPayload = {
+export type ApiPayload = {
   lastUpdated: string;
   funds: FundRow[];
   plans: FundRow[];
@@ -84,6 +85,8 @@ const TEXTS = {
     descriptionLink: "Ver ficha en Morningstar",
     commentPlaceholder: "-",
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
+    mockNotice:
+      "Mostrando datos de ejemplo por falta de conexión con la API. Las cifras pueden no coincidir con los últimos datos reales.",
   },
   en: {
     title: "Fund List and Comparison",
@@ -113,6 +116,8 @@ const TEXTS = {
     descriptionLink: "View on Morningstar",
     commentPlaceholder: "-",
     footer: "© David Gonzalez, want to know more about me? Visit",
+    mockNotice:
+      "Displaying sample data because the live API is unavailable. Figures may differ from the latest real data.",
   },
 } as const;
 
@@ -130,6 +135,26 @@ const PERFORMANCE_LABELS: readonly PerformanceKey[] = [
 const RATIO_LABELS: readonly RatioPeriod[] = ["1Y", "3Y", "5Y"];
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
+const ENABLE_MOCK_DATA =
+  String(import.meta.env.VITE_ENABLE_MOCK_DATA ?? "true").toLowerCase() !== "false";
+
+function shouldUseMockData(err: unknown) {
+  if (!ENABLE_MOCK_DATA) return false;
+  if (err instanceof SyntaxError) return true;
+  if (err instanceof TypeError) return true;
+  if (err instanceof Error) {
+    const message = err.message.toLowerCase();
+    if (/^http \d+/.test(message)) return false;
+    return (
+      message.includes("unexpected token") ||
+      message.includes("content type") ||
+      message.includes("json") ||
+      message.includes("failed to fetch") ||
+      message.includes("network")
+    );
+  }
+  return false;
+}
 
 function useTexts(lang: Lang) {
   return useMemo(() => TEXTS[lang], [lang]);
@@ -442,10 +467,12 @@ export default function App() {
   const [data, setData] = useState<ApiPayload | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usingMockData, setUsingMockData] = useState(false);
 
   const fetchData = async (force = false) => {
     setStatus((prev) => (prev === "ready" ? prev : "loading"));
     setError(null);
+    setUsingMockData(false);
     try {
       const endpoint = force ? `${API_BASE}/refresh` : `${API_BASE}/data`;
       const response = await fetch(endpoint, {
@@ -453,11 +480,27 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload: ApiPayload = await response.json();
+      const contentType = response.headers.get("content-type") ?? "";
+      const rawText = await response.text();
+      if (!contentType.toLowerCase().includes("application/json")) {
+        throw new Error(`Unexpected content type: ${contentType || "unknown"}`);
+      }
+      let payload: ApiPayload;
+      try {
+        payload = JSON.parse(rawText) as ApiPayload;
+      } catch (jsonErr) {
+        throw new SyntaxError((jsonErr as Error).message || "Invalid JSON response");
+      }
       setData(payload);
       setStatus("ready");
     } catch (err) {
       console.error(err);
+      if (shouldUseMockData(err)) {
+        setData(MOCK_PAYLOAD);
+        setStatus("ready");
+        setUsingMockData(true);
+        return;
+      }
       setError((err as Error).message);
       setStatus("error");
     }
@@ -502,6 +545,11 @@ export default function App() {
             </div>
           </div>
           <div className="flex flex-col items-stretch md:items-end gap-2 sm:gap-3">
+            {usingMockData ? (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 shadow-sm">
+                {texts.mockNotice}
+              </div>
+            ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
               <div
                 className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white/90 p-1 shadow-sm"
