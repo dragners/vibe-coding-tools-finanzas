@@ -190,20 +190,51 @@ function getMorningstarUrl(id?: string, lang: Lang = "es") {
 
 const CATEGORY_SECONDARY_LABELS = ["Global", "Europe", "India", "ESG", "China", "Tech"] as const;
 
-function getCategoryLabels(category: string, lang: Lang) {
-  const labels: string[] = [];
+const BADGE_STYLES = {
+  equity: "bg-sky-100/80 text-sky-700 border border-sky-200",
+  bond: "bg-emerald-100/80 text-emerald-700 border border-emerald-200",
+  global: "bg-violet-100/80 text-violet-700 border border-violet-200",
+  europe: "bg-indigo-100/80 text-indigo-700 border border-indigo-200",
+  india: "bg-orange-100/80 text-orange-700 border border-orange-200",
+  esg: "bg-emerald-100/70 text-emerald-700 border border-emerald-200",
+  china: "bg-rose-100/80 text-rose-700 border border-rose-200",
+  tech: "bg-sky-100/70 text-sky-700 border border-sky-200",
+  default: "bg-slate-100/80 text-slate-600 border border-slate-200",
+} as const;
+
+type BadgeVariant = keyof typeof BADGE_STYLES;
+
+type CategoryBadge = {
+  text: string;
+  variant: BadgeVariant;
+};
+
+const SECONDARY_BADGE_VARIANTS: Record<(typeof CATEGORY_SECONDARY_LABELS)[number], BadgeVariant> = {
+  Global: "global",
+  Europe: "europe",
+  India: "india",
+  ESG: "esg",
+  China: "china",
+  Tech: "tech",
+};
+
+function getCategoryLabels(category: string, lang: Lang): CategoryBadge[] {
+  const labels: CategoryBadge[] = [];
   const normalized = category.toLowerCase();
   if (normalized.includes("equity")) {
-    labels.push(lang === "es" ? "Acciones" : "Equity");
+    labels.push({ text: lang === "es" ? "Acciones" : "Equity", variant: "equity" });
   } else if (normalized.includes("bond")) {
-    labels.push(lang === "es" ? "Bonos" : "Bonds");
+    labels.push({ text: lang === "es" ? "Bonos" : "Bonds", variant: "bond" });
   }
 
   const secondary = CATEGORY_SECONDARY_LABELS.find((label) =>
     normalized.includes(label.toLowerCase()),
   );
   if (secondary) {
-    labels.push(secondary);
+    labels.push({
+      text: secondary,
+      variant: SECONDARY_BADGE_VARIANTS[secondary] ?? "default",
+    });
   }
 
   return labels;
@@ -292,7 +323,8 @@ function Section({
               data.map((row) => {
                 const stars = renderStars(row.morningstarRating);
                 const categoryValue = formatValue(row.category);
-                const labels = categoryValue !== "-" ? getCategoryLabels(categoryValue, lang) : [];
+                const badges =
+                  categoryValue !== "-" ? getCategoryLabels(categoryValue, lang) : [];
                 const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
                 return (
                   <tr key={`${section}-${row.morningstarId}`} className="align-top">
@@ -306,7 +338,7 @@ function Section({
                         >
                           {row.name}
                         </a>
-                        {(stars || labels.length > 0) && (
+                        {(stars || badges.length > 0) && (
                           <div className="flex flex-wrap items-center gap-1">
                             {stars ? (
                               <span
@@ -316,12 +348,14 @@ function Section({
                                 {stars}
                               </span>
                             ) : null}
-                            {labels.map((label) => (
+                            {badges.map((badge) => (
                               <span
-                                key={`${row.morningstarId}-${label}`}
-                                className="text-[10px] uppercase tracking-wide rounded-full bg-gray-100 px-1.5 py-0.5 font-semibold text-gray-600"
+                                key={`${row.morningstarId}-${badge.text}`}
+                                className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 border ${
+                                  BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
+                                }`}
                               >
-                                {label}
+                                {badge.text}
                               </span>
                             ))}
                           </div>
