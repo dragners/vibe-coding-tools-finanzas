@@ -67,6 +67,10 @@ type SortKey =
 
 type SortConfig = { key: SortKey; order: SortOrder };
 
+function isPerformanceOrSharpeSortKey(key: SortKey) {
+  return key.startsWith("performance:") || key.startsWith("sharpe:");
+}
+
 const TEXTS = {
   es: {
     title: "Listado y Comparativa de Fondos y Planes de Pensiones",
@@ -776,6 +780,8 @@ function Section({
     const sorted = [...filteredData];
     const locale = lang === "es" ? "es" : "en";
     const multiplier = sortConfig.order === "asc" ? 1 : -1;
+    const missingIsLowestInDesc =
+      sortConfig.order === "desc" && isPerformanceOrSharpeSortKey(sortConfig.key);
 
     sorted.sort((a, b) => {
       const valueA = getSortValue(a, sortConfig.key);
@@ -787,8 +793,18 @@ function Section({
       const isNullB = rawB === null || rawB === undefined || rawB === "";
 
       if (isNullA && isNullB) return 0;
-      if (isNullA) return 1 * multiplier;
-      if (isNullB) return -1 * multiplier;
+      if (isNullA) {
+        if (missingIsLowestInDesc && valueA.type === "number") {
+          return 1;
+        }
+        return 1 * multiplier;
+      }
+      if (isNullB) {
+        if (missingIsLowestInDesc && valueB.type === "number") {
+          return -1;
+        }
+        return -1 * multiplier;
+      }
 
       if (valueA.type === "number" && valueB.type === "number") {
         const diff = (rawA as number) - (rawB as number);
