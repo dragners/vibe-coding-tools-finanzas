@@ -478,7 +478,7 @@ function renderMetricCells<T extends string>(
       ? getMetricBackground(options.metric, numericValue, columnStats)
       : undefined;
     const classes = [
-      "px-1.5 py-2 text-sm font-semibold text-gray-700 text-center",
+      "px-1.5 py-2 text-sm font-semibold text-gray-700 text-center align-middle",
     ];
     if (options.addLeftBoundary && columns[0] === label) {
       classes.push("border-l", "border-gray-400");
@@ -722,8 +722,12 @@ function Section({
                     ? `${row.name} · ${categoryDisplay}`
                     : row.name;
                 return (
-                  <tr key={tooltipId} className="align-top">
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur min-w-[300px] max-w-[320px]">
+                  <tr key={tooltipId} className="align-middle">
+                    <td
+                      className={`relative px-3 py-2 bg-white/95 backdrop-blur min-w-[300px] max-w-[320px] overflow-visible align-top ${
+                        tooltipOpen ? "z-20" : ""
+                      }`}
+                    >
                       <div className="flex flex-col items-start gap-1">
                         <a
                           href={link}
@@ -792,10 +796,10 @@ function Section({
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px]">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle">
                       {formatValue(row.isin)}
                     </td>
-                    <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center">
+                    <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center align-middle">
                       {formatValue(row.ter)}
                     </td>
                     {renderMetricCells(
@@ -816,7 +820,7 @@ function Section({
                       volatilityStats,
                       { metric: "volatility", addLeftBoundary: true },
                     )}
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle">
                       {formatValue(row.comment) || texts.commentPlaceholder}
                     </td>
                   </tr>
