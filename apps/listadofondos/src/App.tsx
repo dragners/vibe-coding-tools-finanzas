@@ -1,4 +1,11 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
 
@@ -1215,8 +1222,11 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [usingMockData, setUsingMockData] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [shouldAutoRefresh, setShouldAutoRefresh] = useState<boolean | null>(
+    null,
+  );
 
-  const fetchData = async (force = false) => {
+  const fetchData = useCallback(async (force = false) => {
     setStatus((prev) => (prev === "ready" ? prev : "loading"));
     setError(null);
     setUsingMockData(false);
@@ -1251,11 +1261,39 @@ export default function App() {
       setError((err as Error).message);
       setStatus("error");
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData();
+    if (typeof window === "undefined") {
+      setShouldAutoRefresh(false);
+      return;
+    }
+    const trimmedPath = window.location.pathname.replace(/\/+$/, "");
+    setShouldAutoRefresh(trimmedPath.endsWith("/refrescardatos_dragner"));
   }, []);
+
+  useEffect(() => {
+    if (shouldAutoRefresh === null) return;
+
+    const run = async () => {
+      if (shouldAutoRefresh) {
+        setRefreshing(true);
+        await fetchData(true);
+        setRefreshing(false);
+        if (typeof window !== "undefined") {
+          const basePath = window.location.pathname.replace(
+            /\/refrescardatos_dragner\/?$/,
+            "/",
+          );
+          window.history.replaceState(null, "", basePath || "/");
+        }
+      } else {
+        await fetchData();
+      }
+    };
+
+    void run();
+  }, [fetchData, shouldAutoRefresh]);
 
   const onRefresh = async () => {
     setRefreshing(true);
