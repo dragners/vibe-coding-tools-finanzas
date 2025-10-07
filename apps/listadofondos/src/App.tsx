@@ -799,7 +799,7 @@ export default function App() {
       `}</style>
       <div className="landing-bg" aria-hidden="true" />
 
-      <div className="sticky top-0 z-10 bg-white/85 backdrop-blur border-b border-gray-200">
+      <div className="bg-white/85 backdrop-blur border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <a
