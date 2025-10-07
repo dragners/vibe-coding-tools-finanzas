@@ -646,10 +646,10 @@ function Section({
                           {row.name}
                         </a>
                         {(badges.length > 0 || stars) && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex w-full items-center gap-2">
                             {stars ? (
                               <span
-                                className="inline-flex items-center text-xs font-semibold text-amber-500"
+                                className="inline-flex shrink-0 items-center text-xs font-semibold text-amber-500"
                                 aria-label={`${stars.length} estrellas Morningstar`}
                               >
                                 {stars}
@@ -657,7 +657,7 @@ function Section({
                             ) : null}
                             {badges.length > 0 ? (
                               <div
-                                className="relative group"
+                                className={`relative group ${stars ? "ml-auto" : ""}`}
                                 onMouseEnter={() => handleOpenTooltip(tooltipId)}
                                 onMouseLeave={() => handleCloseTooltip(tooltipId)}
                               >
