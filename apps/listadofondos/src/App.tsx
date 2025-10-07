@@ -644,39 +644,32 @@ function Section({
                           title={row.name}
                         >
                           {row.name}
-                          {stars ? (
-                            <span
-                              className="ml-2 inline-flex items-center text-xs font-semibold text-amber-500 align-middle"
-                              aria-label={`${stars.length} estrellas Morningstar`}
-                            >
-                              {stars}
-                            </span>
-                          ) : null}
                         </a>
-                        {badges.length > 0 ? (
+                        {(badges.length > 0 || stars) && (
                           <div className="flex items-center gap-1">
-                            <div
-                              className="relative group"
-                              onMouseEnter={() => handleOpenTooltip(tooltipId)}
-                              onMouseLeave={() => handleCloseTooltip(tooltipId)}
-                            >
-                              <button
-                                type="button"
-                                className="inline-flex flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
-                                onClick={() => handleToggleTooltip(tooltipId)}
-                                onBlur={() => handleCloseTooltip(tooltipId)}
-                                onFocus={() => handleOpenTooltip(tooltipId)}
-                                onKeyDown={(event) => {
-                                  if (event.key === "Escape") {
-                                    event.stopPropagation();
-                                    handleCloseTooltip(tooltipId);
-                                  }
-                                }}
-                                aria-haspopup="true"
-                                aria-expanded={tooltipOpen}
-                                aria-label={`${row.name}: ${categoryDisplay}`}
-                                title={tooltipLabel}
+                            {badges.length > 0 ? (
+                              <div
+                                className="relative group"
+                                onMouseEnter={() => handleOpenTooltip(tooltipId)}
+                                onMouseLeave={() => handleCloseTooltip(tooltipId)}
                               >
+                                <button
+                                  type="button"
+                                  className="inline-flex flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
+                                  onClick={() => handleToggleTooltip(tooltipId)}
+                                  onBlur={() => handleCloseTooltip(tooltipId)}
+                                  onFocus={() => handleOpenTooltip(tooltipId)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Escape") {
+                                      event.stopPropagation();
+                                      handleCloseTooltip(tooltipId);
+                                    }
+                                  }}
+                                  aria-haspopup="true"
+                                  aria-expanded={tooltipOpen}
+                                  aria-label={`${row.name}: ${categoryDisplay}`}
+                                  title={tooltipLabel}
+                                >
                                   {badges.map((badge) => (
                                     <span
                                       key={`${rowKey}-${badge.text}`}
@@ -687,18 +680,27 @@ function Section({
                                       {badge.text}
                                     </span>
                                   ))}
-                              </button>
-                              <div
-                                className={`pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
-                                  tooltipOpen ? "opacity-100" : "opacity-0"
-                                }`}
-                                role="tooltip"
-                              >
-                                {tooltipLabel}
+                                </button>
+                                <div
+                                  className={`pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
+                                    tooltipOpen ? "opacity-100" : "opacity-0"
+                                  }`}
+                                  role="tooltip"
+                                >
+                                  {tooltipLabel}
+                                </div>
                               </div>
-                            </div>
+                            ) : null}
+                            {stars ? (
+                              <span
+                                className="inline-flex items-center text-xs font-semibold text-amber-500"
+                                aria-label={`${stars.length} estrellas Morningstar`}
+                              >
+                                {stars}
+                              </span>
+                            ) : null}
                           </div>
-                        ) : null}
+                        )}
                       </div>
                     </td>
                     <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px]">
