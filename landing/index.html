@@ -142,6 +142,14 @@
             </div>
           </a>
 
+          <a class="card" href="/listadofondos/">
+            <div>
+              <div class="pill" data-i18n="fund_badge">Listado</div>
+              <h2 class="title" data-i18n="fund_title">Listado de Fondos y Planes de Pensiones</h2>
+              <p class="desc" data-i18n="fund_desc">Consulta rentabilidades, ratio Sharpe, volatilidad y TER de mis fondos y planes favoritos.</p>
+            </div>
+          </a>
+
           <!-- App de ejemplo oculta: no se muestra -->
           <!--
           <a class="card" href="/ejemplo/">
@@ -171,6 +179,9 @@
           comp_badge:'Comparador',
           comp_title:'Comparador de Ofertas de Hipoteca',
           comp_desc:'Compara fácilmente las ofertas de hipotecas, teniendo en cuenta todos los productos que bonifican las hipotecas.',
+          fund_badge:'Listado',
+          fund_title:'Listado de Fondos y Planes de Pensiones',
+          fund_desc:'Consulta rentabilidades, ratio Sharpe, volatilidad y TER de mis fondos y planes favoritos.',
           footer_text:'© David Gonzalez, si quieres saber más sobre mí, visita'
         },
         en:{
@@ -182,6 +193,9 @@
           comp_badge:'Comparator',
           comp_title:'Mortgage Offer Comparator',
           comp_desc:'Easily compare mortgage offers, accounting for all discount-linked products.',
+          fund_badge:'Screener',
+          fund_title:'Fund & Pension Plan Screener',
+          fund_desc:'Track returns, Sharpe ratio, volatility and TER for my favourite funds and pension plans.',
           footer_text:'© David Gonzalez, want to know more about me? Visit'
         }
       };
@@ -195,6 +209,9 @@
         comp_badge: document.querySelector('[data-i18n="comp_badge"]'),
         comp_title: document.querySelector('[data-i18n="comp_title"]'),
         comp_desc: document.querySelector('[data-i18n="comp_desc"]'),
+        fund_badge: document.querySelector('[data-i18n="fund_badge"]'),
+        fund_title: document.querySelector('[data-i18n="fund_title"]'),
+        fund_desc: document.querySelector('[data-i18n="fund_desc"]'),
         footer_text: document.querySelector('[data-i18n="footer_text"]'),
         chipEs: document.getElementById('chip-es'),
         chipEn: document.getElementById('chip-en')
@@ -223,6 +240,9 @@
         if(els.comp_badge) els.comp_badge.textContent = stripHTML(t.comp_badge);
         if(els.comp_title) els.comp_title.textContent = stripHTML(t.comp_title);
         if(els.comp_desc) els.comp_desc.textContent = stripHTML(t.comp_desc);
+        if(els.fund_badge) els.fund_badge.textContent = stripHTML(t.fund_badge);
+        if(els.fund_title) els.fund_title.textContent = stripHTML(t.fund_title);
+        if(els.fund_desc) els.fund_desc.textContent = stripHTML(t.fund_desc);
         els.footer_text.textContent = stripHTML(t.footer_text);
         localStorage.setItem('landing.lang', lang);
         els.chipEs.setAttribute('aria-pressed', String(lang==='es'));
