@@ -166,6 +166,20 @@ const PERFORMANCE_LABELS: readonly PerformanceKey[] = [
 
 const RATIO_LABELS: readonly RatioPeriod[] = ["1Y", "3Y", "5Y"];
 
+const NAME_COLUMN_MIN_WIDTH = 320;
+const ISIN_COLUMN_MIN_WIDTH = 120;
+const TER_COLUMN_MIN_WIDTH = 90;
+const COMMENT_COLUMN_MIN_WIDTH = 240;
+const METRIC_COLUMN_WIDTH = 88;
+const METRIC_COLUMN_COUNT =
+  PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2;
+const TABLE_MIN_WIDTH =
+  NAME_COLUMN_MIN_WIDTH +
+  ISIN_COLUMN_MIN_WIDTH +
+  TER_COLUMN_MIN_WIDTH +
+  COMMENT_COLUMN_MIN_WIDTH +
+  METRIC_COLUMN_WIDTH * METRIC_COLUMN_COUNT;
+
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
 const ENABLE_MOCK_DATA =
   String(import.meta.env.VITE_ENABLE_MOCK_DATA ?? "true").toLowerCase() !== "false";
@@ -543,11 +557,18 @@ function renderMetricCells<T extends string>(
     if (options.addLeftBoundary && columns[0] === label) {
       classes.push("border-l", "border-gray-400");
     }
+    const style: React.CSSProperties = {
+      minWidth: METRIC_COLUMN_WIDTH,
+      width: METRIC_COLUMN_WIDTH,
+    };
+    if (background) {
+      style.backgroundColor = background;
+    }
     return (
       <td
         key={`${keyPrefix}-${label}`}
         className={classes.join(" ")}
-        style={background ? { backgroundColor: background } : undefined}
+        style={style}
       >
         {formatValue(values[label])}
       </td>
@@ -898,12 +919,16 @@ function Section({
         ) : null}
       </div>
       <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
-        <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
+        <table
+          className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800"
+          style={{ minWidth: TABLE_MIN_WIDTH }}
+        >
           <thead>
             <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
               <th
                 rowSpan={2}
-                className="px-3 py-2 min-w-[300px] max-w-[320px] bg-white/70 text-center rounded-tl-2xl"
+                className="px-3 py-2 max-w-[320px] bg-white/70 text-center rounded-tl-2xl"
+                style={{ minWidth: NAME_COLUMN_MIN_WIDTH }}
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.name}</span>
@@ -918,6 +943,7 @@ function Section({
               <th
                 rowSpan={2}
                 className="px-2.5 py-2 whitespace-nowrap bg-white/70 text-center"
+                style={{ minWidth: ISIN_COLUMN_MIN_WIDTH }}
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.isin}</span>
@@ -932,6 +958,7 @@ function Section({
               <th
                 rowSpan={2}
                 className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center"
+                style={{ minWidth: TER_COLUMN_MIN_WIDTH }}
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.ter}</span>
@@ -972,7 +999,8 @@ function Section({
               </th>
               <th
                 rowSpan={2}
-                className="px-3 py-2 min-w-[200px] bg-white/70 text-center rounded-tr-2xl"
+                className="px-3 py-2 bg-white/70 text-center rounded-tr-2xl"
+                style={{ minWidth: COMMENT_COLUMN_MIN_WIDTH }}
               >
                 {texts.comment}
               </th>
@@ -984,6 +1012,7 @@ function Section({
                   className={`px-1.5 py-1.5 bg-white/70 text-center ${
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
+                  style={{ minWidth: METRIC_COLUMN_WIDTH, width: METRIC_COLUMN_WIDTH }}
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{displayMetricLabel(label)}</span>
@@ -1008,6 +1037,7 @@ function Section({
                   className={`px-1.5 py-1.5 bg-white/70 text-center ${
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
+                  style={{ minWidth: METRIC_COLUMN_WIDTH, width: METRIC_COLUMN_WIDTH }}
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{displayMetricLabel(label)}</span>
@@ -1032,6 +1062,7 @@ function Section({
                   className={`px-1.5 py-1.5 bg-white/70 text-center ${
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
+                  style={{ minWidth: METRIC_COLUMN_WIDTH, width: METRIC_COLUMN_WIDTH }}
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{displayMetricLabel(label)}</span>
@@ -1081,9 +1112,10 @@ function Section({
                 return (
                   <tr key={tooltipId} className="align-middle">
                     <td
-                      className={`relative px-3 py-2 bg-white/95 backdrop-blur min-w-[300px] max-w-[320px] overflow-visible align-top ${
+                      className={`relative px-3 py-2 bg-white/95 backdrop-blur max-w-[320px] overflow-visible align-top ${
                         tooltipOpen ? "z-20" : ""
                       }`}
+                      style={{ minWidth: NAME_COLUMN_MIN_WIDTH }}
                     >
                       <div className="flex flex-col items-start gap-1">
                         <a
@@ -1157,10 +1189,16 @@ function Section({
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle">
+                    <td
+                      className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
+                      style={{ minWidth: ISIN_COLUMN_MIN_WIDTH }}
+                    >
                       {formatValue(row.isin)}
                     </td>
-                    <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center align-middle">
+                    <td
+                      className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center align-middle"
+                      style={{ minWidth: TER_COLUMN_MIN_WIDTH }}
+                    >
                       {formatValue(row.ter)}
                     </td>
                     {renderMetricCells(
@@ -1181,7 +1219,10 @@ function Section({
                       volatilityStats,
                       { metric: "volatility", addLeftBoundary: true },
                     )}
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle">
+                    <td
+                      className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle"
+                      style={{ minWidth: COMMENT_COLUMN_MIN_WIDTH }}
+                    >
                       {formatValue(row.comment) || texts.commentPlaceholder}
                     </td>
                   </tr>
