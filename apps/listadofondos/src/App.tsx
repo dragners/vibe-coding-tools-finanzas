@@ -83,6 +83,8 @@ const TEXTS = {
     fundsTitle: "Fondos de Inversión",
     plansTitle: "Planes de Pensiones",
     sectionDescription: "",
+    searchPlaceholder: "Buscar...",
+    searchAriaLabel: "Buscar en la tabla",
     dataNote:
       "Los datos se obtienen automáticamente de Morningstar una vez al día y pueden actualizarse manualmente.",
     langES: "ES",
@@ -121,6 +123,8 @@ const TEXTS = {
     fundsTitle: "Mutual Funds",
     plansTitle: "Pension Plans",
     sectionDescription: "",
+    searchPlaceholder: "Search...",
+    searchAriaLabel: "Search within the table",
     dataNote: "Data is automatically retrieved from Morningstar once per day and can be refreshed manually.",
     langES: "ES",
     langEN: "EN",
@@ -265,6 +269,42 @@ function formatValue(raw?: MetricValue): string {
     return formatValue(nested as MetricValue);
   }
   return "-";
+}
+
+function metricValueMatches(raw: MetricValue | undefined, query: string): boolean {
+  if (raw === null || raw === undefined) return false;
+  if (typeof raw === "object") {
+    return (
+      metricValueMatches((raw as { value?: MetricValue }).value, query) ||
+      metricValueMatches((raw as { label?: MetricValue }).label, query)
+    );
+  }
+  return String(raw).toLowerCase().includes(query);
+}
+
+function rowMatchesQuery(row: FundRow, query: string): boolean {
+  const baseValues: (MetricValue | undefined)[] = [
+    row.name,
+    row.isin,
+    row.category,
+    row.comment,
+    row.morningstarId,
+    row.morningstarRating,
+    row.ter,
+    row.url,
+  ];
+
+  if (typeof row.indexed === "boolean") {
+    baseValues.push(row.indexed ? "index indexado indexed" : "active activa");
+  }
+
+  const metricValues: MetricValue[] = [
+    ...Object.values(row.performance ?? {}),
+    ...Object.values(row.sharpe ?? {}),
+    ...Object.values(row.volatility ?? {}),
+  ];
+
+  return [...baseValues, ...metricValues].some((value) => metricValueMatches(value, query));
 }
 
 function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
@@ -578,19 +618,26 @@ function Section({
   lang: Lang;
 }) {
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
+  const [searchQuery, setSearchQuery] = useState("");
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
 
+  const filteredData = useMemo(() => {
+    const normalized = searchQuery.trim().toLowerCase();
+    if (!normalized) return data;
+    return data.filter((row) => rowMatchesQuery(row, normalized));
+  }, [data, searchQuery]);
+
   const performanceStats = useMemo(
-    () => collectColumnStats(data, "performance", PERFORMANCE_LABELS),
-    [data],
+    () => collectColumnStats(filteredData, "performance", PERFORMANCE_LABELS),
+    [filteredData],
   );
   const sharpeStats = useMemo(
-    () => collectColumnStats(data, "sharpe", RATIO_LABELS),
-    [data],
+    () => collectColumnStats(filteredData, "sharpe", RATIO_LABELS),
+    [filteredData],
   );
   const volatilityStats = useMemo(
-    () => collectColumnStats(data, "volatility", RATIO_LABELS),
-    [data],
+    () => collectColumnStats(filteredData, "volatility", RATIO_LABELS),
+    [filteredData],
   );
 
   const handleToggleTooltip = (id: string) => {
@@ -607,11 +654,38 @@ function Section({
 
   return (
     <section className="mt-10 sm:mt-12">
-      <div className="mb-6 space-y-1">
-        <h2 className="text-xl md:text-2xl font-semibold text-gray-900">{title}</h2>
-        {texts.sectionDescription ? (
-          <p className="text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
-        ) : null}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-900">{title}</h2>
+          {texts.sectionDescription ? (
+            <p className="text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
+          ) : null}
+        </div>
+        <div className="relative w-full sm:w-60 md:w-72 lg:w-80">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder={texts.searchPlaceholder}
+            aria-label={texts.searchAriaLabel}
+            className="w-full rounded-xl border border-gray-300 bg-white/80 py-2 pl-3 pr-10 text-sm text-gray-700 placeholder:text-gray-400 shadow-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
+          />
+          <svg
+            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.8}
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
+            />
+          </svg>
+        </div>
       </div>
       <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
         <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
@@ -703,7 +777,7 @@ function Section({
             </tr>
           </thead>
           <tbody>
-            {data.length === 0 ? (
+            {filteredData.length === 0 ? (
               <tr>
                 <td
                   colSpan={
@@ -715,7 +789,7 @@ function Section({
                 </td>
               </tr>
             ) : (
-              data.map((row) => {
+              filteredData.map((row) => {
                 const stars = renderStars(row.morningstarRating);
                 const categoryValue = formatValue(row.category);
                 const rowKey = row.morningstarId || row.isin || row.name;
