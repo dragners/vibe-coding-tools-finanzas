@@ -57,9 +57,9 @@ type TableSection = "funds" | "plans";
 
 const TEXTS = {
   es: {
-    title: "Listado y Comparativa de Fondos",
+    title: "Listado y Comparativa de Fondos y Planes de Pensiones",
     subtitle:
-      "Estos son mis fondos favoritos, que sigo e invierto en ellos desde hace años.",
+      "Estos son mis fondos favoritos y planes de pensiones, que sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
     refreshing: "Actualizando...",
     lastUpdated: "Última actualización",
@@ -89,7 +89,7 @@ const TEXTS = {
       "Mostrando datos de ejemplo por falta de conexión con la API. Las cifras pueden no coincidir con los últimos datos reales.",
   },
   en: {
-    title: "Fund List and Comparison",
+    title: "Fund and Pension Plan List and Comparison",
     subtitle:
       "Review performance, Sharpe ratios, volatility and TER for each fund or pension plan.",
     refresh: "Refresh data",
@@ -191,19 +191,225 @@ function renderStars(rating?: number | null) {
   return "★".repeat(normalized);
 }
 
+function getMetricNumber(raw?: MetricValue): number | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === "number") {
+    return Number.isFinite(raw) ? raw : null;
+  }
+  if (typeof raw === "string") {
+    const cleaned = raw.replace(/[%\s]/g, "").replace(/,/g, ".");
+    if (!cleaned) return null;
+    const parsed = Number.parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  if (typeof raw === "object") {
+    if ("value" in raw && raw.value !== undefined) {
+      return getMetricNumber(raw.value as MetricValue);
+    }
+    if ("label" in raw && raw.label !== undefined) {
+      return getMetricNumber(raw.label as MetricValue);
+    }
+  }
+  return null;
+}
+
+type ColumnStats = {
+  min: number | null;
+  max: number | null;
+  maxPositive: number | null;
+  minNegative: number | null;
+};
+
+type MetricAccessor = "performance" | "sharpe" | "volatility";
+
+type ColumnStatsMap<T extends string> = Record<T, ColumnStats>;
+
+function collectColumnStats<T extends string>(
+  rows: FundRow[],
+  accessor: MetricAccessor,
+  labels: readonly T[],
+): ColumnStatsMap<T> {
+  const stats = {} as ColumnStatsMap<T>;
+  labels.forEach((label) => {
+    stats[label] = { min: null, max: null, maxPositive: null, minNegative: null };
+  });
+
+  rows.forEach((row) => {
+    const record = row[accessor] as MetricRecord<T> | undefined;
+    if (!record) return;
+
+    labels.forEach((label) => {
+      const value = getMetricNumber(record[label]);
+      if (value === null) return;
+      const column = stats[label];
+      column.min = column.min === null ? value : Math.min(column.min, value);
+      column.max = column.max === null ? value : Math.max(column.max, value);
+      if (value > 0) {
+        column.maxPositive =
+          column.maxPositive === null ? value : Math.max(column.maxPositive, value);
+      } else if (value < 0) {
+        column.minNegative =
+          column.minNegative === null ? value : Math.min(column.minNegative, value);
+      }
+    });
+  });
+
+  return stats;
+}
+
+type RGB = { r: number; g: number; b: number };
+
+const COLOR_NEGATIVE: RGB = { r: 220, g: 38, b: 38 };
+const COLOR_POSITIVE: RGB = { r: 16, g: 185, b: 129 };
+const COLOR_NEUTRAL: RGB = { r: 226, g: 232, b: 240 };
+const COLOR_SHARPE_NEGATIVE: RGB = { r: 248, g: 113, b: 113 };
+const COLOR_SHARPE_POSITIVE: RGB = { r: 52, g: 211, b: 153 };
+const COLOR_SHARPE_NEUTRAL: RGB = { r: 209, g: 213, b: 219 };
+const COLOR_VOLATILITY_LOW: RGB = { r: 16, g: 185, b: 129 };
+const COLOR_VOLATILITY_NEUTRAL: RGB = { r: 226, g: 232, b: 240 };
+const COLOR_VOLATILITY_HIGH: RGB = { r: 220, g: 38, b: 38 };
+const COLOR_ALPHA = 0.82;
+const ZERO_TOLERANCE = 0.0001;
+
+function blendColors(start: RGB, end: RGB, ratio: number): RGB {
+  const clamped = Math.max(0, Math.min(1, ratio));
+  return {
+    r: Math.round(start.r + (end.r - start.r) * clamped),
+    g: Math.round(start.g + (end.g - start.g) * clamped),
+    b: Math.round(start.b + (end.b - start.b) * clamped),
+  };
+}
+
+function colorToRgba(color: RGB, alpha = COLOR_ALPHA) {
+  return `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+}
+
+function getPerformanceBackground(value: number | null, stats: ColumnStats): string | undefined {
+  if (value === null || Number.isNaN(value)) return undefined;
+  if (Math.abs(value) <= ZERO_TOLERANCE) {
+    return colorToRgba(COLOR_NEUTRAL, 0.45);
+  }
+
+  if (value > 0) {
+    const { maxPositive } = stats;
+    if (!maxPositive || maxPositive <= 0) return colorToRgba(COLOR_NEUTRAL, 0.45);
+    const ratio = value / maxPositive;
+    const blended = blendColors(COLOR_NEUTRAL, COLOR_POSITIVE, ratio);
+    return colorToRgba(blended);
+  }
+
+  if (value < 0) {
+    const { minNegative } = stats;
+    if (!minNegative || minNegative >= 0) return colorToRgba(COLOR_NEUTRAL, 0.45);
+    const ratio = value / minNegative;
+    const blended = blendColors(COLOR_NEUTRAL, COLOR_NEGATIVE, ratio);
+    return colorToRgba(blended);
+  }
+
+  return undefined;
+}
+
+const SHARPE_LOW_THRESHOLD = 0.5;
+const SHARPE_HIGH_THRESHOLD = 0.9;
+
+function getSharpeBackground(value: number | null, stats: ColumnStats): string | undefined {
+  if (value === null || Number.isNaN(value)) return undefined;
+  if (value < SHARPE_LOW_THRESHOLD) {
+    const minBound = Math.min(stats.min ?? value, value);
+    const range = Math.max(SHARPE_LOW_THRESHOLD - minBound, ZERO_TOLERANCE);
+    const ratio = Math.min(1, (SHARPE_LOW_THRESHOLD - value) / range);
+    const blended = blendColors(COLOR_SHARPE_NEUTRAL, COLOR_SHARPE_NEGATIVE, ratio);
+    return colorToRgba(blended);
+  }
+  if (value <= SHARPE_HIGH_THRESHOLD) {
+    return colorToRgba(COLOR_SHARPE_NEUTRAL, 0.55);
+  }
+  const maxBound = Math.max(stats.max ?? value, value);
+  const range = Math.max(maxBound - SHARPE_HIGH_THRESHOLD, ZERO_TOLERANCE);
+  const ratio = Math.min(1, (value - SHARPE_HIGH_THRESHOLD) / range);
+  const blended = blendColors(COLOR_SHARPE_NEUTRAL, COLOR_SHARPE_POSITIVE, ratio);
+  return colorToRgba(blended);
+}
+
+function getVolatilityBackground(
+  value: number | null,
+  stats: ColumnStats,
+): string | undefined {
+  if (value === null || Number.isNaN(value)) return undefined;
+  const min = stats.min ?? value;
+  const max = stats.max ?? value;
+  if (min === null || max === null) {
+    return undefined;
+  }
+  if (Math.abs(max - min) <= ZERO_TOLERANCE) {
+    return colorToRgba(COLOR_VOLATILITY_NEUTRAL, 0.45);
+  }
+  const mid = min + (max - min) / 2;
+  if (value <= mid) {
+    const range = Math.max(mid - min, ZERO_TOLERANCE);
+    const ratio = Math.min(1, (value - min) / range);
+    const blended = blendColors(COLOR_VOLATILITY_LOW, COLOR_VOLATILITY_NEUTRAL, ratio);
+    const alpha = 0.55 + (1 - ratio) * 0.27;
+    return colorToRgba(blended, alpha);
+  }
+  const range = Math.max(max - mid, ZERO_TOLERANCE);
+  const ratio = Math.min(1, (value - mid) / range);
+  const blended = blendColors(COLOR_VOLATILITY_NEUTRAL, COLOR_VOLATILITY_HIGH, ratio);
+  const alpha = 0.55 + ratio * 0.27;
+  return colorToRgba(blended, alpha);
+}
+
+function getMetricBackground(
+  metric: MetricAccessor,
+  value: number | null,
+  stats: ColumnStats,
+): string | undefined {
+  switch (metric) {
+    case "performance":
+      return getPerformanceBackground(value, stats);
+    case "sharpe":
+      return getSharpeBackground(value, stats);
+    case "volatility":
+      return getVolatilityBackground(value, stats);
+    default:
+      return undefined;
+  }
+}
+
+type CellRenderOptions = {
+  metric: MetricAccessor;
+  addLeftBoundary?: boolean;
+};
+
 function renderMetricCells<T extends string>(
   columns: readonly T[],
   values: MetricRecord<T>,
   keyPrefix: string,
+  stats: ColumnStatsMap<T> | undefined,
+  options: CellRenderOptions,
 ) {
-  return columns.map((label) => (
-    <td
-      key={`${keyPrefix}-${label}`}
-      className="px-1.5 py-2 text-sm font-semibold text-gray-700 text-center"
-    >
-      {formatValue(values[label])}
-    </td>
-  ));
+  return columns.map((label) => {
+    const numericValue = getMetricNumber(values[label]);
+    const columnStats = stats?.[label];
+    const background = columnStats
+      ? getMetricBackground(options.metric, numericValue, columnStats)
+      : undefined;
+    const classes = [
+      "px-1.5 py-2 text-sm font-semibold text-gray-700 text-center",
+    ];
+    if (options.addLeftBoundary && columns[0] === label) {
+      classes.push("border-l", "border-gray-400");
+    }
+    return (
+      <td
+        key={`${keyPrefix}-${label}`}
+        className={classes.join(" ")}
+        style={background ? { backgroundColor: background } : undefined}
+      >
+        {formatValue(values[label])}
+      </td>
+    );
+  });
 }
 
 function getMorningstarUrl(id?: string, lang: Lang = "es") {
@@ -287,8 +493,25 @@ function Section({
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
 
+  const performanceStats = useMemo(
+    () => collectColumnStats(data, "performance", PERFORMANCE_LABELS),
+    [data],
+  );
+  const sharpeStats = useMemo(
+    () => collectColumnStats(data, "sharpe", RATIO_LABELS),
+    [data],
+  );
+  const volatilityStats = useMemo(
+    () => collectColumnStats(data, "volatility", RATIO_LABELS),
+    [data],
+  );
+
   const handleToggleTooltip = (id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
+  };
+
+  const handleOpenTooltip = (id: string) => {
+    setOpenTooltipId(id);
   };
 
   const handleCloseTooltip = (id: string) => {
@@ -298,7 +521,7 @@ function Section({
   return (
     <section className="mt-10 sm:mt-12">
       <div className="mb-6 space-y-1">
-        <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-900">{title}</h2>
         {texts.sectionDescription ? (
           <p className="text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
         ) : null}
@@ -306,42 +529,78 @@ function Section({
       <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
         <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
           <thead>
-            <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-              <th rowSpan={2} className="px-3 py-2 min-w-[220px] bg-white/70 rounded-tl-2xl">
+            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th
+                rowSpan={2}
+                className="px-3 py-2 min-w-[300px] max-w-[320px] bg-white/70 text-center rounded-tl-2xl"
+              >
                 {texts.name}
               </th>
-              <th rowSpan={2} className="px-2.5 py-2 whitespace-nowrap bg-white/70">
+              <th
+                rowSpan={2}
+                className="px-2.5 py-2 whitespace-nowrap bg-white/70 text-center"
+              >
                 {texts.isin}
               </th>
-              <th rowSpan={2} className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center">
+              <th
+                rowSpan={2}
+                className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center"
+              >
                 {texts.ter}
               </th>
-              <th colSpan={PERFORMANCE_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
+              <th
+                colSpan={PERFORMANCE_LABELS.length}
+                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+              >
                 {texts.performance}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
+              <th
+                colSpan={RATIO_LABELS.length}
+                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+              >
                 {texts.sharpe}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
+              <th
+                colSpan={RATIO_LABELS.length}
+                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+              >
                 {texts.volatility}
               </th>
-              <th rowSpan={2} className="px-3 py-2 min-w-[200px] bg-white/70 rounded-tr-2xl">
+              <th
+                rowSpan={2}
+                className="px-3 py-2 min-w-[200px] bg-white/70 text-center rounded-tr-2xl"
+              >
                 {texts.comment}
               </th>
             </tr>
             <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-              {PERFORMANCE_LABELS.map((label) => (
-                <th key={`perf-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
+              {PERFORMANCE_LABELS.map((label, index) => (
+                <th
+                  key={`perf-${label}`}
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
+                  }`}
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
-              {RATIO_LABELS.map((label) => (
-                <th key={`sharpe-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
+              {RATIO_LABELS.map((label, index) => (
+                <th
+                  key={`sharpe-${label}`}
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
+                  }`}
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
-              {RATIO_LABELS.map((label) => (
-                <th key={`vol-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
+              {RATIO_LABELS.map((label, index) => (
+                <th
+                  key={`vol-${label}`}
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
+                  }`}
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
@@ -369,23 +628,28 @@ function Section({
                 const tooltipOpen = openTooltipId === tooltipId;
                 const categoryDisplay = categoryValue !== "-" ? categoryValue : texts.noData;
                 const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
+                const tooltipLabel =
+                  categoryDisplay && categoryDisplay !== texts.noData
+                    ? `${row.name} · ${categoryDisplay}`
+                    : row.name;
                 return (
                   <tr key={tooltipId} className="align-top">
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur min-w-[300px] max-w-[320px]">
                       <div className="flex flex-col items-start gap-1">
                         <a
                           href={link}
                           target="_blank"
                           rel="noreferrer"
                           className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
+                          title={row.name}
                         >
                           {row.name}
                         </a>
-                        {(stars || badges.length > 0) && (
-                          <div className="flex flex-wrap items-center gap-1">
+                        {(badges.length > 0 || stars) && (
+                          <div className="flex w-full items-center gap-2">
                             {stars ? (
                               <span
-                                className="text-xs font-semibold text-amber-500 leading-none"
+                                className="inline-flex shrink-0 items-center text-xs font-semibold text-amber-500"
                                 aria-label={`${stars.length} estrellas Morningstar`}
                               >
                                 {stars}
@@ -393,14 +657,16 @@ function Section({
                             ) : null}
                             {badges.length > 0 ? (
                               <div
-                                className="relative group"
+                                className={`relative group ${stars ? "ml-auto" : ""}`}
+                                onMouseEnter={() => handleOpenTooltip(tooltipId)}
                                 onMouseLeave={() => handleCloseTooltip(tooltipId)}
                               >
                                 <button
                                   type="button"
-                                  className="inline-flex flex-wrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
+                                  className="inline-flex flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
                                   onClick={() => handleToggleTooltip(tooltipId)}
                                   onBlur={() => handleCloseTooltip(tooltipId)}
+                                  onFocus={() => handleOpenTooltip(tooltipId)}
                                   onKeyDown={(event) => {
                                     if (event.key === "Escape") {
                                       event.stopPropagation();
@@ -409,13 +675,13 @@ function Section({
                                   }}
                                   aria-haspopup="true"
                                   aria-expanded={tooltipOpen}
-                                  aria-label={`${texts.category}: ${categoryDisplay}`}
-                                  title={categoryDisplay}
+                                  aria-label={`${row.name}: ${categoryDisplay}`}
+                                  title={tooltipLabel}
                                 >
                                   {badges.map((badge) => (
                                     <span
                                       key={`${rowKey}-${badge.text}`}
-                                      className={`text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
+                                      className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
                                         BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
                                       }`}
                                     >
@@ -424,12 +690,12 @@ function Section({
                                   ))}
                                 </button>
                                 <div
-                                  className={`pointer-events-none absolute left-0 top-full z-20 mt-1 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
-                                    tooltipOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                  className={`pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
+                                    tooltipOpen ? "opacity-100" : "opacity-0"
                                   }`}
                                   role="tooltip"
                                 >
-                                  {categoryDisplay}
+                                  {tooltipLabel}
                                 </div>
                               </div>
                             ) : null}
@@ -437,16 +703,31 @@ function Section({
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px]">
                       {formatValue(row.isin)}
                     </td>
                     <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center">
                       {formatValue(row.ter)}
                     </td>
-                    {renderMetricCells(PERFORMANCE_LABELS, row.performance, "perf")}
-                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe")}
-                    {renderMetricCells(RATIO_LABELS, row.volatility, "vol")}
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600">
+                    {renderMetricCells(
+                      PERFORMANCE_LABELS,
+                      row.performance,
+                      "perf",
+                      performanceStats,
+                      { metric: "performance", addLeftBoundary: true },
+                    )}
+                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe", sharpeStats, {
+                      metric: "sharpe",
+                      addLeftBoundary: true,
+                    })}
+                    {renderMetricCells(
+                      RATIO_LABELS,
+                      row.volatility,
+                      "vol",
+                      volatilityStats,
+                      { metric: "volatility", addLeftBoundary: true },
+                    )}
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug">
                       {formatValue(row.comment) || texts.commentPlaceholder}
                     </td>
                   </tr>
@@ -529,8 +810,8 @@ export default function App() {
       `}</style>
       <div className="landing-bg" aria-hidden="true" />
 
-      <div className="sticky top-0 z-10 bg-white/85 backdrop-blur border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="bg-white/85 backdrop-blur border-b border-gray-200">
+        <div className="max-w-[min(96vw,1600px)] mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <a
               href="/"
@@ -540,7 +821,7 @@ export default function App() {
               {texts.back}
             </a>
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold">{texts.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-extrabold">{texts.title}</h1>
               <p className="mt-1 text-sm md:text-base text-gray-700 max-w-3xl">{texts.subtitle}</p>
             </div>
           </div>
@@ -602,7 +883,7 @@ export default function App() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 space-y-6">
+      <main className="max-w-[min(96vw,1600px)] mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         {status === "loading" && (
           <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-gray-600 shadow-sm backdrop-blur">
             {texts.loading}
