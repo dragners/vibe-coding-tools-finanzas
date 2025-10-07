@@ -109,7 +109,7 @@ const TEXTS = {
     searchPlaceholder: "Buscar...",
     searchAriaLabel: "Buscar en la tabla",
     dataNote:
-      "Los datos se obtienen automáticamente de Morningstar una vez al día y pueden actualizarse manualmente.",
+      "Los datos se obtienen automáticamente de Morningstar cada 4 horas y pueden actualizarse manualmente.",
     langES: "ES",
     langEN: "EN",
     back: "Volver a Herramientas",
@@ -148,7 +148,8 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Search...",
     searchAriaLabel: "Search within the table",
-    dataNote: "Data is automatically retrieved from Morningstar once per day and can be refreshed manually.",
+    dataNote:
+      "Data is automatically retrieved from Morningstar every 4 hours and can be refreshed manually.",
     langES: "ES",
     langEN: "EN",
     back: "Back to Tools",

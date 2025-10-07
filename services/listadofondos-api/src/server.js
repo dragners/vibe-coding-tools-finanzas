@@ -613,15 +613,17 @@ function parseMorningstarRating(html) {
   return Math.max(0, Math.min(5, rating));
 }
 
-function isSameDay(isoA, isoB) {
+function isWithinHours(isoA, isoB, hours) {
   if (!isoA || !isoB) return false;
-  const a = new Date(isoA);
-  const b = new Date(isoB);
-  return (
-    a.getUTCFullYear() === b.getUTCFullYear() &&
-    a.getUTCMonth() === b.getUTCMonth() &&
-    a.getUTCDate() === b.getUTCDate()
-  );
+  if (typeof hours !== "number" || !Number.isFinite(hours) || hours <= 0) {
+    return false;
+  }
+  const a = new Date(isoA).getTime();
+  const b = new Date(isoB).getTime();
+  if (Number.isNaN(a) || Number.isNaN(b)) return false;
+  const diffMs = Math.abs(b - a);
+  const limitMs = hours * 60 * 60 * 1000;
+  return diffMs <= limitMs;
 }
 
 function stripQuotes(value) {
@@ -772,8 +774,8 @@ async function buildPayload() {
 
 async function getData() {
   const cache = await readCache();
-  const today = new Date().toISOString();
-  if (cache && isSameDay(cache.lastUpdated, today)) return cache;
+  const nowIso = new Date().toISOString();
+  if (cache && isWithinHours(cache.lastUpdated, nowIso, 4)) return cache;
   return await buildPayload();
 }
 
