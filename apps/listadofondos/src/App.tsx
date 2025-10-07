@@ -639,7 +639,7 @@ function Section({
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
-                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.sharpe}</span>
@@ -648,7 +648,7 @@ function Section({
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
-                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.volatility}</span>
@@ -735,7 +735,7 @@ function Section({
                           {row.name}
                         </a>
                         {(badges.length > 0 || stars) && (
-                          <div className="flex w-full items-center gap-1.5">
+                          <div className="flex w-full items-center gap-1">
                             {stars ? (
                               <span
                                 className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-500"
