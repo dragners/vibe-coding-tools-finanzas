@@ -611,14 +611,19 @@ function Section({
   data,
   texts,
   lang,
+  searchQuery,
+  onSearchChange,
+  showSearchInput = false,
 }: {
   section: TableSection;
   data: FundRow[];
   texts: Record<TextKey, string>;
   lang: Lang;
+  searchQuery: string;
+  onSearchChange?: (value: string) => void;
+  showSearchInput?: boolean;
 }) {
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
-  const [searchQuery, setSearchQuery] = useState("");
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
 
   const filteredData = useMemo(() => {
@@ -654,38 +659,44 @@ function Section({
 
   return (
     <section className="mt-10 sm:mt-12">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        className={`mb-6 flex flex-col gap-3 ${
+          showSearchInput ? "sm:flex-row sm:items-center sm:justify-between" : ""
+        }`}
+      >
         <div className="space-y-1">
           <h2 className="text-xl md:text-2xl font-semibold text-gray-900">{title}</h2>
           {texts.sectionDescription ? (
             <p className="text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
           ) : null}
         </div>
-        <div className="relative w-full sm:w-60 md:w-72 lg:w-80">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder={texts.searchPlaceholder}
-            aria-label={texts.searchAriaLabel}
-            className="w-full rounded-xl border border-gray-300 bg-white/80 py-2 pl-3 pr-10 text-sm text-gray-700 placeholder:text-gray-400 shadow-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
-          />
-          <svg
-            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.8}
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
+        {showSearchInput ? (
+          <div className="relative w-full sm:w-60 md:w-72 lg:w-80">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => onSearchChange?.(event.target.value)}
+              placeholder={texts.searchPlaceholder}
+              aria-label={texts.searchAriaLabel}
+              className="w-full rounded-xl border border-gray-300 bg-white/80 py-2 pl-3 pr-10 text-sm text-gray-700 placeholder:text-gray-400 shadow-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
             />
-          </svg>
-        </div>
+            <svg
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.8}
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
+              />
+            </svg>
+          </div>
+        ) : null}
       </div>
       <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
         <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
@@ -927,6 +938,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usingMockData, setUsingMockData] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = async (force = false) => {
     setStatus((prev) => (prev === "ready" ? prev : "loading"));
@@ -1078,8 +1090,22 @@ export default function App() {
 
         {data && status === "ready" && (
           <div className="space-y-12 pb-12">
-            <Section section="funds" data={data.funds} texts={texts} lang={lang} />
-            <Section section="plans" data={data.plans} texts={texts} lang={lang} />
+            <Section
+              section="funds"
+              data={data.funds}
+              texts={texts}
+              lang={lang}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              showSearchInput
+            />
+            <Section
+              section="plans"
+              data={data.plans}
+              texts={texts}
+              lang={lang}
+              searchQuery={searchQuery}
+            />
           </div>
         )}
 
