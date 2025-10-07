@@ -772,6 +772,11 @@ function Section({
     [filteredData],
   );
 
+  const commentColumnWidthClass =
+    section === "plans"
+      ? "min-w-[320px] sm:min-w-[380px]"
+      : "min-w-[160px]";
+
   const sortedData = useMemo(() => {
     if (!sortConfig) {
       return filteredData;
@@ -972,7 +977,7 @@ function Section({
               </th>
               <th
                 rowSpan={2}
-                className="px-3 py-2 bg-white/70 text-center rounded-tr-2xl"
+                className={`px-3 py-2 bg-white/70 text-center rounded-tr-2xl ${commentColumnWidthClass}`}
               >
                 {texts.comment}
               </th>
@@ -1186,7 +1191,7 @@ function Section({
                       { metric: "volatility", addLeftBoundary: true },
                     )}
                     <td
-                      className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle"
+                      className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle ${commentColumnWidthClass}`}
                     >
                       {formatValue(row.comment) || texts.commentPlaceholder}
                     </td>
