@@ -59,7 +59,7 @@ const TEXTS = {
   es: {
     title: "Listado y Comparativa de Fondos y Planes de Pensiones",
     subtitle:
-      "Estos son mis fondos favoritos y planes de pensiones, que sigo e invierto en ellos desde hace años.",
+      "Estos son mis fondos favoritos y planes de pensiones,\nque sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
     refreshing: "Actualizando...",
     lastUpdated: "Última actualización",
@@ -726,8 +726,8 @@ function Section({
                 const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
                 const tooltipLabel =
                   categoryDisplay && categoryDisplay !== texts.noData
-                    ? `${row.name} · ${categoryDisplay}`
-                    : row.name;
+                    ? categoryDisplay
+                    : texts.noData;
                 return (
                   <tr key={tooltipId} className="align-middle">
                     <td
@@ -775,7 +775,11 @@ function Section({
                                   }}
                                   aria-haspopup="true"
                                   aria-expanded={tooltipOpen}
-                                  aria-label={`${row.name}: ${categoryDisplay}`}
+                                  aria-label={
+                                    categoryDisplay && categoryDisplay !== texts.noData
+                                      ? `${row.name}: ${categoryDisplay}`
+                                      : row.name
+                                  }
                                   title={tooltipLabel}
                                 >
                                   {badges.map((badge) => (
@@ -922,7 +926,9 @@ export default function App() {
             </a>
             <div>
               <h1 className="text-2xl md:text-3xl font-extrabold">{texts.title}</h1>
-              <p className="mt-1 text-sm md:text-base text-gray-700 max-w-3xl">{texts.subtitle}</p>
+              <p className="mt-1 text-sm md:text-base text-gray-700 max-w-3xl whitespace-pre-line">
+                {texts.subtitle}
+              </p>
             </div>
           </div>
           <div className="flex flex-col items-stretch md:items-end gap-2 sm:gap-3">
