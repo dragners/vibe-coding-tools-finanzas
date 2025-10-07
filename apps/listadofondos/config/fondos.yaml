@@ -1,15 +1,15 @@
 funds:
-- name: Azvalor Internacional FI
+- name: Azvalor Internacional
   isin: ES0112611001
   category: Global Flex-Cap Equity
   morningstarId: F00000WI0D
   comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020
-- name: Azvalor Managers FI
+- name: Azvalor Managers
   isin: ES0112602000
   category: Global Small/Mid-Cap Equity
   morningstarId: F000011HLY
   comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020
-- name: Hamco Global Value Fund R FI
+- name: Hamco Global Value Fund R
   isin: ES0141116030
   category: Global Small/Mid-Cap Equity
   morningstarId: F000014ACV
@@ -29,22 +29,22 @@ funds:
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000YXEW
   comment: Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional. Parames suele invetir en este fondo
-- name: Horos Value Internacional FI
+- name: Horos Value Internacional
   isin: ES0146309002
   category: Global Small/Mid-Cap Equity
   morningstarId: F000010KY6
   comment: Javier Ruiz Miguel Rodríguez y Alejandro Martín (ex Fondo Metagestión). ~12 años de resultados con +11,6% anual
-- name: Sigma Internacional A FI
+- name: Sigma Internacional A
   isin: ES0175902008
   category: Global Small Equity
   morningstarId: F000016XFO
   comment: Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record
-- name: Gestión Boutique VI Opportunity A FI
+- name: Gestión Boutique VI Opportunity A
   isin: ES0110407063
   category: Global Small/Mid-Cap Equity
   morningstarId: F0000107JH
   comment: Andbank, lleva tambien BTC y otros activos alternativos
-- name: Avantage Fund A FI
+- name: Avantage Fund A
   isin: ES0112231016
   category: Global Flexible Allocation
   morningstarId: F00001B0AP
@@ -120,7 +120,7 @@ funds:
   category: Sector Equity Ecology (ESG)
   morningstarId: F000014SSQ
   comment: ESG - Equipo de gestores
-- name: Indexa RV internacional FI
+- name: Indexa RV internacional
   isin: ES0148019005
   category: Global Large-Cap Blend Equity
   morningstarId: F00001QFKV
@@ -167,7 +167,7 @@ plans:
   morningstarId: F000016CB6
   comment: ''
   indexed: true
-- name: Indexa Más Rentabilidad Acciones PP
+- name: Indexa Más Rentabilidad Acciones
   isin: N5138
   category: Global Large-Cap Blend Equity
   morningstarId: F00000Y5QI
@@ -183,7 +183,7 @@ plans:
   isin: N5263
   category: Global Small/Mid-Cap Equity
   morningstarId: F000010KY6
-  comment: Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional FI pero en PP
+  comment: Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional pero en PP
 - name: Azvalor Global Value PP
   isin: N5116
   category: Global Small-Cap Equity
