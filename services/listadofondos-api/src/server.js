@@ -369,23 +369,65 @@ function parseRatiosFromText(html) {
     .replace(/[ \t]+/g, " ")
     .replace(/\n{2,}/g, "\n")
     .trim();
-  
+
   // Find a local block around "Análisis de Rentabilidad/Riesgo" to increase precision
   const blockMatch = norm.match(/An[aá]lisis de Rentabilidad\/?Riesgo[\s\S]{0,800}/i);
   const block = blockMatch ? blockMatch[0] : norm;
 
-  // Patterns for the two rows. Accept comma decimals and optional units.
-  const volRe = /Volatilidad\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)/i;
-  const sharpeRe = /Ratio\s+de\s+Sharpe\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)\s+(-?\d+[.,]\d+)/i;
+  const lines = block
+    .split(/\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 
-  const vm = block.match(volRe);
-  if (vm) {
-    out.volatility = { "1Y": vm[1], "3Y": vm[2], "5Y": vm[3] };
-  }
-  const sm = block.match(sharpeRe);
-  if (sm) {
-    out.sharpe = { "1Y": sm[1], "3Y": sm[2], "5Y": sm[3] };
-  }
+  const VALUE_TOKEN_RE = /^-?(?:\d+(?:[.,]\d+)?)(?:%?)$|^[-–—]+$|^n\/?a$/i;
+  const periods = ["1Y", "3Y", "5Y"];
+
+  const parseLine = (labelRe) => {
+    const line = lines.find((candidate) => labelRe.test(candidate));
+    if (!line) return null;
+
+    const rest = line.replace(labelRe, "").trim();
+    if (!rest) {
+      return periods.reduce((acc, period) => {
+        acc[period] = "-";
+        return acc;
+      }, {});
+    }
+
+    const tokens = rest.split(/\s+/);
+    const values = [];
+    for (const token of tokens) {
+      const cleanedToken = token.replace(/[()%]/g, "");
+      if (!VALUE_TOKEN_RE.test(cleanedToken)) continue;
+
+      const normalizedToken = cleanedToken.replace(/%$/, "");
+      values.push(sanitizeValue(normalizedToken));
+      if (values.length === periods.length) break;
+    }
+
+    if (!values.length) {
+      return periods.reduce((acc, period) => {
+        acc[period] = "-";
+        return acc;
+      }, {});
+    }
+
+    while (values.length < periods.length) {
+      values.push("-");
+    }
+
+    return periods.reduce((acc, period, idx) => {
+      acc[period] = values[idx] ?? "-";
+      return acc;
+    }, {});
+  };
+
+  const volatility = parseLine(/^Volatilidad\b/i);
+  if (volatility) out.volatility = volatility;
+
+  const sharpe = parseLine(/^Ratio\s+de\s+Sharpe\b/i);
+  if (sharpe) out.sharpe = sharpe;
+
   return out;
 }
 
