@@ -1218,7 +1218,6 @@ export default function App() {
   const texts = useTexts(lang);
   const [status, setStatus] = useState<ApiStatus>("idle");
   const [data, setData] = useState<ApiPayload | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usingMockData, setUsingMockData] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1277,9 +1276,7 @@ export default function App() {
 
     const run = async () => {
       if (shouldAutoRefresh) {
-        setRefreshing(true);
         await fetchData(true);
-        setRefreshing(false);
         if (typeof window !== "undefined") {
           const basePath = window.location.pathname.replace(
             /\/refrescardatos_dragner\/?$/,
@@ -1294,12 +1291,6 @@ export default function App() {
 
     void run();
   }, [fetchData, shouldAutoRefresh]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData(true);
-    setRefreshing(false);
-  };
 
   return (
     <div className="relative min-h-screen text-gray-900">
@@ -1368,14 +1359,6 @@ export default function App() {
                   </span>
                 </label>
               </div>
-              <button
-                type="button"
-                onClick={onRefresh}
-                disabled={refreshing}
-                className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto w-full"
-              >
-                {refreshing ? texts.refreshing : texts.refresh}
-              </button>
             </div>
             {status === "ready" && data && (
               <p className="text-xs text-gray-500">
