@@ -262,6 +262,12 @@ type RGB = { r: number; g: number; b: number };
 const COLOR_NEGATIVE: RGB = { r: 220, g: 38, b: 38 };
 const COLOR_POSITIVE: RGB = { r: 16, g: 185, b: 129 };
 const COLOR_NEUTRAL: RGB = { r: 226, g: 232, b: 240 };
+const COLOR_SHARPE_NEGATIVE: RGB = { r: 248, g: 113, b: 113 };
+const COLOR_SHARPE_POSITIVE: RGB = { r: 52, g: 211, b: 153 };
+const COLOR_SHARPE_NEUTRAL: RGB = { r: 209, g: 213, b: 219 };
+const COLOR_VOLATILITY_LOW: RGB = { r: 16, g: 185, b: 129 };
+const COLOR_VOLATILITY_NEUTRAL: RGB = { r: 226, g: 232, b: 240 };
+const COLOR_VOLATILITY_HIGH: RGB = { r: 220, g: 38, b: 38 };
 const COLOR_ALPHA = 0.82;
 const ZERO_TOLERANCE = 0.0001;
 
@@ -278,7 +284,7 @@ function colorToRgba(color: RGB, alpha = COLOR_ALPHA) {
   return `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
 }
 
-function getBackgroundColor(value: number | null, stats: ColumnStats): string | undefined {
+function getPerformanceBackground(value: number | null, stats: ColumnStats): string | undefined {
   if (value === null || Number.isNaN(value)) return undefined;
   if (Math.abs(value) <= ZERO_TOLERANCE) {
     return colorToRgba(COLOR_NEUTRAL, 0.45);
@@ -295,7 +301,7 @@ function getBackgroundColor(value: number | null, stats: ColumnStats): string | 
   if (value < 0) {
     const { minNegative } = stats;
     if (!minNegative || minNegative >= 0) return colorToRgba(COLOR_NEUTRAL, 0.45);
-    const ratio = value / minNegative; // both negative, results between 0 and 1
+    const ratio = value / minNegative;
     const blended = blendColors(COLOR_NEUTRAL, COLOR_NEGATIVE, ratio);
     return colorToRgba(blended);
   }
@@ -303,22 +309,101 @@ function getBackgroundColor(value: number | null, stats: ColumnStats): string | 
   return undefined;
 }
 
+const SHARPE_LOW_THRESHOLD = 0.5;
+const SHARPE_HIGH_THRESHOLD = 0.9;
+
+function getSharpeBackground(value: number | null, stats: ColumnStats): string | undefined {
+  if (value === null || Number.isNaN(value)) return undefined;
+  if (value < SHARPE_LOW_THRESHOLD) {
+    const minBound = Math.min(stats.min ?? value, value);
+    const range = Math.max(SHARPE_LOW_THRESHOLD - minBound, ZERO_TOLERANCE);
+    const ratio = Math.min(1, (SHARPE_LOW_THRESHOLD - value) / range);
+    const blended = blendColors(COLOR_SHARPE_NEUTRAL, COLOR_SHARPE_NEGATIVE, ratio);
+    return colorToRgba(blended);
+  }
+  if (value <= SHARPE_HIGH_THRESHOLD) {
+    return colorToRgba(COLOR_SHARPE_NEUTRAL, 0.55);
+  }
+  const maxBound = Math.max(stats.max ?? value, value);
+  const range = Math.max(maxBound - SHARPE_HIGH_THRESHOLD, ZERO_TOLERANCE);
+  const ratio = Math.min(1, (value - SHARPE_HIGH_THRESHOLD) / range);
+  const blended = blendColors(COLOR_SHARPE_NEUTRAL, COLOR_SHARPE_POSITIVE, ratio);
+  return colorToRgba(blended);
+}
+
+function getVolatilityBackground(
+  value: number | null,
+  stats: ColumnStats,
+): string | undefined {
+  if (value === null || Number.isNaN(value)) return undefined;
+  const min = stats.min ?? value;
+  const max = stats.max ?? value;
+  if (min === null || max === null) {
+    return undefined;
+  }
+  if (Math.abs(max - min) <= ZERO_TOLERANCE) {
+    return colorToRgba(COLOR_VOLATILITY_NEUTRAL, 0.45);
+  }
+  const mid = min + (max - min) / 2;
+  if (value <= mid) {
+    const range = Math.max(mid - min, ZERO_TOLERANCE);
+    const ratio = Math.min(1, (value - min) / range);
+    const blended = blendColors(COLOR_VOLATILITY_LOW, COLOR_VOLATILITY_NEUTRAL, ratio);
+    const alpha = 0.55 + (1 - ratio) * 0.27;
+    return colorToRgba(blended, alpha);
+  }
+  const range = Math.max(max - mid, ZERO_TOLERANCE);
+  const ratio = Math.min(1, (value - mid) / range);
+  const blended = blendColors(COLOR_VOLATILITY_NEUTRAL, COLOR_VOLATILITY_HIGH, ratio);
+  const alpha = 0.55 + ratio * 0.27;
+  return colorToRgba(blended, alpha);
+}
+
+function getMetricBackground(
+  metric: MetricAccessor,
+  value: number | null,
+  stats: ColumnStats,
+): string | undefined {
+  switch (metric) {
+    case "performance":
+      return getPerformanceBackground(value, stats);
+    case "sharpe":
+      return getSharpeBackground(value, stats);
+    case "volatility":
+      return getVolatilityBackground(value, stats);
+    default:
+      return undefined;
+  }
+}
+
+type CellRenderOptions = {
+  metric: MetricAccessor;
+  addLeftBoundary?: boolean;
+};
+
 function renderMetricCells<T extends string>(
   columns: readonly T[],
   values: MetricRecord<T>,
   keyPrefix: string,
-  stats?: ColumnStatsMap<T>,
+  stats: ColumnStatsMap<T> | undefined,
+  options: CellRenderOptions,
 ) {
   return columns.map((label) => {
     const numericValue = getMetricNumber(values[label]);
     const columnStats = stats?.[label];
     const background = columnStats
-      ? getBackgroundColor(numericValue, columnStats)
+      ? getMetricBackground(options.metric, numericValue, columnStats)
       : undefined;
+    const classes = [
+      "px-1.5 py-2 text-sm font-semibold text-gray-700 text-center",
+    ];
+    if (options.addLeftBoundary && columns[0] === label) {
+      classes.push("border-l", "border-gray-400");
+    }
     return (
       <td
         key={`${keyPrefix}-${label}`}
-        className="px-1.5 py-2 text-sm font-semibold text-gray-700 text-center"
+        className={classes.join(" ")}
         style={background ? { backgroundColor: background } : undefined}
       >
         {formatValue(values[label])}
@@ -425,6 +510,10 @@ function Section({
     setOpenTooltipId((prev) => (prev === id ? null : id));
   };
 
+  const handleOpenTooltip = (id: string) => {
+    setOpenTooltipId(id);
+  };
+
   const handleCloseTooltip = (id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : prev));
   };
@@ -432,7 +521,7 @@ function Section({
   return (
     <section className="mt-10 sm:mt-12">
       <div className="mb-6 space-y-1">
-        <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-900">{title}</h2>
         {texts.sectionDescription ? (
           <p className="text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
         ) : null}
@@ -447,16 +536,28 @@ function Section({
               <th rowSpan={2} className="px-2.5 py-2 whitespace-nowrap bg-white/70">
                 {texts.isin}
               </th>
-              <th rowSpan={2} className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center">
+              <th
+                rowSpan={2}
+                className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center"
+              >
                 {texts.ter}
               </th>
-              <th colSpan={PERFORMANCE_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
+              <th
+                colSpan={PERFORMANCE_LABELS.length}
+                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+              >
                 {texts.performance}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
+              <th
+                colSpan={RATIO_LABELS.length}
+                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+              >
                 {texts.sharpe}
               </th>
-              <th colSpan={RATIO_LABELS.length} className="px-2.5 py-2 bg-white/70 text-center">
+              <th
+                colSpan={RATIO_LABELS.length}
+                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+              >
                 {texts.volatility}
               </th>
               <th rowSpan={2} className="px-3 py-2 min-w-[200px] bg-white/70 rounded-tr-2xl">
@@ -464,18 +565,33 @@ function Section({
               </th>
             </tr>
             <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-              {PERFORMANCE_LABELS.map((label) => (
-                <th key={`perf-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
+              {PERFORMANCE_LABELS.map((label, index) => (
+                <th
+                  key={`perf-${label}`}
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
+                  }`}
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
-              {RATIO_LABELS.map((label) => (
-                <th key={`sharpe-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
+              {RATIO_LABELS.map((label, index) => (
+                <th
+                  key={`sharpe-${label}`}
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
+                  }`}
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
-              {RATIO_LABELS.map((label) => (
-                <th key={`vol-${label}`} className="px-1.5 py-1.5 bg-white/70 text-center">
+              {RATIO_LABELS.map((label, index) => (
+                <th
+                  key={`vol-${label}`}
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
+                  }`}
+                >
                   {displayMetricLabel(label)}
                 </th>
               ))}
@@ -532,6 +648,7 @@ function Section({
                           <div className="flex flex-wrap items-center gap-1">
                             <div
                               className="relative group"
+                              onMouseEnter={() => handleOpenTooltip(tooltipId)}
                               onMouseLeave={() => handleCloseTooltip(tooltipId)}
                             >
                               <button
@@ -539,6 +656,7 @@ function Section({
                                 className="inline-flex flex-wrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
                                 onClick={() => handleToggleTooltip(tooltipId)}
                                 onBlur={() => handleCloseTooltip(tooltipId)}
+                                onFocus={() => handleOpenTooltip(tooltipId)}
                                 onKeyDown={(event) => {
                                   if (event.key === "Escape") {
                                     event.stopPropagation();
@@ -563,7 +681,7 @@ function Section({
                               </button>
                               <div
                                 className={`pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
-                                  tooltipOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                  tooltipOpen ? "opacity-100" : "opacity-0"
                                 }`}
                                 role="tooltip"
                               >
@@ -585,13 +703,18 @@ function Section({
                       row.performance,
                       "perf",
                       performanceStats,
+                      { metric: "performance", addLeftBoundary: true },
                     )}
-                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe", sharpeStats)}
+                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe", sharpeStats, {
+                      metric: "sharpe",
+                      addLeftBoundary: true,
+                    })}
                     {renderMetricCells(
                       RATIO_LABELS,
                       row.volatility,
                       "vol",
                       volatilityStats,
+                      { metric: "volatility", addLeftBoundary: true },
                     )}
                     <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600">
                       {formatValue(row.comment) || texts.commentPlaceholder}
@@ -687,7 +810,7 @@ export default function App() {
               {texts.back}
             </a>
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold">{texts.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-extrabold">{texts.title}</h1>
               <p className="mt-1 text-sm md:text-base text-gray-700 max-w-3xl">{texts.subtitle}</p>
             </div>
           </div>
