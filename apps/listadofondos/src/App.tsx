@@ -617,7 +617,7 @@ function SortControl({
         type="button"
         aria-label={ascLabel}
         aria-pressed={ascActive}
-        className={`group inline-flex h-4 w-4 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
+        className={`group inline-flex h-3 w-3 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
           ascActive ? "text-cyan-600" : "text-gray-300 hover:text-gray-500"
         }`}
         onClick={() => onChange(ascActive ? null : "asc")}
@@ -630,7 +630,7 @@ function SortControl({
           strokeWidth={2.4}
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="h-3 w-3"
+          className="h-2.5 w-2.5"
         >
           <path d="M6 14L12 8l6 6" />
         </svg>
@@ -639,7 +639,7 @@ function SortControl({
         type="button"
         aria-label={descLabel}
         aria-pressed={descActive}
-        className={`group inline-flex h-4 w-4 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
+        className={`group inline-flex h-3 w-3 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
           descActive ? "text-cyan-600" : "text-gray-300 hover:text-gray-500"
         }`}
         onClick={() => onChange(descActive ? null : "desc")}
@@ -652,7 +652,7 @@ function SortControl({
           strokeWidth={2.4}
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="h-3 w-3"
+          className="h-2.5 w-2.5"
         >
           <path d="M6 10l6 6 6-6" />
         </svg>
@@ -889,7 +889,7 @@ function Section({
                 rowSpan={2}
                 className="px-3 py-2 min-w-[300px] max-w-[320px] bg-white/70 text-center rounded-tl-2xl"
               >
-                <div className="flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center justify-center gap-1">
                   <span>{texts.name}</span>
                   <SortControl
                     lang={lang}
@@ -903,7 +903,7 @@ function Section({
                 rowSpan={2}
                 className="px-2.5 py-2 whitespace-nowrap bg-white/70 text-center"
               >
-                <div className="flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center justify-center gap-1">
                   <span>{texts.isin}</span>
                   <SortControl
                     lang={lang}
@@ -917,7 +917,7 @@ function Section({
                 rowSpan={2}
                 className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center"
               >
-                <div className="flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center justify-center gap-1">
                   <span>{texts.ter}</span>
                   <SortControl
                     lang={lang}
@@ -969,7 +969,7 @@ function Section({
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
-                  <div className="flex flex-col items-center justify-center gap-0.5">
+                  <div className="flex items-center justify-center gap-1">
                     <span>{displayMetricLabel(label)}</span>
                     <SortControl
                       lang={lang}
@@ -993,7 +993,7 @@ function Section({
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
-                  <div className="flex flex-col items-center justify-center gap-0.5">
+                  <div className="flex items-center justify-center gap-1">
                     <span>{displayMetricLabel(label)}</span>
                     <SortControl
                       lang={lang}
@@ -1017,7 +1017,7 @@ function Section({
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
-                  <div className="flex flex-col items-center justify-center gap-0.5">
+                  <div className="flex items-center justify-center gap-1">
                     <span>{displayMetricLabel(label)}</span>
                     <SortControl
                       lang={lang}
