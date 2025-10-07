@@ -68,6 +68,8 @@ const TEXTS = {
     category: "Categoría",
     comment: "Comentarios",
     performance: "Rentabilidades (%)",
+    performanceInfo:
+      "Las rentabilidades a 3Y, 5Y y 10Y están anualizadas.",
     sharpe: "Ratio Sharpe",
     sharpeInfo:
       "Mide la rentabilidad obtenida por unidad de riesgo asumido; cuanto mayor, mejor.",
@@ -104,6 +106,8 @@ const TEXTS = {
     category: "Category",
     comment: "Notes",
     performance: "Performance (%)",
+    performanceInfo:
+      "3Y, 5Y and 10Y returns are annualized.",
     sharpe: "Sharpe ratio",
     sharpeInfo:
       "Measures the return earned per unit of risk taken; higher values are better.",
@@ -633,9 +637,12 @@ function Section({
               </th>
               <th
                 colSpan={PERFORMANCE_LABELS.length}
-                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
-                {texts.performance}
+                <div className="flex items-center justify-center gap-1">
+                  <span>{texts.performance}</span>
+                  <InfoTip content={texts.performanceInfo} label={texts.performance} />
+                </div>
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
