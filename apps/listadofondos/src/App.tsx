@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
 
@@ -68,8 +68,14 @@ const TEXTS = {
     category: "Categoría",
     comment: "Comentarios",
     performance: "Rentabilidades (%)",
+    performanceInfo:
+      "Las rentabilidades a 3Y, 5Y y 10Y están anualizadas.",
     sharpe: "Ratio Sharpe",
+    sharpeInfo:
+      "Mide la rentabilidad obtenida por unidad de riesgo asumido; cuanto mayor, mejor.",
     volatility: "Volatilidad",
+    volatilityInfo:
+      "Indica cuánto fluctúa el valor del fondo en el tiempo; un valor menor implica menos oscilaciones.",
     ter: "TER",
     noData: "Sin datos",
     loading: "Cargando datos...",
@@ -100,8 +106,14 @@ const TEXTS = {
     category: "Category",
     comment: "Notes",
     performance: "Performance (%)",
+    performanceInfo:
+      "3Y, 5Y and 10Y returns are annualized.",
     sharpe: "Sharpe ratio",
+    sharpeInfo:
+      "Measures the return earned per unit of risk taken; higher values are better.",
     volatility: "Volatility",
+    volatilityInfo:
+      "Shows how much the fund value fluctuates over time; lower values mean less variability.",
     ter: "TER",
     noData: "No data",
     loading: "Loading data...",
@@ -137,6 +149,81 @@ const RATIO_LABELS: readonly RatioPeriod[] = ["1Y", "3Y", "5Y"];
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
 const ENABLE_MOCK_DATA =
   String(import.meta.env.VITE_ENABLE_MOCK_DATA ?? "true").toLowerCase() !== "false";
+
+function InfoTip({
+  content,
+  label = "Información",
+  side = "bottom",
+  className = "",
+}: {
+  content: React.ReactNode;
+  label?: string;
+  side?: "top" | "bottom";
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const handleDocument = (event: Event) => {
+      const target = event.target as Node;
+      if (buttonRef.current?.contains(target) || popoverRef.current?.contains(target)) {
+        return;
+      }
+      setOpen(false);
+    };
+    const handleScroll = () => setOpen(false);
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleDocument);
+    document.addEventListener("touchstart", handleDocument, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("keydown", handleKey);
+
+    return () => {
+      document.removeEventListener("mousedown", handleDocument);
+      document.removeEventListener("touchstart", handleDocument);
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  return (
+    <span className={`relative inline-flex ${className}`}>
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label={label}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] align-middle focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+          open ? "border-cyan-400 bg-cyan-50 text-cyan-700" : "border-gray-300 bg-white text-gray-600"
+        }`}
+      >
+        i
+      </button>
+      {open ? (
+        <div
+          ref={popoverRef}
+          id={id}
+          role="tooltip"
+          className={`absolute z-50 max-w-[260px] rounded-lg border bg-white p-2 text-xs text-gray-700 shadow-lg ${
+            side === "top" ? "bottom-full mb-1 left-1/2 -translate-x-1/2" : "top-full mt-1 left-1/2 -translate-x-1/2"
+          }`}
+        >
+          {content}
+        </div>
+      ) : null}
+    </span>
+  );
+}
 
 function shouldUseMockData(err: unknown) {
   if (!ENABLE_MOCK_DATA) return false;
@@ -395,7 +482,7 @@ function renderMetricCells<T extends string>(
       ? getMetricBackground(options.metric, numericValue, columnStats)
       : undefined;
     const classes = [
-      "px-1.5 py-2 text-sm font-semibold text-gray-700 text-center",
+      "px-1.5 py-2 text-sm font-semibold text-gray-700 text-center align-middle",
     ];
     if (options.addLeftBoundary && columns[0] === label) {
       classes.push("border-l", "border-gray-400");
@@ -550,21 +637,30 @@ function Section({
               </th>
               <th
                 colSpan={PERFORMANCE_LABELS.length}
-                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
-                {texts.performance}
+                <div className="flex items-center justify-center gap-1">
+                  <span>{texts.performance}</span>
+                  <InfoTip content={texts.performanceInfo} label={texts.performance} />
+                </div>
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
-                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
-                {texts.sharpe}
+                <div className="flex items-center justify-center gap-1">
+                  <span>{texts.sharpe}</span>
+                  <InfoTip content={texts.sharpeInfo} label={texts.sharpe} />
+                </div>
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
-                className="px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
-                {texts.volatility}
+                <div className="flex items-center justify-center gap-1">
+                  <span>{texts.volatility}</span>
+                  <InfoTip content={texts.volatilityInfo} label={texts.volatility} />
+                </div>
               </th>
               <th
                 rowSpan={2}
@@ -630,11 +726,15 @@ function Section({
                 const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
                 const tooltipLabel =
                   categoryDisplay && categoryDisplay !== texts.noData
-                    ? `${row.name} · ${categoryDisplay}`
-                    : row.name;
+                    ? categoryDisplay
+                    : texts.noData;
                 return (
-                  <tr key={tooltipId} className="align-top">
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur min-w-[300px] max-w-[320px]">
+                  <tr key={tooltipId} className="align-middle">
+                    <td
+                      className={`relative px-3 py-2 bg-white/95 backdrop-blur min-w-[300px] max-w-[320px] overflow-visible align-top ${
+                        tooltipOpen ? "z-20" : ""
+                      }`}
+                    >
                       <div className="flex flex-col items-start gap-1">
                         <a
                           href={link}
@@ -646,10 +746,10 @@ function Section({
                           {row.name}
                         </a>
                         {(badges.length > 0 || stars) && (
-                          <div className="flex w-full items-center gap-2">
+                          <div className="flex w-full items-center gap-1">
                             {stars ? (
                               <span
-                                className="inline-flex shrink-0 items-center text-xs font-semibold text-amber-500"
+                                className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-500"
                                 aria-label={`${stars.length} estrellas Morningstar`}
                               >
                                 {stars}
@@ -675,7 +775,11 @@ function Section({
                                   }}
                                   aria-haspopup="true"
                                   aria-expanded={tooltipOpen}
-                                  aria-label={`${row.name}: ${categoryDisplay}`}
+                                  aria-label={
+                                    categoryDisplay && categoryDisplay !== texts.noData
+                                      ? `${row.name}: ${categoryDisplay}`
+                                      : row.name
+                                  }
                                   title={tooltipLabel}
                                 >
                                   {badges.map((badge) => (
@@ -690,12 +794,12 @@ function Section({
                                   ))}
                                 </button>
                                 <div
-                                  className={`pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
+                                  className={`pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-max max-w-xs -translate-x-1/2 rounded-md bg-slate-900/95 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
                                     tooltipOpen ? "opacity-100" : "opacity-0"
                                   }`}
                                   role="tooltip"
                                 >
-                                  {tooltipLabel}
+                                  <span className="block whitespace-nowrap">{tooltipLabel}</span>
                                 </div>
                               </div>
                             ) : null}
@@ -703,10 +807,10 @@ function Section({
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px]">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle">
                       {formatValue(row.isin)}
                     </td>
-                    <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center">
+                    <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center align-middle">
                       {formatValue(row.ter)}
                     </td>
                     {renderMetricCells(
@@ -727,7 +831,7 @@ function Section({
                       volatilityStats,
                       { metric: "volatility", addLeftBoundary: true },
                     )}
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle">
                       {formatValue(row.comment) || texts.commentPlaceholder}
                     </td>
                   </tr>
@@ -822,7 +926,9 @@ export default function App() {
             </a>
             <div>
               <h1 className="text-2xl md:text-3xl font-extrabold">{texts.title}</h1>
-              <p className="mt-1 text-sm md:text-base text-gray-700 max-w-3xl">{texts.subtitle}</p>
+              <p className="mt-1 text-sm md:text-base text-gray-700 max-w-4xl">
+                {texts.subtitle}
+              </p>
             </div>
           </div>
           <div className="flex flex-col items-stretch md:items-end gap-2 sm:gap-3">
