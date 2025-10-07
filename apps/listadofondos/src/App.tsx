@@ -530,7 +530,7 @@ function Section({
         <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
           <thead>
             <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-              <th rowSpan={2} className="px-3 py-2 min-w-[220px] bg-white/70 rounded-tl-2xl">
+              <th rowSpan={2} className="px-3 py-2 min-w-[320px] bg-white/70 rounded-tl-2xl">
                 {texts.name}
               </th>
               <th rowSpan={2} className="px-2.5 py-2 whitespace-nowrap bg-white/70">
@@ -625,7 +625,7 @@ function Section({
                     : row.name;
                 return (
                   <tr key={tooltipId} className="align-top">
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur min-w-[320px]">
                       <div className="flex flex-col items-start gap-1">
                         <a
                           href={link}
@@ -645,7 +645,7 @@ function Section({
                           ) : null}
                         </a>
                         {badges.length > 0 ? (
-                          <div className="flex flex-wrap items-center gap-1">
+                          <div className="flex items-center gap-1">
                             <div
                               className="relative group"
                               onMouseEnter={() => handleOpenTooltip(tooltipId)}
@@ -653,7 +653,7 @@ function Section({
                             >
                               <button
                                 type="button"
-                                className="inline-flex flex-wrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
+                                className="inline-flex flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
                                 onClick={() => handleToggleTooltip(tooltipId)}
                                 onBlur={() => handleCloseTooltip(tooltipId)}
                                 onFocus={() => handleOpenTooltip(tooltipId)}
@@ -668,16 +668,16 @@ function Section({
                                 aria-label={`${row.name}: ${categoryDisplay}`}
                                 title={tooltipLabel}
                               >
-                                {badges.map((badge) => (
-                                  <span
-                                    key={`${rowKey}-${badge.text}`}
-                                    className={`text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
-                                      BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
-                                    }`}
-                                  >
-                                    {badge.text}
-                                  </span>
-                                ))}
+                                  {badges.map((badge) => (
+                                    <span
+                                      key={`${rowKey}-${badge.text}`}
+                                      className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
+                                        BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
+                                      }`}
+                                    >
+                                      {badge.text}
+                                    </span>
+                                  ))}
                               </button>
                               <div
                                 className={`pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-xs rounded-md bg-slate-900/90 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
