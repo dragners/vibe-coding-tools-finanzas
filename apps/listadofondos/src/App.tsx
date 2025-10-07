@@ -59,7 +59,7 @@ const TEXTS = {
   es: {
     title: "Listado y Comparativa de Fondos y Planes de Pensiones",
     subtitle:
-      "Estos son mis fondos favoritos y planes de pensiones,\nque sigo e invierto en ellos desde hace años.",
+      "Estos son mis fondos favoritos y planes de pensiones, que sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
     refreshing: "Actualizando...",
     lastUpdated: "Última actualización",
@@ -926,7 +926,7 @@ export default function App() {
             </a>
             <div>
               <h1 className="text-2xl md:text-3xl font-extrabold">{texts.title}</h1>
-              <p className="mt-1 text-sm md:text-base text-gray-700 max-w-3xl whitespace-pre-line">
+              <p className="mt-1 text-sm md:text-base text-gray-700 max-w-4xl">
                 {texts.subtitle}
               </p>
             </div>
