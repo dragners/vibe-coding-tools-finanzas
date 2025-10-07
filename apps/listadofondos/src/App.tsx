@@ -55,6 +55,18 @@ type TextKey = keyof typeof TEXTS["es"];
 
 type TableSection = "funds" | "plans";
 
+type SortOrder = "asc" | "desc";
+
+type SortKey =
+  | "name"
+  | "isin"
+  | "ter"
+  | `performance:${PerformanceKey}`
+  | `sharpe:${RatioPeriod}`
+  | `volatility:${RatioPeriod}`;
+
+type SortConfig = { key: SortKey; order: SortOrder };
+
 const TEXTS = {
   es: {
     title: "Listado y Comparativa de Fondos y Planes de Pensiones",
@@ -539,6 +551,116 @@ function renderMetricCells<T extends string>(
   });
 }
 
+type SortValue =
+  | { type: "number"; value: number | null }
+  | { type: "text"; value: string | null };
+
+function getSortValue(row: FundRow, key: SortKey): SortValue {
+  if (key === "name") {
+    return { type: "text", value: row.name ?? null };
+  }
+  if (key === "isin") {
+    return { type: "text", value: row.isin ?? null };
+  }
+  if (key === "ter") {
+    return { type: "number", value: getMetricNumber(row.ter) };
+  }
+
+  const [metric, label] = key.split(":") as ["performance" | "sharpe" | "volatility", string];
+  if (metric === "performance") {
+    return {
+      type: "number",
+      value: getMetricNumber((row.performance ?? {})[label as PerformanceKey]),
+    };
+  }
+  if (metric === "sharpe") {
+    return {
+      type: "number",
+      value: getMetricNumber((row.sharpe ?? {})[label as RatioPeriod]),
+    };
+  }
+  if (metric === "volatility") {
+    return {
+      type: "number",
+      value: getMetricNumber((row.volatility ?? {})[label as RatioPeriod]),
+    };
+  }
+
+  return { type: "text", value: null };
+}
+
+function SortControl({
+  activeOrder,
+  label,
+  lang,
+  onChange,
+}: {
+  activeOrder: SortOrder | null;
+  label: string;
+  lang: Lang;
+  onChange: (order: SortOrder | null) => void;
+}) {
+  const ascActive = activeOrder === "asc";
+  const descActive = activeOrder === "desc";
+  const ascLabel =
+    lang === "es"
+      ? `Orden ascendente por ${label}`
+      : `Sort ascending by ${label}`;
+  const descLabel =
+    lang === "es"
+      ? `Orden descendente por ${label}`
+      : `Sort descending by ${label}`;
+
+  return (
+    <span className="ml-1 flex flex-col items-center justify-center gap-0.5">
+      <button
+        type="button"
+        aria-label={ascLabel}
+        aria-pressed={ascActive}
+        className={`group inline-flex h-4 w-4 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
+          ascActive ? "text-cyan-600" : "text-gray-300 hover:text-gray-500"
+        }`}
+        onClick={() => onChange(ascActive ? null : "asc")}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.4}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3 w-3"
+        >
+          <path d="M6 14L12 8l6 6" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        aria-label={descLabel}
+        aria-pressed={descActive}
+        className={`group inline-flex h-4 w-4 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
+          descActive ? "text-cyan-600" : "text-gray-300 hover:text-gray-500"
+        }`}
+        onClick={() => onChange(descActive ? null : "desc")}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.4}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3 w-3"
+        >
+          <path d="M6 10l6 6 6-6" />
+        </svg>
+      </button>
+    </span>
+  );
+}
+
 function getMorningstarUrl(id?: string, lang: Lang = "es") {
   if (!id) return null;
   const langId = lang === "es" ? "es-ES" : "en-EN";
@@ -625,6 +747,7 @@ function Section({
 }) {
   const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
   const filteredData = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
@@ -645,6 +768,51 @@ function Section({
     [filteredData],
   );
 
+  const sortedData = useMemo(() => {
+    if (!sortConfig) {
+      return filteredData;
+    }
+
+    const sorted = [...filteredData];
+    const locale = lang === "es" ? "es" : "en";
+    const multiplier = sortConfig.order === "asc" ? 1 : -1;
+
+    sorted.sort((a, b) => {
+      const valueA = getSortValue(a, sortConfig.key);
+      const valueB = getSortValue(b, sortConfig.key);
+      const rawA = valueA.value;
+      const rawB = valueB.value;
+
+      const isNullA = rawA === null || rawA === undefined || rawA === "";
+      const isNullB = rawB === null || rawB === undefined || rawB === "";
+
+      if (isNullA && isNullB) return 0;
+      if (isNullA) return 1 * multiplier;
+      if (isNullB) return -1 * multiplier;
+
+      if (valueA.type === "number" && valueB.type === "number") {
+        const diff = (rawA as number) - (rawB as number);
+        if (Math.abs(diff) <= ZERO_TOLERANCE) {
+          return 0;
+        }
+        return diff > 0 ? 1 * multiplier : -1 * multiplier;
+      }
+
+      const textA = String(rawA);
+      const textB = String(rawB);
+      const comparison = textA.localeCompare(textB, locale, {
+        sensitivity: "base",
+        numeric: true,
+      });
+      if (comparison === 0) {
+        return 0;
+      }
+      return comparison > 0 ? 1 * multiplier : -1 * multiplier;
+    });
+
+    return sorted;
+  }, [filteredData, lang, sortConfig]);
+
   const handleToggleTooltip = (id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
   };
@@ -655,6 +823,21 @@ function Section({
 
   const handleCloseTooltip = (id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : prev));
+  };
+
+  const handleSortChange = (key: SortKey, order: SortOrder | null) => {
+    setSortConfig((prev) => {
+      if (order === null) {
+        if (prev?.key === key) {
+          return null;
+        }
+        return prev;
+      }
+      if (prev?.key === key && prev.order === order) {
+        return prev;
+      }
+      return { key, order };
+    });
   };
 
   return (
@@ -706,19 +889,43 @@ function Section({
                 rowSpan={2}
                 className="px-3 py-2 min-w-[300px] max-w-[320px] bg-white/70 text-center rounded-tl-2xl"
               >
-                {texts.name}
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <span>{texts.name}</span>
+                  <SortControl
+                    lang={lang}
+                    label={texts.name}
+                    activeOrder={sortConfig?.key === "name" ? sortConfig.order : null}
+                    onChange={(order) => handleSortChange("name", order)}
+                  />
+                </div>
               </th>
               <th
                 rowSpan={2}
                 className="px-2.5 py-2 whitespace-nowrap bg-white/70 text-center"
               >
-                {texts.isin}
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <span>{texts.isin}</span>
+                  <SortControl
+                    lang={lang}
+                    label={texts.isin}
+                    activeOrder={sortConfig?.key === "isin" ? sortConfig.order : null}
+                    onChange={(order) => handleSortChange("isin", order)}
+                  />
+                </div>
               </th>
               <th
                 rowSpan={2}
                 className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center"
               >
-                {texts.ter}
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <span>{texts.ter}</span>
+                  <SortControl
+                    lang={lang}
+                    label={texts.ter}
+                    activeOrder={sortConfig?.key === "ter" ? sortConfig.order : null}
+                    onChange={(order) => handleSortChange("ter", order)}
+                  />
+                </div>
               </th>
               <th
                 colSpan={PERFORMANCE_LABELS.length}
@@ -762,7 +969,21 @@ function Section({
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
-                  {displayMetricLabel(label)}
+                  <div className="flex flex-col items-center justify-center gap-0.5">
+                    <span>{displayMetricLabel(label)}</span>
+                    <SortControl
+                      lang={lang}
+                      label={`${texts.performance} ${displayMetricLabel(label)}`}
+                      activeOrder={
+                        sortConfig?.key === `performance:${label}`
+                          ? sortConfig.order
+                          : null
+                      }
+                      onChange={(order) =>
+                        handleSortChange(`performance:${label}` as SortKey, order)
+                      }
+                    />
+                  </div>
                 </th>
               ))}
               {RATIO_LABELS.map((label, index) => (
@@ -772,7 +993,21 @@ function Section({
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
-                  {displayMetricLabel(label)}
+                  <div className="flex flex-col items-center justify-center gap-0.5">
+                    <span>{displayMetricLabel(label)}</span>
+                    <SortControl
+                      lang={lang}
+                      label={`${texts.sharpe} ${displayMetricLabel(label)}`}
+                      activeOrder={
+                        sortConfig?.key === `sharpe:${label}`
+                          ? sortConfig.order
+                          : null
+                      }
+                      onChange={(order) =>
+                        handleSortChange(`sharpe:${label}` as SortKey, order)
+                      }
+                    />
+                  </div>
                 </th>
               ))}
               {RATIO_LABELS.map((label, index) => (
@@ -782,13 +1017,27 @@ function Section({
                     index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
-                  {displayMetricLabel(label)}
+                  <div className="flex flex-col items-center justify-center gap-0.5">
+                    <span>{displayMetricLabel(label)}</span>
+                    <SortControl
+                      lang={lang}
+                      label={`${texts.volatility} ${displayMetricLabel(label)}`}
+                      activeOrder={
+                        sortConfig?.key === `volatility:${label}`
+                          ? sortConfig.order
+                          : null
+                      }
+                      onChange={(order) =>
+                        handleSortChange(`volatility:${label}` as SortKey, order)
+                      }
+                    />
+                  </div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filteredData.length === 0 ? (
+            {sortedData.length === 0 ? (
               <tr>
                 <td
                   colSpan={
@@ -800,7 +1049,7 @@ function Section({
                 </td>
               </tr>
             ) : (
-              filteredData.map((row) => {
+              sortedData.map((row) => {
                 const stars = renderStars(row.morningstarRating);
                 const categoryValue = formatValue(row.category);
                 const rowKey = row.morningstarId || row.isin || row.name;
