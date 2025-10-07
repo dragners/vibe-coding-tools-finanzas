@@ -529,11 +529,17 @@ function Section({
       <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
         <table className="min-w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
           <thead>
-            <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-              <th rowSpan={2} className="px-3 py-2 min-w-[320px] bg-white/70 rounded-tl-2xl">
+            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th
+                rowSpan={2}
+                className="px-3 py-2 min-w-[300px] max-w-[320px] bg-white/70 text-center rounded-tl-2xl"
+              >
                 {texts.name}
               </th>
-              <th rowSpan={2} className="px-2.5 py-2 whitespace-nowrap bg-white/70">
+              <th
+                rowSpan={2}
+                className="px-2.5 py-2 whitespace-nowrap bg-white/70 text-center"
+              >
                 {texts.isin}
               </th>
               <th
@@ -560,7 +566,10 @@ function Section({
               >
                 {texts.volatility}
               </th>
-              <th rowSpan={2} className="px-3 py-2 min-w-[200px] bg-white/70 rounded-tr-2xl">
+              <th
+                rowSpan={2}
+                className="px-3 py-2 min-w-[200px] bg-white/70 text-center rounded-tr-2xl"
+              >
                 {texts.comment}
               </th>
             </tr>
@@ -625,7 +634,7 @@ function Section({
                     : row.name;
                 return (
                   <tr key={tooltipId} className="align-top">
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur min-w-[320px]">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur min-w-[300px] max-w-[320px]">
                       <div className="flex flex-col items-start gap-1">
                         <a
                           href={link}
@@ -692,7 +701,7 @@ function Section({
                         ) : null}
                       </div>
                     </td>
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px]">
                       {formatValue(row.isin)}
                     </td>
                     <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center">
@@ -716,7 +725,7 @@ function Section({
                       volatilityStats,
                       { metric: "volatility", addLeftBoundary: true },
                     )}
-                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600">
+                    <td className="px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug">
                       {formatValue(row.comment) || texts.commentPlaceholder}
                     </td>
                   </tr>
