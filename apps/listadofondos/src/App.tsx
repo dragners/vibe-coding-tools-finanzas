@@ -1,4 +1,11 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
 
@@ -73,7 +80,7 @@ function isPerformanceOrSharpeSortKey(key: SortKey) {
 
 const TEXTS = {
   es: {
-    title: "Listado y Comparativa de Fondos y Planes de Pensiones",
+    title: "Comparativa de Fondos y Planes de Pensiones",
     subtitle:
       "Estos son mis fondos favoritos y planes de pensiones, que sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
@@ -102,7 +109,7 @@ const TEXTS = {
     searchPlaceholder: "Buscar...",
     searchAriaLabel: "Buscar en la tabla",
     dataNote:
-      "Los datos se obtienen automáticamente de Morningstar una vez al día y pueden actualizarse manualmente.",
+      "Los datos se obtienen automáticamente de Morningstar cada 4 horas y pueden actualizarse manualmente.",
     langES: "ES",
     langEN: "EN",
     back: "Volver a Herramientas",
@@ -113,7 +120,7 @@ const TEXTS = {
       "Mostrando datos de ejemplo por falta de conexión con la API. Las cifras pueden no coincidir con los últimos datos reales.",
   },
   en: {
-    title: "Fund and Pension Plan List and Comparison",
+    title: "Fund and Pension Plan Comparison",
     subtitle:
       "Review performance, Sharpe ratios, volatility and TER for each fund or pension plan.",
     refresh: "Refresh data",
@@ -141,7 +148,8 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Search...",
     searchAriaLabel: "Search within the table",
-    dataNote: "Data is automatically retrieved from Morningstar once per day and can be refreshed manually.",
+    dataNote:
+      "Data is automatically retrieved from Morningstar every 4 hours and can be refreshed manually.",
     langES: "ES",
     langEN: "EN",
     back: "Back to Tools",
@@ -1211,12 +1219,14 @@ export default function App() {
   const texts = useTexts(lang);
   const [status, setStatus] = useState<ApiStatus>("idle");
   const [data, setData] = useState<ApiPayload | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usingMockData, setUsingMockData] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [shouldAutoRefresh, setShouldAutoRefresh] = useState<boolean | null>(
+    null,
+  );
 
-  const fetchData = async (force = false) => {
+  const fetchData = useCallback(async (force = false) => {
     setStatus((prev) => (prev === "ready" ? prev : "loading"));
     setError(null);
     setUsingMockData(false);
@@ -1251,17 +1261,37 @@ export default function App() {
       setError((err as Error).message);
       setStatus("error");
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData(true);
-    setRefreshing(false);
-  };
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      setShouldAutoRefresh(false);
+      return;
+    }
+    const trimmedPath = window.location.pathname.replace(/\/+$/, "");
+    setShouldAutoRefresh(trimmedPath.endsWith("/refrescardatos_dragner"));
+  }, []);
+
+  useEffect(() => {
+    if (shouldAutoRefresh === null) return;
+
+    const run = async () => {
+      if (shouldAutoRefresh) {
+        await fetchData(true);
+        if (typeof window !== "undefined") {
+          const basePath = window.location.pathname.replace(
+            /\/refrescardatos_dragner\/?$/,
+            "/",
+          );
+          window.history.replaceState(null, "", basePath || "/");
+        }
+      } else {
+        await fetchData();
+      }
+    };
+
+    void run();
+  }, [fetchData, shouldAutoRefresh]);
 
   return (
     <div className="relative min-h-screen text-gray-900">
@@ -1330,14 +1360,6 @@ export default function App() {
                   </span>
                 </label>
               </div>
-              <button
-                type="button"
-                onClick={onRefresh}
-                disabled={refreshing}
-                className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto w-full"
-              >
-                {refreshing ? texts.refreshing : texts.refresh}
-              </button>
             </div>
             {status === "ready" && data && (
               <p className="text-xs text-gray-500">
