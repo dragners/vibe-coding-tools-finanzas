@@ -647,6 +647,14 @@ function Section({
                         </a>
                         {(badges.length > 0 || stars) && (
                           <div className="flex items-center gap-1">
+                            {stars ? (
+                              <span
+                                className="inline-flex items-center text-xs font-semibold text-amber-500"
+                                aria-label={`${stars.length} estrellas Morningstar`}
+                              >
+                                {stars}
+                              </span>
+                            ) : null}
                             {badges.length > 0 ? (
                               <div
                                 className="relative group"
@@ -690,14 +698,6 @@ function Section({
                                   {tooltipLabel}
                                 </div>
                               </div>
-                            ) : null}
-                            {stars ? (
-                              <span
-                                className="inline-flex items-center text-xs font-semibold text-amber-500"
-                                aria-label={`${stars.length} estrellas Morningstar`}
-                              >
-                                {stars}
-                              </span>
                             ) : null}
                           </div>
                         )}
