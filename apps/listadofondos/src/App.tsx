@@ -80,7 +80,7 @@ function isPerformanceOrSharpeSortKey(key: SortKey) {
 
 const TEXTS = {
   es: {
-    title: "Listado y Comparativa de Fondos y Planes de Pensiones",
+    title: "Comparativa de Fondos y Planes de Pensiones",
     subtitle:
       "Estos son mis fondos favoritos y planes de pensiones, que sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
@@ -120,7 +120,7 @@ const TEXTS = {
       "Mostrando datos de ejemplo por falta de conexión con la API. Las cifras pueden no coincidir con los últimos datos reales.",
   },
   en: {
-    title: "Fund and Pension Plan List and Comparison",
+    title: "Fund and Pension Plan Comparison",
     subtitle:
       "Review performance, Sharpe ratios, volatility and TER for each fund or pension plan.",
     refresh: "Refresh data",
