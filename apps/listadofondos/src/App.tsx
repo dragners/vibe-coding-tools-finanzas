@@ -800,7 +800,7 @@ export default function App() {
       <div className="landing-bg" aria-hidden="true" />
 
       <div className="bg-white/85 backdrop-blur border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="max-w-[min(96vw,1600px)] mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <a
               href="/"
@@ -872,7 +872,7 @@ export default function App() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 space-y-6">
+      <main className="max-w-[min(96vw,1600px)] mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         {status === "loading" && (
           <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-gray-600 shadow-sm backdrop-blur">
             {texts.loading}
