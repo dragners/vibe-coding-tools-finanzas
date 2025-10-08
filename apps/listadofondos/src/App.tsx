@@ -56,7 +56,7 @@ export type ApiPayload = {
   plans: FundRow[];
 };
 
-type ApiStatus = "idle" | "loading" | "ready" | "error";
+type ApiStatus = "idle" | "loading" | "ready" | "refreshing" | "error";
 
 type TextKey = keyof typeof TEXTS["es"];
 
@@ -1263,11 +1263,25 @@ export default function App() {
   const [shouldAutoRefresh, setShouldAutoRefresh] = useState<boolean | null>(
     null,
   );
+  const dataRef = useRef<ApiPayload | null>(null);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const fetchData = useCallback(async (force = false) => {
-    setStatus((prev) => (prev === "ready" ? prev : "loading"));
+    const hasExistingData = Boolean(dataRef.current);
+    setStatus((prev) => {
+      if (force && hasExistingData) {
+        return "refreshing";
+      }
+      if (prev === "ready" && hasExistingData) {
+        return prev;
+      }
+      return "loading";
+    });
     setError(null);
-    setUsingMockData(false);
+    setUsingMockData((prev) => (hasExistingData ? prev : false));
     try {
       const endpoint = force ? `${API_BASE}/refresh` : `${API_BASE}/data`;
       const response = await fetch(endpoint, {
@@ -1284,20 +1298,25 @@ export default function App() {
       try {
         payload = JSON.parse(rawText) as ApiPayload;
       } catch (jsonErr) {
-        throw new SyntaxError((jsonErr as Error).message || "Invalid JSON response");
+        throw new SyntaxError(
+          (jsonErr as Error).message || "Invalid JSON response",
+        );
       }
       setData(payload);
+      dataRef.current = payload;
+      setUsingMockData(false);
       setStatus("ready");
     } catch (err) {
       console.error(err);
       if (shouldUseMockData(err)) {
         setData(MOCK_PAYLOAD);
+        dataRef.current = MOCK_PAYLOAD;
         setStatus("ready");
         setUsingMockData(true);
         return;
       }
       setError((err as Error).message);
-      setStatus("error");
+      setStatus(hasExistingData ? "ready" : "error");
     }
   }, []);
 
@@ -1315,6 +1334,7 @@ export default function App() {
 
     const run = async () => {
       if (shouldAutoRefresh) {
+        await fetchData();
         await fetchData(true);
         if (typeof window !== "undefined") {
           const basePath = window.location.pathname.replace(
@@ -1399,7 +1419,7 @@ export default function App() {
                 </label>
               </div>
             </div>
-            {status === "ready" && data && (
+            {(status === "ready" || status === "refreshing") && data && (
               <p className="text-xs text-gray-500">
                 {texts.lastUpdated}: {new Intl.DateTimeFormat(lang === "es" ? "es-ES" : "en-GB", {
                   dateStyle: "medium",
@@ -1412,19 +1432,19 @@ export default function App() {
       </div>
 
       <main className="max-w-[min(96vw,1600px)] mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
-        {status === "loading" && (
+        {(status === "loading" || status === "refreshing") && (
           <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-gray-600 shadow-sm backdrop-blur">
-            {texts.loading}
+            {status === "refreshing" ? texts.refreshing : texts.loading}
           </div>
         )}
-        {status === "error" && (
+        {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
             {texts.error}
             {error ? ` (${error})` : null}
           </div>
         )}
 
-        {data && status === "ready" && (
+        {data && (status === "ready" || status === "refreshing") && (
           <div className="space-y-12 pb-12">
             <Section
               section="funds"
