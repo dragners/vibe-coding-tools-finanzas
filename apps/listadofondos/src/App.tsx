@@ -974,7 +974,7 @@ function CombinedTable({
         ) : null}
         <div className="overflow-x-auto pb-4">
           <table className="w-full border-separate border-spacing-y-1 border-spacing-x-[1px] text-sm text-gray-800">
-            <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
+            <thead className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm shadow-sm">
               <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 <th
                   rowSpan={2}
