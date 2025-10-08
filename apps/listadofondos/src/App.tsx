@@ -580,7 +580,7 @@ function renderMetricCells<T extends string>(
       ? getMetricBackground(options.metric, numericValue, columnStats)
       : undefined;
     const classes = [
-      "px-1.5 py-2 text-sm font-semibold text-gray-700 text-center align-middle",
+      "px-1 py-1.5 text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle",
     ];
     if (options.addLeftBoundary && columns[0] === label) {
       classes.push("border-l", "border-gray-400");
@@ -911,7 +911,7 @@ function CombinedTable({
 
   const totalColumns =
     2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
-  const commentColumnWidthClass = "min-w-[320px] sm:min-w-[380px]";
+  const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
 
   const handleToggleTooltip = (id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
@@ -938,7 +938,7 @@ function CombinedTable({
   };
 
   return (
-    <section className="mt-10 sm:mt-12">
+    <section className="mt-6 sm:mt-8">
       <div className="rounded-3xl border border-slate-200/70 bg-white/85 p-4 sm:p-6 lg:p-8 shadow-xl backdrop-blur">
         {showSearchInput ? (
           <div className="mb-6">
@@ -970,7 +970,7 @@ function CombinedTable({
           </div>
         ) : null}
         <div className="overflow-x-auto pb-4">
-          <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
+          <table className="w-full border-separate border-spacing-y-1 border-spacing-x-[1px] text-sm text-gray-800">
             <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
               <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 <th
@@ -1017,7 +1017,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={PERFORMANCE_LABELS.length}
-                  className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-2 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.performance}</span>
@@ -1026,7 +1026,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-2 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.sharpe}</span>
@@ -1035,7 +1035,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-2 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.volatility}</span>
@@ -1254,7 +1254,7 @@ function CombinedTable({
                           {formatValue(row.isin, lang)}
                         </td>
                         <td
-                          className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center align-middle"
+                          className="px-1.5 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle"
                         >
                           {formatValue(row.ter, lang)}
                         </td>
@@ -1313,6 +1313,14 @@ export default function App() {
     null,
   );
   const dataRef = useRef<ApiPayload | null>(null);
+
+  const lastUpdatedFormatted =
+    (status === "ready" || status === "refreshing") && data
+      ? new Intl.DateTimeFormat(lang === "es" ? "es-ES" : "en-GB", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date(data.lastUpdated))
+      : null;
 
   useEffect(() => {
     dataRef.current = data;
@@ -1424,10 +1432,15 @@ export default function App() {
               {texts.back}
             </a>
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold">{texts.title}</h1>
+              <h1 className="text-xl md:text-2xl font-extrabold">{texts.title}</h1>
               <p className="mt-1 text-sm md:text-base text-gray-700 max-w-4xl">
                 {texts.subtitle}
               </p>
+              {lastUpdatedFormatted ? (
+                <p className="mt-1 text-[11px] md:text-xs text-gray-500">
+                  {texts.lastUpdated}: {lastUpdatedFormatted}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex flex-col items-stretch md:items-end gap-2 sm:gap-3">
@@ -1468,19 +1481,11 @@ export default function App() {
                 </label>
               </div>
             </div>
-            {(status === "ready" || status === "refreshing") && data && (
-              <p className="text-xs text-gray-500">
-                {texts.lastUpdated}: {new Intl.DateTimeFormat(lang === "es" ? "es-ES" : "en-GB", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(new Date(data.lastUpdated))}
-              </p>
-            )}
           </div>
         </div>
       </div>
 
-      <main className="w-full max-w-[1600px] mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      <main className="w-full max-w-[1600px] mx-auto px-4 py-5 sm:px-6 lg:px-8 space-y-5">
         {(status === "loading" || status === "refreshing") && (
           <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-gray-600 shadow-sm backdrop-blur">
             {status === "refreshing" ? texts.refreshing : texts.loading}
