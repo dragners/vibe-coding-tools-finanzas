@@ -39,7 +39,7 @@ funds:
   category: Global Small Equity
   morningstarId: F000016XFO
   comment: Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record
-- name: Gestión Boutique VI Opportunity A
+- name: Gestión Boutique VI Opportunity
   isin: ES0110407063
   category: Global Small/Mid-Cap Equity
   morningstarId: F0000107JH
@@ -59,7 +59,7 @@ funds:
   category: Global Equity Income
   morningstarId: F00000W42B
   comment: Empresas de Dividendos - Tambien existe en distribución 
-- name: Heptagon Kopernik Glb AllCp (Acc)
+- name: Heptagon Kopernik Glb AllCp
   isin: IE00BH6XSF26
   category: Global Flex-Cap Equity
   morningstarId: F00000YZS6
@@ -84,7 +84,7 @@ funds:
   category: Sector Equity Technology
   morningstarId: F00000VKNA
   comment: ''
-- name: Lazard Emerging Markets Eq C (Acc)
+- name: Lazard Emerging Markets Eq C
   isin: IE00BYWPGP72
   category: Global Emerging Markets Equity
   morningstarId: F00000ZYZI
