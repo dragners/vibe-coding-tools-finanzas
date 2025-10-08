@@ -1,2 +1,6 @@
 apps/comparadorhipotecas/node_modules
 apps/planvsfondo/node_modules
+apps/listadofondos/node_modules
+apps/listadofondos/dist
+apps/listadofondos/tsconfig.tsbuildinfo
+apps/ejemplo/node_modules
