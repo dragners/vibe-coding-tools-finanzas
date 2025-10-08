@@ -844,7 +844,6 @@ function CombinedTable({
   searchQuery,
   onSearchChange,
   showSearchInput = false,
-  stickyHeaderOffset = 0,
 }: {
   funds: FundRow[];
   plans: FundRow[];
@@ -853,7 +852,6 @@ function CombinedTable({
   searchQuery: string;
   onSearchChange?: (value: string) => void;
   showSearchInput?: boolean;
-  stickyHeaderOffset?: number;
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
@@ -970,12 +968,9 @@ function CombinedTable({
           </div>
         </div>
       ) : null}
-      <div className="overflow-x-auto pb-4">
+      <div className="pb-4">
         <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
-          <thead
-            className="sticky z-30 bg-white/95 backdrop-blur-sm shadow-sm transition-[top] duration-200"
-            style={{ top: Math.max(0, stickyHeaderOffset) }}
-          >
+          <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
             <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
               <th
                 rowSpan={2}
@@ -1316,77 +1311,10 @@ export default function App() {
     null,
   );
   const dataRef = useRef<ApiPayload | null>(null);
-  const headerRef = useRef<HTMLDivElement | null>(null);
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const [headerInView, setHeaderInView] = useState(true);
 
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const element = headerRef.current;
-    if (!element) return;
-
-    const readHeight = () => {
-      const nextHeight = Math.ceil(element.getBoundingClientRect().height);
-      setHeaderHeight((prev) => (prev === nextHeight ? prev : nextHeight));
-    };
-
-    let rafId: number | null = null;
-    const scheduleRead = () => {
-      if (rafId !== null) {
-        window.cancelAnimationFrame(rafId);
-      }
-      rafId = window.requestAnimationFrame(readHeight);
-    };
-
-    readHeight();
-
-    let resizeObserver: ResizeObserver | null = null;
-    if ("ResizeObserver" in window) {
-      resizeObserver = new ResizeObserver(scheduleRead);
-      resizeObserver.observe(element);
-    }
-
-    window.addEventListener("resize", scheduleRead);
-
-    return () => {
-      if (rafId !== null) {
-        window.cancelAnimationFrame(rafId);
-      }
-      resizeObserver?.disconnect();
-      window.removeEventListener("resize", scheduleRead);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const element = headerRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setHeaderInView(entry?.isIntersecting ?? false);
-      },
-      { threshold: 0, rootMargin: "0px 0px -1px 0px" },
-    );
-
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const element = headerRef.current;
-    if (!element) return;
-    const nextHeight = Math.ceil(element.getBoundingClientRect().height);
-    setHeaderHeight((prev) => (prev === nextHeight ? prev : nextHeight));
-  }, [lang, usingMockData, status]);
 
   const fetchData = useCallback(async (force = false) => {
     const hasExistingData = Boolean(dataRef.current);
@@ -1470,10 +1398,6 @@ export default function App() {
     void run();
   }, [fetchData, shouldAutoRefresh]);
 
-  const stickyHeaderOffset = headerInView
-    ? Math.max(0, headerHeight + 16)
-    : 0;
-
   return (
     <div className="relative min-h-[100dvh] text-gray-900">
       <style>{`
@@ -1487,10 +1411,7 @@ export default function App() {
       `}</style>
       <div className="landing-bg" aria-hidden="true" />
 
-      <div
-        ref={headerRef}
-        className="bg-white/85 backdrop-blur border-b border-gray-200"
-      >
+      <div className="bg-white/85 backdrop-blur border-b border-gray-200">
         <div className="w-full max-w-[1600px] mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <a
@@ -1580,7 +1501,6 @@ export default function App() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               showSearchInput
-              stickyHeaderOffset={stickyHeaderOffset}
             />
           </div>
         )}
