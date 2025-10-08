@@ -275,22 +275,57 @@ function useTexts(lang: Lang) {
   return useMemo(() => TEXTS[lang], [lang]);
 }
 
-function formatValue(raw?: MetricValue): string {
+function formatNumberForLocale(value: number, lang: Lang, fractionDigits?: number) {
+  const digits =
+    typeof fractionDigits === "number"
+      ? Math.max(0, Math.min(6, Math.trunc(fractionDigits)))
+      : undefined;
+  const options: Intl.NumberFormatOptions = { useGrouping: false };
+  if (digits !== undefined) {
+    options.minimumFractionDigits = digits;
+    options.maximumFractionDigits = digits;
+  } else {
+    options.maximumFractionDigits = 6;
+  }
+  const locale = lang === "es" ? "es-ES" : "en-GB";
+  return new Intl.NumberFormat(locale, options).format(value);
+}
+
+function formatNumericString(value: string, lang: Lang): string | null {
+  const percent = value.includes("%");
+  const compact = value.replace(/\s+/g, "");
+  const numericPart = compact.replace(/%/g, "");
+  const normalized = numericPart.replace(/,/g, ".");
+  if (!/^[-+]?\d+(?:\.\d+)?$/.test(normalized)) {
+    return null;
+  }
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  const decimalMatch = normalized.match(/\.(\d+)/);
+  const fractionDigits = decimalMatch ? Math.min(decimalMatch[1].length, 6) : undefined;
+  const formattedNumber = formatNumberForLocale(parsed, lang, fractionDigits);
+  return percent ? `${formattedNumber}%` : formattedNumber;
+}
+
+function formatValue(raw?: MetricValue, lang: Lang = "es"): string {
   if (raw === null || raw === undefined) return "-";
   if (typeof raw === "number") {
     if (!Number.isFinite(raw)) return "-";
-    return String(raw);
+    return formatNumberForLocale(raw, lang);
   }
   if (typeof raw === "string") {
     const val = raw.trim();
     if (!val || val.toUpperCase() === "N/A" || val === "NaN") return "-";
-    return val;
+    const numericFormatted = formatNumericString(val, lang);
+    return numericFormatted ?? val;
   }
   if (typeof raw === "object") {
     const nested =
       ("value" in raw ? raw.value : undefined) ??
       ("label" in raw ? raw.label : undefined);
-    return formatValue(nested as MetricValue);
+    return formatValue(nested as MetricValue, lang);
   }
   return "-";
 }
@@ -538,6 +573,7 @@ function renderMetricCells<T extends string>(
   keyPrefix: string,
   stats: ColumnStatsMap<T> | undefined,
   options: CellRenderOptions,
+  lang: Lang,
 ) {
   return columns.map((label) => {
     const numericValue = getMetricNumber(values[label]);
@@ -557,7 +593,7 @@ function renderMetricCells<T extends string>(
         className={classes.join(" ")}
         style={background ? { backgroundColor: background } : undefined}
       >
-        {formatValue(values[label])}
+        {formatValue(values[label], lang)}
       </td>
     );
   });
@@ -1080,7 +1116,7 @@ function Section({
             ) : (
               sortedData.map((row) => {
                 const stars = renderStars(row.morningstarRating);
-                const categoryValue = formatValue(row.category);
+                const categoryValue = formatValue(row.category, lang);
                 const rowKey = row.morningstarId || row.isin || row.name;
                 const badges = getCategoryBadges(categoryValue, lang, row.indexed);
                 const tooltipId = `${section}-${rowKey}`;
@@ -1173,12 +1209,12 @@ function Section({
                     <td
                       className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
                     >
-                      {formatValue(row.isin)}
+                      {formatValue(row.isin, lang)}
                     </td>
                     <td
                       className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center align-middle"
                     >
-                      {formatValue(row.ter)}
+                      {formatValue(row.ter, lang)}
                     </td>
                     {renderMetricCells(
                       PERFORMANCE_LABELS,
@@ -1186,22 +1222,24 @@ function Section({
                       "perf",
                       performanceStats,
                       { metric: "performance", addLeftBoundary: true },
+                      lang,
                     )}
                     {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe", sharpeStats, {
                       metric: "sharpe",
                       addLeftBoundary: true,
-                    })}
+                    }, lang)}
                     {renderMetricCells(
                       RATIO_LABELS,
                       row.volatility,
                       "vol",
                       volatilityStats,
                       { metric: "volatility", addLeftBoundary: true },
+                      lang,
                     )}
                     <td
                       className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle ${commentColumnWidthClass}`}
                     >
-                      {formatValue(row.comment) || texts.commentPlaceholder}
+                      {formatValue(row.comment, lang) || texts.commentPlaceholder}
                     </td>
                   </tr>
                 );
