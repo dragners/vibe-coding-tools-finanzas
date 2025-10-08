@@ -171,6 +171,8 @@ const PERFORMANCE_LABELS: readonly PerformanceKey[] = [
 ];
 
 const RATIO_LABELS: readonly RatioPeriod[] = ["1Y", "3Y", "5Y"];
+const TER_COLUMN_WIDTH_CLASS = "w-[52px] sm:w-[60px]";
+const METRIC_COLUMN_WIDTH_CLASS = "w-[58px] sm:w-[66px]";
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
 const ENABLE_MOCK_DATA =
@@ -581,6 +583,7 @@ function renderMetricCells<T extends string>(
       : undefined;
     const classes = [
       "px-1 py-1.5 text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle",
+      METRIC_COLUMN_WIDTH_CLASS,
     ];
     if (options.addLeftBoundary && columns[0] === label) {
       classes.push("border-l", "border-gray-400");
@@ -1003,7 +1006,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className="px-1.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
+                  className={`px-1 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center ${TER_COLUMN_WIDTH_CLASS}`}
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.ter}</span>
@@ -1017,7 +1020,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={PERFORMANCE_LABELS.length}
-                  className="relative px-2 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.performance}</span>
@@ -1026,7 +1029,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-2 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.sharpe}</span>
@@ -1035,7 +1038,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-2 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.volatility}</span>
@@ -1053,9 +1056,9 @@ function CombinedTable({
                 {PERFORMANCE_LABELS.map((label, index) => (
                   <th
                     key={`perf-${label}`}
-                    className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
-                    }`}
+                    } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
                     <div className="flex items-center justify-center gap-1">
                       <span>{displayMetricLabel(label)}</span>
@@ -1077,9 +1080,9 @@ function CombinedTable({
                 {RATIO_LABELS.map((label, index) => (
                   <th
                     key={`sharpe-${label}`}
-                    className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
-                    }`}
+                    } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
                     <div className="flex items-center justify-center gap-1">
                       <span>{displayMetricLabel(label)}</span>
@@ -1101,9 +1104,9 @@ function CombinedTable({
                 {RATIO_LABELS.map((label, index) => (
                   <th
                     key={`vol-${label}`}
-                    className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
-                    }`}
+                    } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
                     <div className="flex items-center justify-center gap-1">
                       <span>{displayMetricLabel(label)}</span>
@@ -1254,7 +1257,7 @@ function CombinedTable({
                           {formatValue(row.isin, lang)}
                         </td>
                         <td
-                          className="px-1.5 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle"
+                          className={`px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}
                         >
                           {formatValue(row.ter, lang)}
                         </td>
@@ -1423,7 +1426,7 @@ export default function App() {
 
       <div className="bg-white/85 backdrop-blur border-b border-gray-200">
         <div className="w-full max-w-[1600px] mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-2">
+          <div className="space-y-2 w-full">
             <a
               href="/"
               className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline"
@@ -1433,14 +1436,16 @@ export default function App() {
             </a>
             <div>
               <h1 className="text-xl md:text-2xl font-extrabold">{texts.title}</h1>
-              <p className="mt-1 text-sm md:text-base text-gray-700 max-w-4xl">
-                {texts.subtitle}
-              </p>
-              {lastUpdatedFormatted ? (
-                <p className="mt-1 text-[11px] md:text-xs text-gray-500">
-                  {texts.lastUpdated}: {lastUpdatedFormatted}
+              <div className="mt-2 flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-6">
+                <p className="text-sm md:text-base text-gray-700 max-w-4xl md:max-w-3xl">
+                  {texts.subtitle}
                 </p>
-              ) : null}
+                {lastUpdatedFormatted ? (
+                  <p className="text-[11px] md:text-xs text-gray-500 text-right md:whitespace-nowrap">
+                    {texts.lastUpdated}: {lastUpdatedFormatted}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
           <div className="flex flex-col items-stretch md:items-end gap-2 sm:gap-3">
