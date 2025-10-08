@@ -939,191 +939,192 @@ function CombinedTable({
 
   return (
     <section className="mt-10 sm:mt-12">
-      {showSearchInput ? (
-        <div className="mb-6 flex justify-end">
-          <div className="relative w-full sm:w-60 md:w-72 lg:w-80">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => onSearchChange?.(event.target.value)}
-              placeholder={texts.searchPlaceholder}
-              aria-label={texts.searchAriaLabel}
-              className="w-full rounded-xl border border-gray-300 bg-white/80 py-2 pl-3 pr-10 text-sm text-gray-700 placeholder:text-gray-400 shadow-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
-            />
-            <svg
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.8}
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
+      <div className="rounded-3xl border border-slate-200/70 bg-white/85 p-4 sm:p-6 lg:p-8 shadow-xl backdrop-blur">
+        {showSearchInput ? (
+          <div className="mb-6">
+            <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => onSearchChange?.(event.target.value)}
+                placeholder={texts.searchPlaceholder}
+                aria-label={texts.searchAriaLabel}
+                className="w-full rounded-2xl border border-slate-300/80 bg-white/90 py-2.5 pl-3.5 pr-10 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm transition focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200"
               />
-            </svg>
+              <svg
+                className="pointer-events-none absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.8}
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
+                />
+              </svg>
+            </div>
           </div>
-        </div>
-      ) : null}
-      <div className="pb-4">
-        <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
-          <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
-            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-              <th
-                rowSpan={2}
-                className="px-3 py-2 max-w-[320px] bg-white/90 backdrop-blur text-center rounded-tl-2xl"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>{texts.name}</span>
-                  <SortControl
-                    lang={lang}
-                    label={texts.name}
-                    activeOrder={sortConfig?.key === "name" ? sortConfig.order : null}
-                    onChange={(order) => handleSortChange("name", order)}
-                  />
-                </div>
-              </th>
-              <th
-                rowSpan={2}
-                className="px-2.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>{texts.isin}</span>
-                  <SortControl
-                    lang={lang}
-                    label={texts.isin}
-                    activeOrder={sortConfig?.key === "isin" ? sortConfig.order : null}
-                    onChange={(order) => handleSortChange("isin", order)}
-                  />
-                </div>
-              </th>
-              <th
-                rowSpan={2}
-                className="px-1.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>{texts.ter}</span>
-                  <SortControl
-                    lang={lang}
-                    label={texts.ter}
-                    activeOrder={sortConfig?.key === "ter" ? sortConfig.order : null}
-                    onChange={(order) => handleSortChange("ter", order)}
-                  />
-                </div>
-              </th>
-              <th
-                colSpan={PERFORMANCE_LABELS.length}
-                className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>{texts.performance}</span>
-                  <InfoTip content={texts.performanceInfo} label={texts.performance} />
-                </div>
-              </th>
-              <th
-                colSpan={RATIO_LABELS.length}
-                className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>{texts.sharpe}</span>
-                  <InfoTip content={texts.sharpeInfo} label={texts.sharpe} />
-                </div>
-              </th>
-              <th
-                colSpan={RATIO_LABELS.length}
-                className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>{texts.volatility}</span>
-                  <InfoTip content={texts.volatilityInfo} label={texts.volatility} />
-                </div>
-              </th>
-              <th
-                rowSpan={2}
-                className={`px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
-              >
-                {texts.comment}
-              </th>
-            </tr>
-            <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-              {PERFORMANCE_LABELS.map((label, index) => (
+        ) : null}
+        <div className="overflow-x-auto pb-4">
+          <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
+            <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
+              <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 <th
-                  key={`perf-${label}`}
-                  className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
-                    index === 0 ? "border-l border-gray-400" : ""
-                  }`}
+                  rowSpan={2}
+                  className="px-3 py-2 max-w-[320px] bg-white/90 backdrop-blur text-center rounded-tl-2xl"
                 >
                   <div className="flex items-center justify-center gap-1">
-                    <span>{displayMetricLabel(label)}</span>
+                    <span>{texts.name}</span>
                     <SortControl
                       lang={lang}
-                      label={`${texts.performance} ${displayMetricLabel(label)}`}
-                      activeOrder={
-                        sortConfig?.key === `performance:${label}`
-                          ? sortConfig.order
-                          : null
-                      }
-                      onChange={(order) =>
-                        handleSortChange(`performance:${label}` as SortKey, order)
-                      }
+                      label={texts.name}
+                      activeOrder={sortConfig?.key === "name" ? sortConfig.order : null}
+                      onChange={(order) => handleSortChange("name", order)}
                     />
                   </div>
                 </th>
-              ))}
-              {RATIO_LABELS.map((label, index) => (
                 <th
-                  key={`sharpe-${label}`}
-                  className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
-                    index === 0 ? "border-l border-gray-400" : ""
-                  }`}
+                  rowSpan={2}
+                  className="px-2.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
                 >
                   <div className="flex items-center justify-center gap-1">
-                    <span>{displayMetricLabel(label)}</span>
+                    <span>{texts.isin}</span>
                     <SortControl
                       lang={lang}
-                      label={`${texts.sharpe} ${displayMetricLabel(label)}`}
-                      activeOrder={
-                        sortConfig?.key === `sharpe:${label}`
-                          ? sortConfig.order
-                          : null
-                      }
-                      onChange={(order) =>
-                        handleSortChange(`sharpe:${label}` as SortKey, order)
-                      }
+                      label={texts.isin}
+                      activeOrder={sortConfig?.key === "isin" ? sortConfig.order : null}
+                      onChange={(order) => handleSortChange("isin", order)}
                     />
                   </div>
                 </th>
-              ))}
-              {RATIO_LABELS.map((label, index) => (
                 <th
-                  key={`vol-${label}`}
-                  className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
-                    index === 0 ? "border-l border-gray-400" : ""
-                  }`}
+                  rowSpan={2}
+                  className="px-1.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
                 >
                   <div className="flex items-center justify-center gap-1">
-                    <span>{displayMetricLabel(label)}</span>
+                    <span>{texts.ter}</span>
                     <SortControl
                       lang={lang}
-                      label={`${texts.volatility} ${displayMetricLabel(label)}`}
-                      activeOrder={
-                        sortConfig?.key === `volatility:${label}`
-                          ? sortConfig.order
-                          : null
-                      }
-                      onChange={(order) =>
-                        handleSortChange(`volatility:${label}` as SortKey, order)
-                      }
+                      label={texts.ter}
+                      activeOrder={sortConfig?.key === "ter" ? sortConfig.order : null}
+                      onChange={(order) => handleSortChange("ter", order)}
                     />
                   </div>
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
+                <th
+                  colSpan={PERFORMANCE_LABELS.length}
+                  className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span>{texts.performance}</span>
+                    <InfoTip content={texts.performanceInfo} label={texts.performance} />
+                  </div>
+                </th>
+                <th
+                  colSpan={RATIO_LABELS.length}
+                  className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span>{texts.sharpe}</span>
+                    <InfoTip content={texts.sharpeInfo} label={texts.sharpe} />
+                  </div>
+                </th>
+                <th
+                  colSpan={RATIO_LABELS.length}
+                  className="relative px-2.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span>{texts.volatility}</span>
+                    <InfoTip content={texts.volatilityInfo} label={texts.volatility} />
+                  </div>
+                </th>
+                <th
+                  rowSpan={2}
+                  className={`px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
+                >
+                  {texts.comment}
+                </th>
+              </tr>
+              <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                {PERFORMANCE_LABELS.map((label, index) => (
+                  <th
+                    key={`perf-${label}`}
+                    className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
+                      index === 0 ? "border-l border-gray-400" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>{displayMetricLabel(label)}</span>
+                      <SortControl
+                        lang={lang}
+                        label={`${texts.performance} ${displayMetricLabel(label)}`}
+                        activeOrder={
+                          sortConfig?.key === `performance:${label}`
+                            ? sortConfig.order
+                            : null
+                        }
+                        onChange={(order) =>
+                          handleSortChange(`performance:${label}` as SortKey, order)
+                        }
+                      />
+                    </div>
+                  </th>
+                ))}
+                {RATIO_LABELS.map((label, index) => (
+                  <th
+                    key={`sharpe-${label}`}
+                    className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
+                      index === 0 ? "border-l border-gray-400" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>{displayMetricLabel(label)}</span>
+                      <SortControl
+                        lang={lang}
+                        label={`${texts.sharpe} ${displayMetricLabel(label)}`}
+                        activeOrder={
+                          sortConfig?.key === `sharpe:${label}`
+                            ? sortConfig.order
+                            : null
+                        }
+                        onChange={(order) =>
+                          handleSortChange(`sharpe:${label}` as SortKey, order)
+                        }
+                      />
+                    </div>
+                  </th>
+                ))}
+                {RATIO_LABELS.map((label, index) => (
+                  <th
+                    key={`vol-${label}`}
+                    className={`px-1.5 py-1.5 bg-white/90 backdrop-blur text-center ${
+                      index === 0 ? "border-l border-gray-400" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>{displayMetricLabel(label)}</span>
+                      <SortControl
+                        lang={lang}
+                        label={`${texts.volatility} ${displayMetricLabel(label)}`}
+                        activeOrder={
+                          sortConfig?.key === `volatility:${label}`
+                            ? sortConfig.order
+                            : null
+                        }
+                        onChange={(order) =>
+                          handleSortChange(`volatility:${label}` as SortKey, order)
+                        }
+                      />
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
             {visibleRowCount === 0 ? (
               <tr>
                 <td
@@ -1292,10 +1293,11 @@ function CombinedTable({
                 </React.Fragment>
               ))
             )}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
       </div>
-    </section>
+    </div>
+  </section>
   );
 }
 
