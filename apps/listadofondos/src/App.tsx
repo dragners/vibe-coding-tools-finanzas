@@ -942,7 +942,7 @@ function CombinedTable({
         colSpan={TABLE_COLUMN_COUNT}
         className={`px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white ${
           isFirstSection ? "rounded-t-2xl" : ""
-        } bg-slate-950/90`}
+        } bg-slate-900`}
       >
         {label}
       </td>
@@ -970,7 +970,7 @@ function CombinedTable({
     return (
       <tr key={tooltipId} className="align-middle">
         <td
-          className={`relative px-3 py-3 bg-slate-900 text-white max-w-[320px] overflow-visible align-top ${
+          className={`relative px-3 py-2 bg-white/95 backdrop-blur max-w-[320px] overflow-visible align-top ${
             tooltipOpen ? "z-20" : ""
           }`}
         >
@@ -979,7 +979,7 @@ function CombinedTable({
               href={link}
               target="_blank"
               rel="noreferrer"
-              className="font-semibold text-white hover:text-cyan-200 leading-tight"
+              className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
               title={row.name}
             >
               {row.name}
@@ -988,7 +988,7 @@ function CombinedTable({
               <div className="flex w-full items-center gap-1">
                 {stars ? (
                   <span
-                    className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-400"
+                    className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-500"
                     aria-label={`${stars.length} estrellas Morningstar`}
                   >
                     {stars}
@@ -1046,10 +1046,10 @@ function CombinedTable({
             )}
           </div>
         </td>
-        <td className="px-3 py-3 bg-slate-900 whitespace-nowrap text-slate-100 text-xs sm:text-sm align-middle">
+        <td className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle">
           {formatValue(row.isin, lang)}
         </td>
-        <td className="px-1.5 py-3 bg-slate-900 whitespace-nowrap font-semibold text-slate-100 text-center align-middle">
+        <td className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center align-middle">
           {formatValue(row.ter, lang)}
         </td>
         {renderMetricCells(
@@ -1060,7 +1060,6 @@ function CombinedTable({
           {
             metric: "performance",
             addLeftBoundary: true,
-            textClass: "text-slate-100",
           },
           lang,
         )}
@@ -1072,7 +1071,6 @@ function CombinedTable({
           {
             metric: "sharpe",
             addLeftBoundary: true,
-            textClass: "text-slate-100",
           },
           lang,
         )}
@@ -1084,14 +1082,13 @@ function CombinedTable({
           {
             metric: "volatility",
             addLeftBoundary: true,
-            textClass: "text-slate-100",
           },
           lang,
         )}
         <td
-          className={`px-3 py-3 bg-slate-900 text-sm text-slate-100 align-top ${commentColumnWidthClass}`}
+          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle ${commentColumnWidthClass}`}
         >
-          {formatValue(row.comment || texts.commentPlaceholder, lang)}
+          {formatValue(row.comment, lang) || texts.commentPlaceholder}
         </td>
       </tr>
     );
@@ -1107,10 +1104,10 @@ function CombinedTable({
             onChange={(event) => onSearchChange?.(event.target.value)}
             placeholder={texts.searchPlaceholder}
             aria-label={texts.searchAriaLabel}
-            className="w-full rounded-xl border border-slate-700 bg-slate-900/80 py-2 pl-3 pr-10 text-sm text-slate-100 placeholder:text-slate-400 shadow-sm focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
+            className="w-full rounded-xl border border-gray-300 bg-white/80 py-2 pl-3 pr-10 text-sm text-gray-700 placeholder:text-gray-400 shadow-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
           />
           <svg
-            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -1127,12 +1124,12 @@ function CombinedTable({
         </div>
       </div>
       <div className="overflow-x-auto pb-4">
-        <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm">
-          <thead className="sticky top-0 z-30 bg-slate-800/95 backdrop-blur">
-            <tr className="text-[11px] font-semibold uppercase tracking-wide text-slate-100">
+        <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
+          <thead className="sticky top-0 z-30 bg-white/95 backdrop-blur">
+            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
               <th
                 rowSpan={2}
-                className="px-3 py-3 max-w-[320px] text-center"
+                className="px-3 py-2 max-w-[320px] bg-white/70 text-center rounded-tl-2xl"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.name}</span>
@@ -1146,7 +1143,7 @@ function CombinedTable({
               </th>
               <th
                 rowSpan={2}
-                className="px-2.5 py-3 whitespace-nowrap text-center"
+                className="px-2.5 py-2 whitespace-nowrap bg-white/70 text-center"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.isin}</span>
@@ -1160,7 +1157,7 @@ function CombinedTable({
               </th>
               <th
                 rowSpan={2}
-                className="px-1.5 py-3 whitespace-nowrap text-center"
+                className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.ter}</span>
@@ -1174,7 +1171,7 @@ function CombinedTable({
               </th>
               <th
                 colSpan={PERFORMANCE_LABELS.length}
-                className="relative px-2.5 py-3 text-center border-l border-slate-600"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.performance}</span>
@@ -1183,7 +1180,7 @@ function CombinedTable({
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
-                className="relative px-2.5 py-3 text-center border-l border-slate-600"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.sharpe}</span>
@@ -1192,7 +1189,7 @@ function CombinedTable({
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
-                className="relative px-2.5 py-3 text-center border-l border-slate-600"
+                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.volatility}</span>
@@ -1201,17 +1198,17 @@ function CombinedTable({
               </th>
               <th
                 rowSpan={2}
-                className="px-3 py-3 text-center"
+                className="px-3 py-2 whitespace-nowrap bg-white/70 text-center rounded-tr-2xl min-w-[320px]"
               >
                 {texts.comment}
               </th>
             </tr>
-            <tr className="text-[10px] font-semibold uppercase tracking-wide text-slate-200">
+            <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
               {PERFORMANCE_LABELS.map((label, index) => (
                 <th
                   key={`perf-${label}`}
-                  className={`px-1.5 py-2 text-center ${
-                    index === 0 ? "border-l border-slate-600" : ""
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
                   <div className="flex items-center justify-center gap-1">
@@ -1234,8 +1231,8 @@ function CombinedTable({
               {RATIO_LABELS.map((label, index) => (
                 <th
                   key={`sharpe-${label}`}
-                  className={`px-1.5 py-2 text-center ${
-                    index === 0 ? "border-l border-slate-600" : ""
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
                   <div className="flex items-center justify-center gap-1">
@@ -1258,8 +1255,8 @@ function CombinedTable({
               {RATIO_LABELS.map((label, index) => (
                 <th
                   key={`vol-${label}`}
-                  className={`px-1.5 py-2 text-center ${
-                    index === 0 ? "border-l border-slate-600" : ""
+                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
+                    index === 0 ? "border-l border-gray-400" : ""
                   }`}
                 >
                   <div className="flex items-center justify-center gap-1">
@@ -1286,7 +1283,7 @@ function CombinedTable({
               <tr>
                 <td
                   colSpan={TABLE_COLUMN_COUNT}
-                  className="px-3 py-6 text-center text-sm font-medium text-slate-200 bg-slate-900/80 rounded-b-2xl"
+                  className="px-3 py-6 text-center text-sm font-medium text-gray-500 bg-white/90 rounded-b-2xl"
                 >
                   {texts.noData}
                 </td>
