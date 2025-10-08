@@ -108,8 +108,7 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Buscar...",
     searchAriaLabel: "Buscar en la tabla",
-    dataNote:
-      "Los datos se obtienen automáticamente de Morningstar cada 4 horas y pueden actualizarse manualmente.",
+    dataNote: "",
     langES: "ES",
     langEN: "EN",
     back: "Volver a Herramientas",
@@ -148,8 +147,7 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Search...",
     searchAriaLabel: "Search within the table",
-    dataNote:
-      "Data is automatically retrieved from Morningstar every 4 hours and can be refreshed manually.",
+    dataNote: "",
     langES: "ES",
     langEN: "EN",
     back: "Back to Tools",
@@ -946,7 +944,7 @@ function Section({
           </div>
         ) : null}
       </div>
-      <div className="-mx-4 overflow-x-auto pb-4 sm:mx-0">
+      <div className="overflow-x-auto pb-4">
         <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
           <thead>
             <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
@@ -1365,7 +1363,7 @@ export default function App() {
       <div className="landing-bg" aria-hidden="true" />
 
       <div className="bg-white/85 backdrop-blur border-b border-gray-200">
-        <div className="max-w-[min(96vw,1600px)] mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="w-full max-w-[1600px] mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <a
               href="/"
@@ -1431,7 +1429,7 @@ export default function App() {
         </div>
       </div>
 
-      <main className="max-w-[min(96vw,1600px)] mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      <main className="w-full max-w-[1600px] mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         {(status === "loading" || status === "refreshing") && (
           <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-gray-600 shadow-sm backdrop-blur">
             {status === "refreshing" ? texts.refreshing : texts.loading}
