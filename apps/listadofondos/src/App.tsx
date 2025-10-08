@@ -62,6 +62,8 @@ type TextKey = keyof typeof TEXTS["es"];
 
 type TableSection = "funds" | "plans";
 
+type FundRowWithSection = FundRow & { __section: TableSection };
+
 type SortOrder = "asc" | "desc";
 
 type SortKey =
@@ -171,6 +173,9 @@ const PERFORMANCE_LABELS: readonly PerformanceKey[] = [
 ];
 
 const RATIO_LABELS: readonly RatioPeriod[] = ["1Y", "3Y", "5Y"];
+
+const TABLE_COLUMN_COUNT =
+  2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
 const ENABLE_MOCK_DATA =
@@ -563,6 +568,7 @@ function getMetricBackground(
 type CellRenderOptions = {
   metric: MetricAccessor;
   addLeftBoundary?: boolean;
+  textClass?: string;
 };
 
 function renderMetricCells<T extends string>(
@@ -580,7 +586,8 @@ function renderMetricCells<T extends string>(
       ? getMetricBackground(options.metric, numericValue, columnStats)
       : undefined;
     const classes = [
-      "px-1.5 py-2 text-sm font-semibold text-gray-700 text-center align-middle",
+      "px-1.5 py-2 text-sm font-semibold text-center align-middle",
+      options.textClass ?? "text-gray-700",
     ];
     if (options.addLeftBoundary && columns[0] === label) {
       classes.push("border-l", "border-gray-400");
@@ -633,6 +640,63 @@ function getSortValue(row: FundRow, key: SortKey): SortValue {
   }
 
   return { type: "text", value: null };
+}
+
+function sortRows<T extends FundRow>(rows: T[], sortConfig: SortConfig | null, lang: Lang) {
+  if (!sortConfig) {
+    return rows;
+  }
+
+  const sorted = [...rows];
+  const locale = lang === "es" ? "es" : "en";
+  const multiplier = sortConfig.order === "asc" ? 1 : -1;
+  const missingIsLowestInDesc =
+    sortConfig.order === "desc" && isPerformanceOrSharpeSortKey(sortConfig.key);
+
+  sorted.sort((a, b) => {
+    const valueA = getSortValue(a, sortConfig.key);
+    const valueB = getSortValue(b, sortConfig.key);
+    const rawA = valueA.value;
+    const rawB = valueB.value;
+
+    const isNullA = rawA === null || rawA === undefined || rawA === "";
+    const isNullB = rawB === null || rawB === undefined || rawB === "";
+
+    if (isNullA && isNullB) return 0;
+    if (isNullA) {
+      if (missingIsLowestInDesc && valueA.type === "number") {
+        return 1;
+      }
+      return 1 * multiplier;
+    }
+    if (isNullB) {
+      if (missingIsLowestInDesc && valueB.type === "number") {
+        return -1;
+      }
+      return -1 * multiplier;
+    }
+
+    if (valueA.type === "number" && valueB.type === "number") {
+      const diff = (rawA as number) - (rawB as number);
+      if (Math.abs(diff) <= ZERO_TOLERANCE) {
+        return 0;
+      }
+      return diff > 0 ? 1 * multiplier : -1 * multiplier;
+    }
+
+    const textA = String(rawA);
+    const textB = String(rawB);
+    const comparison = textA.localeCompare(textB, locale, {
+      sensitivity: "base",
+      numeric: true,
+    });
+    if (comparison === 0) {
+      return 0;
+    }
+    return comparison > 0 ? 1 * multiplier : -1 * multiplier;
+  });
+
+  return sorted;
 }
 
 function SortControl({
@@ -774,107 +838,76 @@ function getCategoryBadges(category: string, lang: Lang, indexed?: boolean): Cat
   return labels;
 }
 
-function Section({
-  section,
-  data,
+function CombinedTable({
+  funds,
+  plans,
   texts,
   lang,
   searchQuery,
   onSearchChange,
-  showSearchInput = false,
 }: {
-  section: TableSection;
-  data: FundRow[];
+  funds: FundRow[];
+  plans: FundRow[];
   texts: Record<TextKey, string>;
   lang: Lang;
   searchQuery: string;
   onSearchChange?: (value: string) => void;
-  showSearchInput?: boolean;
 }) {
-  const title = section === "funds" ? texts.fundsTitle : texts.plansTitle;
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
-  const filteredData = useMemo(() => {
+  const fundsWithSection = useMemo<FundRowWithSection[]>(
+    () => funds.map((row) => ({ ...row, __section: "funds" })),
+    [funds],
+  );
+  const plansWithSection = useMemo<FundRowWithSection[]>(
+    () => plans.map((row) => ({ ...row, __section: "plans" })),
+    [plans],
+  );
+
+  const filteredFunds = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
-    if (!normalized) return data;
-    return data.filter((row) => rowMatchesQuery(row, normalized));
-  }, [data, searchQuery]);
+    if (!normalized) return fundsWithSection;
+    return fundsWithSection.filter((row) => rowMatchesQuery(row, normalized));
+  }, [fundsWithSection, searchQuery]);
+
+  const filteredPlans = useMemo(() => {
+    const normalized = searchQuery.trim().toLowerCase();
+    if (!normalized) return plansWithSection;
+    return plansWithSection.filter((row) => rowMatchesQuery(row, normalized));
+  }, [plansWithSection, searchQuery]);
+
+  const combinedFilteredData = useMemo(
+    () => [...filteredFunds, ...filteredPlans],
+    [filteredFunds, filteredPlans],
+  );
 
   const performanceStats = useMemo(
-    () => collectColumnStats(filteredData, "performance", PERFORMANCE_LABELS),
-    [filteredData],
+    () => collectColumnStats(combinedFilteredData, "performance", PERFORMANCE_LABELS),
+    [combinedFilteredData],
   );
   const sharpeStats = useMemo(
-    () => collectColumnStats(filteredData, "sharpe", RATIO_LABELS),
-    [filteredData],
+    () => collectColumnStats(combinedFilteredData, "sharpe", RATIO_LABELS),
+    [combinedFilteredData],
   );
   const volatilityStats = useMemo(
-    () => collectColumnStats(filteredData, "volatility", RATIO_LABELS),
-    [filteredData],
+    () => collectColumnStats(combinedFilteredData, "volatility", RATIO_LABELS),
+    [combinedFilteredData],
   );
 
-  const commentColumnWidthClass =
-    section === "plans"
-      ? "min-w-[320px] sm:min-w-[380px]"
-      : "min-w-[160px]";
+  const sortedFunds = useMemo(
+    () => sortRows(filteredFunds, sortConfig, lang),
+    [filteredFunds, sortConfig, lang],
+  );
+  const sortedPlans = useMemo(
+    () => sortRows(filteredPlans, sortConfig, lang),
+    [filteredPlans, sortConfig, lang],
+  );
 
-  const sortedData = useMemo(() => {
-    if (!sortConfig) {
-      return filteredData;
-    }
-
-    const sorted = [...filteredData];
-    const locale = lang === "es" ? "es" : "en";
-    const multiplier = sortConfig.order === "asc" ? 1 : -1;
-    const missingIsLowestInDesc =
-      sortConfig.order === "desc" && isPerformanceOrSharpeSortKey(sortConfig.key);
-
-    sorted.sort((a, b) => {
-      const valueA = getSortValue(a, sortConfig.key);
-      const valueB = getSortValue(b, sortConfig.key);
-      const rawA = valueA.value;
-      const rawB = valueB.value;
-
-      const isNullA = rawA === null || rawA === undefined || rawA === "";
-      const isNullB = rawB === null || rawB === undefined || rawB === "";
-
-      if (isNullA && isNullB) return 0;
-      if (isNullA) {
-        if (missingIsLowestInDesc && valueA.type === "number") {
-          return 1;
-        }
-        return 1 * multiplier;
-      }
-      if (isNullB) {
-        if (missingIsLowestInDesc && valueB.type === "number") {
-          return -1;
-        }
-        return -1 * multiplier;
-      }
-
-      if (valueA.type === "number" && valueB.type === "number") {
-        const diff = (rawA as number) - (rawB as number);
-        if (Math.abs(diff) <= ZERO_TOLERANCE) {
-          return 0;
-        }
-        return diff > 0 ? 1 * multiplier : -1 * multiplier;
-      }
-
-      const textA = String(rawA);
-      const textB = String(rawB);
-      const comparison = textA.localeCompare(textB, locale, {
-        sensitivity: "base",
-        numeric: true,
-      });
-      if (comparison === 0) {
-        return 0;
-      }
-      return comparison > 0 ? 1 * multiplier : -1 * multiplier;
-    });
-
-    return sorted;
-  }, [filteredData, lang, sortConfig]);
+  const sortedData = useMemo(
+    () => [...sortedFunds, ...sortedPlans],
+    [sortedFunds, sortedPlans],
+  );
 
   const handleToggleTooltip = (id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
@@ -903,54 +936,203 @@ function Section({
     });
   };
 
+  const renderSectionDivider = (label: string, isFirstSection: boolean) => (
+    <tr key={`section-${label}`}>
+      <td
+        colSpan={TABLE_COLUMN_COUNT}
+        className={`px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white ${
+          isFirstSection ? "rounded-t-2xl" : ""
+        } bg-slate-950/90`}
+      >
+        {label}
+      </td>
+    </tr>
+  );
+
+  const renderDataRow = (row: FundRowWithSection) => {
+    const stars = renderStars(row.morningstarRating);
+    const categoryValue = formatValue(row.category, lang);
+    const rowKey = row.morningstarId || row.isin || row.name;
+    const badges = getCategoryBadges(categoryValue, lang, row.indexed);
+    const tooltipId = `${row.__section}-${rowKey}`;
+    const tooltipOpen = openTooltipId === tooltipId;
+    const categoryDisplay = categoryValue !== "-" ? categoryValue : texts.noData;
+    const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
+    const tooltipLabel =
+      categoryDisplay && categoryDisplay !== texts.noData
+        ? categoryDisplay
+        : texts.noData;
+    const commentColumnWidthClass =
+      row.__section === "plans"
+        ? "min-w-[320px] sm:min-w-[380px]"
+        : "min-w-[160px]";
+
+    return (
+      <tr key={tooltipId} className="align-middle">
+        <td
+          className={`relative px-3 py-3 bg-slate-900 text-white max-w-[320px] overflow-visible align-top ${
+            tooltipOpen ? "z-20" : ""
+          }`}
+        >
+          <div className="flex flex-col items-start gap-1">
+            <a
+              href={link}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-white hover:text-cyan-200 leading-tight"
+              title={row.name}
+            >
+              {row.name}
+            </a>
+            {(badges.length > 0 || stars) && (
+              <div className="flex w-full items-center gap-1">
+                {stars ? (
+                  <span
+                    className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-400"
+                    aria-label={`${stars.length} estrellas Morningstar`}
+                  >
+                    {stars}
+                  </span>
+                ) : null}
+                {badges.length > 0 ? (
+                  <div
+                    className={`relative group ${stars ? "ml-auto" : ""}`}
+                    onMouseEnter={() => handleOpenTooltip(tooltipId)}
+                    onMouseLeave={() => handleCloseTooltip(tooltipId)}
+                  >
+                    <button
+                      type="button"
+                      className="inline-flex flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
+                      onClick={() => handleToggleTooltip(tooltipId)}
+                      onBlur={() => handleCloseTooltip(tooltipId)}
+                      onFocus={() => handleOpenTooltip(tooltipId)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                          event.stopPropagation();
+                          handleCloseTooltip(tooltipId);
+                        }
+                      }}
+                      aria-haspopup="true"
+                      aria-expanded={tooltipOpen}
+                      aria-label={
+                        categoryDisplay && categoryDisplay !== texts.noData
+                          ? `${row.name}: ${categoryDisplay}`
+                          : row.name
+                      }
+                      title={tooltipLabel}
+                    >
+                      {badges.map((badge) => (
+                        <span
+                          key={`${rowKey}-${badge.text}`}
+                          className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
+                            BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
+                          }`}
+                        >
+                          {badge.text}
+                        </span>
+                      ))}
+                    </button>
+                    <div
+                      className={`pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-max max-w-xs -translate-x-1/2 rounded-md bg-slate-900/95 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
+                        tooltipOpen ? "opacity-100" : "opacity-0"
+                      }`}
+                      role="tooltip"
+                    >
+                      <span className="block whitespace-nowrap">{tooltipLabel}</span>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </td>
+        <td className="px-3 py-3 bg-slate-900 whitespace-nowrap text-slate-100 text-xs sm:text-sm align-middle">
+          {formatValue(row.isin, lang)}
+        </td>
+        <td className="px-1.5 py-3 bg-slate-900 whitespace-nowrap font-semibold text-slate-100 text-center align-middle">
+          {formatValue(row.ter, lang)}
+        </td>
+        {renderMetricCells(
+          PERFORMANCE_LABELS,
+          row.performance,
+          `${rowKey}-performance`,
+          performanceStats,
+          {
+            metric: "performance",
+            addLeftBoundary: true,
+            textClass: "text-slate-100",
+          },
+          lang,
+        )}
+        {renderMetricCells(
+          RATIO_LABELS,
+          row.sharpe,
+          `${rowKey}-sharpe`,
+          sharpeStats,
+          {
+            metric: "sharpe",
+            addLeftBoundary: true,
+            textClass: "text-slate-100",
+          },
+          lang,
+        )}
+        {renderMetricCells(
+          RATIO_LABELS,
+          row.volatility,
+          `${rowKey}-volatility`,
+          volatilityStats,
+          {
+            metric: "volatility",
+            addLeftBoundary: true,
+            textClass: "text-slate-100",
+          },
+          lang,
+        )}
+        <td
+          className={`px-3 py-3 bg-slate-900 text-sm text-slate-100 align-top ${commentColumnWidthClass}`}
+        >
+          {formatValue(row.comment || texts.commentPlaceholder, lang)}
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <section className="mt-10 sm:mt-12">
-      <div
-        className={`mb-6 flex flex-col gap-3 ${
-          showSearchInput ? "sm:flex-row sm:items-center sm:justify-between" : ""
-        }`}
-      >
-        <div className="space-y-1">
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900">{title}</h2>
-          {texts.sectionDescription ? (
-            <p className="text-sm text-gray-600 max-w-3xl">{texts.sectionDescription}</p>
-          ) : null}
-        </div>
-        {showSearchInput ? (
-          <div className="relative w-full sm:w-60 md:w-72 lg:w-80">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => onSearchChange?.(event.target.value)}
-              placeholder={texts.searchPlaceholder}
-              aria-label={texts.searchAriaLabel}
-              className="w-full rounded-xl border border-gray-300 bg-white/80 py-2 pl-3 pr-10 text-sm text-gray-700 placeholder:text-gray-400 shadow-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:w-60 md:w-72 lg:w-80">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(event) => onSearchChange?.(event.target.value)}
+            placeholder={texts.searchPlaceholder}
+            aria-label={texts.searchAriaLabel}
+            className="w-full rounded-xl border border-slate-700 bg-slate-900/80 py-2 pl-3 pr-10 text-sm text-slate-100 placeholder:text-slate-400 shadow-sm focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
+          />
+          <svg
+            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.8}
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
             />
-            <svg
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.8}
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
-              />
-            </svg>
-          </div>
-        ) : null}
+          </svg>
+        </div>
       </div>
       <div className="overflow-x-auto pb-4">
-        <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm text-gray-800">
-          <thead>
-            <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        <table className="w-full border-separate border-spacing-y-1 border-spacing-x-0.5 text-sm">
+          <thead className="sticky top-0 z-30 bg-slate-800/95 backdrop-blur">
+            <tr className="text-[11px] font-semibold uppercase tracking-wide text-slate-100">
               <th
                 rowSpan={2}
-                className="px-3 py-2 max-w-[320px] bg-white/70 text-center rounded-tl-2xl"
+                className="px-3 py-3 max-w-[320px] text-center"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.name}</span>
@@ -964,7 +1146,7 @@ function Section({
               </th>
               <th
                 rowSpan={2}
-                className="px-2.5 py-2 whitespace-nowrap bg-white/70 text-center"
+                className="px-2.5 py-3 whitespace-nowrap text-center"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.isin}</span>
@@ -978,7 +1160,7 @@ function Section({
               </th>
               <th
                 rowSpan={2}
-                className="px-1.5 py-2 whitespace-nowrap bg-white/70 text-center"
+                className="px-1.5 py-3 whitespace-nowrap text-center"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.ter}</span>
@@ -992,7 +1174,7 @@ function Section({
               </th>
               <th
                 colSpan={PERFORMANCE_LABELS.length}
-                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-3 text-center border-l border-slate-600"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.performance}</span>
@@ -1001,7 +1183,7 @@ function Section({
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
-                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-3 text-center border-l border-slate-600"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.sharpe}</span>
@@ -1010,7 +1192,7 @@ function Section({
               </th>
               <th
                 colSpan={RATIO_LABELS.length}
-                className="relative px-2.5 py-2 bg-white/70 text-center border-l border-gray-400"
+                className="relative px-2.5 py-3 text-center border-l border-slate-600"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>{texts.volatility}</span>
@@ -1019,17 +1201,17 @@ function Section({
               </th>
               <th
                 rowSpan={2}
-                className={`px-3 py-2 bg-white/70 text-center rounded-tr-2xl ${commentColumnWidthClass}`}
+                className="px-3 py-3 text-center"
               >
                 {texts.comment}
               </th>
             </tr>
-            <tr className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+            <tr className="text-[10px] font-semibold uppercase tracking-wide text-slate-200">
               {PERFORMANCE_LABELS.map((label, index) => (
                 <th
                   key={`perf-${label}`}
-                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
-                    index === 0 ? "border-l border-gray-400" : ""
+                  className={`px-1.5 py-2 text-center ${
+                    index === 0 ? "border-l border-slate-600" : ""
                   }`}
                 >
                   <div className="flex items-center justify-center gap-1">
@@ -1052,8 +1234,8 @@ function Section({
               {RATIO_LABELS.map((label, index) => (
                 <th
                   key={`sharpe-${label}`}
-                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
-                    index === 0 ? "border-l border-gray-400" : ""
+                  className={`px-1.5 py-2 text-center ${
+                    index === 0 ? "border-l border-slate-600" : ""
                   }`}
                 >
                   <div className="flex items-center justify-center gap-1">
@@ -1076,8 +1258,8 @@ function Section({
               {RATIO_LABELS.map((label, index) => (
                 <th
                   key={`vol-${label}`}
-                  className={`px-1.5 py-1.5 bg-white/70 text-center ${
-                    index === 0 ? "border-l border-gray-400" : ""
+                  className={`px-1.5 py-2 text-center ${
+                    index === 0 ? "border-l border-slate-600" : ""
                   }`}
                 >
                   <div className="flex items-center justify-center gap-1">
@@ -1103,145 +1285,27 @@ function Section({
             {sortedData.length === 0 ? (
               <tr>
                 <td
-                  colSpan={
-                    2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2
-                  }
-                  className="px-3 py-6 text-center text-sm font-medium text-gray-500 bg-white/90 rounded-b-2xl"
+                  colSpan={TABLE_COLUMN_COUNT}
+                  className="px-3 py-6 text-center text-sm font-medium text-slate-200 bg-slate-900/80 rounded-b-2xl"
                 >
                   {texts.noData}
                 </td>
               </tr>
             ) : (
-              sortedData.map((row) => {
-                const stars = renderStars(row.morningstarRating);
-                const categoryValue = formatValue(row.category, lang);
-                const rowKey = row.morningstarId || row.isin || row.name;
-                const badges = getCategoryBadges(categoryValue, lang, row.indexed);
-                const tooltipId = `${section}-${rowKey}`;
-                const tooltipOpen = openTooltipId === tooltipId;
-                const categoryDisplay = categoryValue !== "-" ? categoryValue : texts.noData;
-                const link = getMorningstarUrl(row.morningstarId, lang) ?? row.url ?? undefined;
-                const tooltipLabel =
-                  categoryDisplay && categoryDisplay !== texts.noData
-                    ? categoryDisplay
-                    : texts.noData;
-                return (
-                  <tr key={tooltipId} className="align-middle">
-                    <td
-                      className={`relative px-3 py-2 bg-white/95 backdrop-blur max-w-[320px] overflow-visible align-top ${
-                        tooltipOpen ? "z-20" : ""
-                      }`}
-                    >
-                      <div className="flex flex-col items-start gap-1">
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
-                          title={row.name}
-                        >
-                          {row.name}
-                        </a>
-                        {(badges.length > 0 || stars) && (
-                          <div className="flex w-full items-center gap-1">
-                            {stars ? (
-                              <span
-                                className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-500"
-                                aria-label={`${stars.length} estrellas Morningstar`}
-                              >
-                                {stars}
-                              </span>
-                            ) : null}
-                            {badges.length > 0 ? (
-                              <div
-                                className={`relative group ${stars ? "ml-auto" : ""}`}
-                                onMouseEnter={() => handleOpenTooltip(tooltipId)}
-                                onMouseLeave={() => handleCloseTooltip(tooltipId)}
-                              >
-                                <button
-                                  type="button"
-                                  className="inline-flex flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
-                                  onClick={() => handleToggleTooltip(tooltipId)}
-                                  onBlur={() => handleCloseTooltip(tooltipId)}
-                                  onFocus={() => handleOpenTooltip(tooltipId)}
-                                  onKeyDown={(event) => {
-                                    if (event.key === "Escape") {
-                                      event.stopPropagation();
-                                      handleCloseTooltip(tooltipId);
-                                    }
-                                  }}
-                                  aria-haspopup="true"
-                                  aria-expanded={tooltipOpen}
-                                  aria-label={
-                                    categoryDisplay && categoryDisplay !== texts.noData
-                                      ? `${row.name}: ${categoryDisplay}`
-                                      : row.name
-                                  }
-                                  title={tooltipLabel}
-                                >
-                                  {badges.map((badge) => (
-                                    <span
-                                      key={`${rowKey}-${badge.text}`}
-                                      className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
-                                        BADGE_STYLES[badge.variant] ?? BADGE_STYLES.default
-                                      }`}
-                                    >
-                                      {badge.text}
-                                    </span>
-                                  ))}
-                                </button>
-                                <div
-                                  className={`pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-max max-w-xs -translate-x-1/2 rounded-md bg-slate-900/95 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
-                                    tooltipOpen ? "opacity-100" : "opacity-0"
-                                  }`}
-                                  role="tooltip"
-                                >
-                                  <span className="block whitespace-nowrap">{tooltipLabel}</span>
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td
-                      className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
-                    >
-                      {formatValue(row.isin, lang)}
-                    </td>
-                    <td
-                      className="px-1.5 py-2 bg-white/95 backdrop-blur whitespace-nowrap font-semibold text-gray-700 text-center align-middle"
-                    >
-                      {formatValue(row.ter, lang)}
-                    </td>
-                    {renderMetricCells(
-                      PERFORMANCE_LABELS,
-                      row.performance,
-                      "perf",
-                      performanceStats,
-                      { metric: "performance", addLeftBoundary: true },
-                      lang,
-                    )}
-                    {renderMetricCells(RATIO_LABELS, row.sharpe, "sharpe", sharpeStats, {
-                      metric: "sharpe",
-                      addLeftBoundary: true,
-                    }, lang)}
-                    {renderMetricCells(
-                      RATIO_LABELS,
-                      row.volatility,
-                      "vol",
-                      volatilityStats,
-                      { metric: "volatility", addLeftBoundary: true },
-                      lang,
-                    )}
-                    <td
-                      className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle ${commentColumnWidthClass}`}
-                    >
-                      {formatValue(row.comment, lang) || texts.commentPlaceholder}
-                    </td>
-                  </tr>
-                );
-              })
+              <>
+                {sortedFunds.length > 0 && (
+                  <>
+                    {renderSectionDivider(texts.fundsTitle, true)}
+                    {sortedFunds.map((row) => renderDataRow(row))}
+                  </>
+                )}
+                {sortedPlans.length > 0 && (
+                  <>
+                    {renderSectionDivider(texts.plansTitle, sortedFunds.length === 0)}
+                    {sortedPlans.map((row) => renderDataRow(row))}
+                  </>
+                )}
+              </>
             )}
           </tbody>
         </table>
@@ -1250,7 +1314,7 @@ function Section({
   );
 }
 
-export default function App() {
+function App() {
   const [lang, setLang] = useState<Lang>("es");
   const texts = useTexts(lang);
   const [status, setStatus] = useState<ApiStatus>("idle");
@@ -1444,21 +1508,13 @@ export default function App() {
 
         {data && (status === "ready" || status === "refreshing") && (
           <div className="space-y-12 pb-12">
-            <Section
-              section="funds"
-              data={data.funds}
+            <CombinedTable
+              funds={data.funds}
+              plans={data.plans}
               texts={texts}
               lang={lang}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
-              showSearchInput
-            />
-            <Section
-              section="plans"
-              data={data.plans}
-              texts={texts}
-              lang={lang}
-              searchQuery={searchQuery}
             />
           </div>
         )}
@@ -1480,3 +1536,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
