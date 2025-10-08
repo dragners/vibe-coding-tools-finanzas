@@ -2,10 +2,12 @@ import React, {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
 
@@ -192,6 +194,10 @@ function InfoTip({
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const id = useId();
 
   useEffect(() => {
@@ -221,6 +227,55 @@ function InfoTip({
     };
   }, [open]);
 
+  const updatePopoverPosition = useCallback(() => {
+    if (!open || !buttonRef.current || !popoverRef.current) {
+      return;
+    }
+
+    const buttonRect = buttonRef.current.getBoundingClientRect();
+    const popoverRect = popoverRef.current.getBoundingClientRect();
+
+    const gap = 8;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    let left =
+      buttonRect.left +
+      buttonRect.width / 2 -
+      popoverRect.width / 2;
+
+    left = Math.max(gap, Math.min(left, viewportWidth - popoverRect.width - gap));
+
+    let top =
+      side === "top"
+        ? buttonRect.top - popoverRect.height - gap
+        : buttonRect.bottom + gap;
+
+    top = Math.max(gap, Math.min(top, viewportHeight - popoverRect.height - gap));
+
+    setPopoverPosition({ top, left });
+  }, [open, side]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const frame = requestAnimationFrame(() => {
+      updatePopoverPosition();
+    });
+
+    window.addEventListener("resize", updatePopoverPosition);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updatePopoverPosition);
+    };
+  }, [open, updatePopoverPosition]);
+
+  useEffect(() => {
+    if (!open) {
+      setPopoverPosition(null);
+    }
+  }, [open]);
+
   const wrapperClassName = `relative inline-flex ${open ? "z-50" : ""} ${className}`.trim();
 
   return (
@@ -239,18 +294,25 @@ function InfoTip({
       >
         i
       </button>
-      {open ? (
-        <div
-          ref={popoverRef}
-          id={id}
-          role="tooltip"
-          className={`absolute z-50 max-w-[260px] rounded-lg border bg-white p-2 text-xs text-gray-700 shadow-lg ${
-            side === "top" ? "bottom-full mb-1 left-1/2 -translate-x-1/2" : "top-full mt-1 left-1/2 -translate-x-1/2"
-          }`}
-        >
-          {content}
-        </div>
-      ) : null}
+      {open
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              id={id}
+              role="tooltip"
+              style={{
+                position: "fixed",
+                top: popoverPosition?.top ?? -9999,
+                left: popoverPosition?.left ?? -9999,
+                opacity: popoverPosition ? 1 : 0,
+              }}
+              className="z-50 max-w-[260px] rounded-lg border bg-white p-2 text-xs text-gray-700 shadow-lg"
+            >
+              {content}
+            </div>,
+            document.body,
+          )
+        : null}
     </span>
   );
 }
