@@ -1,5 +1,6 @@
 import React, {
   useCallback,
+  useDeferredValue,
   useEffect,
   useId,
   useMemo,
@@ -173,6 +174,8 @@ const PERFORMANCE_LABELS: readonly PerformanceKey[] = [
 const RATIO_LABELS: readonly RatioPeriod[] = ["1Y", "3Y", "5Y"];
 const TER_COLUMN_WIDTH_CLASS = "w-[52px] sm:w-[60px]";
 const METRIC_COLUMN_WIDTH_CLASS = "w-[58px] sm:w-[66px]";
+const COMMENT_COLUMN_WIDTH_CLASS = "min-w-[272px] sm:min-w-[323px]";
+const TABLE_TOTAL_COLUMNS = 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/listadofondos/api").replace(/\/$/, "");
 const ENABLE_MOCK_DATA =
@@ -859,22 +862,31 @@ function CombinedTable({
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
+  const deferredQuery = useDeferredValue(searchQuery);
+  const normalizedQuery = useMemo(
+    () => deferredQuery.trim().toLowerCase(),
+    [deferredQuery],
+  );
+
   const filteredFunds = useMemo(() => {
-    const normalized = searchQuery.trim().toLowerCase();
-    if (!normalized) return funds;
-    return funds.filter((row) => rowMatchesQuery(row, normalized));
-  }, [funds, searchQuery]);
+    if (!normalizedQuery) return funds;
+    return funds.filter((row) => rowMatchesQuery(row, normalizedQuery));
+  }, [funds, normalizedQuery]);
 
   const filteredPlans = useMemo(() => {
-    const normalized = searchQuery.trim().toLowerCase();
-    if (!normalized) return plans;
-    return plans.filter((row) => rowMatchesQuery(row, normalized));
-  }, [plans, searchQuery]);
+    if (!normalizedQuery) return plans;
+    return plans.filter((row) => rowMatchesQuery(row, normalizedQuery));
+  }, [plans, normalizedQuery]);
 
-  const filteredForStats = useMemo(
-    () => [...filteredFunds, ...filteredPlans],
-    [filteredFunds, filteredPlans],
-  );
+  const filteredForStats = useMemo(() => {
+    if (filteredFunds.length === 0) {
+      return filteredPlans;
+    }
+    if (filteredPlans.length === 0) {
+      return filteredFunds;
+    }
+    return filteredFunds.concat(filteredPlans);
+  }, [filteredFunds, filteredPlans]);
 
   const performanceStats = useMemo(
     () => collectColumnStats(filteredForStats, "performance", PERFORMANCE_LABELS),
@@ -907,26 +919,22 @@ function CombinedTable({
     [sortedFunds, sortedPlans, texts.fundsTitle, texts.plansTitle],
   );
 
-  const visibleRowCount = sections.reduce(
-    (total, section) => total + section.rows.length,
-    0,
+  const visibleRowCount = useMemo(
+    () => sections.reduce((total, section) => total + section.rows.length, 0),
+    [sections],
   );
 
-  const totalColumns =
-    2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
-  const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
-
-  const handleToggleTooltip = (id: string) => {
+  const handleToggleTooltip = useCallback((id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
-  };
-  const handleOpenTooltip = (id: string) => {
+  }, []);
+  const handleOpenTooltip = useCallback((id: string) => {
     setOpenTooltipId(id);
-  };
-  const handleCloseTooltip = (id: string) => {
+  }, []);
+  const handleCloseTooltip = useCallback((id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : prev));
-  };
+  }, []);
 
-  const handleSortChange = (key: SortKey, order: SortOrder | null) => {
+  const handleSortChange = useCallback((key: SortKey, order: SortOrder | null) => {
     setSortConfig((prev) => {
       if (!order) {
         if (!prev) return null;
@@ -938,7 +946,14 @@ function CombinedTable({
       }
       return { key, order };
     });
-  };
+  }, []);
+
+  const handleSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onSearchChange?.(event.target.value);
+    },
+    [onSearchChange],
+  );
 
   return (
     <section className="mt-6 sm:mt-8">
@@ -949,7 +964,7 @@ function CombinedTable({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(event) => onSearchChange?.(event.target.value)}
+                onChange={handleSearchInputChange}
                 placeholder={texts.searchPlaceholder}
                 aria-label={texts.searchAriaLabel}
                 className="w-full rounded-2xl border border-slate-300/80 bg-white/90 py-2.5 pl-3.5 pr-10 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm transition focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200"
@@ -1047,7 +1062,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className={`px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
+                  className={`px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${COMMENT_COLUMN_WIDTH_CLASS}`}
                 >
                   {texts.comment}
                 </th>
@@ -1131,7 +1146,7 @@ function CombinedTable({
             {visibleRowCount === 0 ? (
               <tr>
                 <td
-                  colSpan={totalColumns}
+                  colSpan={TABLE_TOTAL_COLUMNS}
                   className="px-3 py-6 text-center text-sm font-medium text-gray-500 bg-white/90 rounded-b-2xl"
                 >
                   {texts.noData}
@@ -1142,7 +1157,7 @@ function CombinedTable({
                 <React.Fragment key={section.key}>
                   <tr>
                     <td
-                      colSpan={totalColumns}
+                      colSpan={TABLE_TOTAL_COLUMNS}
                       className={`px-4 py-3 text-sm font-semibold uppercase tracking-wide bg-slate-800 text-white text-left ${
                         sectionIndex === 0 ? "rounded-t-2xl" : "rounded-2xl"
                       }`}
@@ -1286,7 +1301,7 @@ function CombinedTable({
                           lang,
                         )}
                         <td
-                          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle ${commentColumnWidthClass}`}
+                          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle ${COMMENT_COLUMN_WIDTH_CLASS}`}
                         >
                           {formatValue(row.comment, lang) || texts.commentPlaceholder}
                         </td>
@@ -1316,6 +1331,7 @@ export default function App() {
     null,
   );
   const dataRef = useRef<ApiPayload | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const lastUpdatedFormatted =
     (status === "ready" || status === "refreshing") && data
@@ -1329,8 +1345,18 @@ export default function App() {
     dataRef.current = data;
   }, [data]);
 
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
   const fetchData = useCallback(async (force = false) => {
     const hasExistingData = Boolean(dataRef.current);
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setStatus((prev) => {
       if (force && hasExistingData) {
         return "refreshing";
@@ -1342,11 +1368,15 @@ export default function App() {
     });
     setError(null);
     setUsingMockData((prev) => (hasExistingData ? prev : false));
+
+    const endpoint = force ? `${API_BASE}/refresh` : `${API_BASE}/data`;
+    const method = force ? "POST" : "GET";
+
     try {
-      const endpoint = force ? `${API_BASE}/refresh` : `${API_BASE}/data`;
       const response = await fetch(endpoint, {
-        method: force ? "POST" : "GET",
+        method,
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const contentType = response.headers.get("content-type") ?? "";
@@ -1367,6 +1397,9 @@ export default function App() {
       setUsingMockData(false);
       setStatus("ready");
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
       console.error(err);
       if (shouldUseMockData(err)) {
         setData(MOCK_PAYLOAD);
@@ -1377,6 +1410,10 @@ export default function App() {
       }
       setError((err as Error).message);
       setStatus(hasExistingData ? "ready" : "error");
+    } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
     }
   }, []);
 
