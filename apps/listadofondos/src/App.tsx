@@ -1425,8 +1425,8 @@ export default function App() {
       <div className="landing-bg" aria-hidden="true" />
 
       <div className="bg-white/85 backdrop-blur border-b border-gray-200">
-        <div className="w-full max-w-[1600px] mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-2 w-full">
+        <div className="w-full max-w-[1600px] mx-auto px-4 py-4 sm:px-6 lg:px-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:grid-rows-[auto_auto] md:items-start">
+          <div className="order-1 space-y-2 md:order-1 md:col-start-1 md:row-start-1">
             <a
               href="/"
               className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline"
@@ -1434,21 +1434,17 @@ export default function App() {
               <span aria-hidden="true">←</span>
               {texts.back}
             </a>
-            <div>
-              <h1 className="text-xl md:text-2xl font-extrabold">{texts.title}</h1>
-              <div className="mt-2 flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-6">
-                <p className="text-sm md:text-base text-gray-700 max-w-4xl md:max-w-3xl">
-                  {texts.subtitle}
-                </p>
-                {lastUpdatedFormatted ? (
-                  <p className="text-[11px] md:text-xs text-gray-500 text-right md:whitespace-nowrap">
-                    {texts.lastUpdated}: {lastUpdatedFormatted}
-                  </p>
-                ) : null}
-              </div>
-            </div>
+            <h1 className="text-xl md:text-2xl font-extrabold">{texts.title}</h1>
           </div>
-          <div className="flex flex-col items-stretch md:items-end gap-2 sm:gap-3">
+          <p className="order-3 text-sm md:text-base text-gray-700 md:order-3 md:col-start-1 md:row-start-2 md:pr-6">
+            {texts.subtitle}
+          </p>
+          {lastUpdatedFormatted ? (
+            <p className="order-4 text-[11px] text-gray-500 text-right md:order-3 md:col-start-2 md:row-start-2 md:text-xs md:whitespace-nowrap md:justify-self-end">
+              {texts.lastUpdated}: {lastUpdatedFormatted}
+            </p>
+          ) : null}
+          <div className="order-2 flex flex-col items-stretch md:order-2 md:col-start-2 md:row-start-1 md:row-span-2 md:items-end gap-2 sm:gap-3">
             {usingMockData ? (
               <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 shadow-sm">
                 {texts.mockNotice}
