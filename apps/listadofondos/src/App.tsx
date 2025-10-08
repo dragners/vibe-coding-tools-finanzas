@@ -221,8 +221,10 @@ function InfoTip({
     };
   }, [open]);
 
+  const wrapperClassName = `relative inline-flex ${open ? "z-50" : ""} ${className}`.trim();
+
   return (
-    <span className={`relative inline-flex ${className}`}>
+    <span className={wrapperClassName}>
       <button
         ref={buttonRef}
         type="button"
@@ -1109,7 +1111,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={PERFORMANCE_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.performance}</span>
@@ -1118,7 +1120,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.sharpe}</span>
@@ -1127,7 +1129,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.volatility}</span>
