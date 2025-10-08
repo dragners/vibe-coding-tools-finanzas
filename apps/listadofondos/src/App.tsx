@@ -275,20 +275,28 @@ function useTexts(lang: Lang) {
   return useMemo(() => TEXTS[lang], [lang]);
 }
 
+const numberFormatterCache = new Map<string, Intl.NumberFormat>();
+
 function formatNumberForLocale(value: number, lang: Lang, fractionDigits?: number) {
   const digits =
     typeof fractionDigits === "number"
       ? Math.max(0, Math.min(6, Math.trunc(fractionDigits)))
       : undefined;
-  const options: Intl.NumberFormatOptions = { useGrouping: false };
-  if (digits !== undefined) {
-    options.minimumFractionDigits = digits;
-    options.maximumFractionDigits = digits;
-  } else {
-    options.maximumFractionDigits = 6;
-  }
   const locale = lang === "es" ? "es-ES" : "en-GB";
-  return new Intl.NumberFormat(locale, options).format(value);
+  const cacheKey = `${locale}:${digits ?? "auto"}`;
+  let formatter = numberFormatterCache.get(cacheKey);
+  if (!formatter) {
+    const options: Intl.NumberFormatOptions = { useGrouping: false };
+    if (digits !== undefined) {
+      options.minimumFractionDigits = digits;
+      options.maximumFractionDigits = digits;
+    } else {
+      options.maximumFractionDigits = 6;
+    }
+    formatter = new Intl.NumberFormat(locale, options);
+    numberFormatterCache.set(cacheKey, formatter);
+  }
+  return formatter.format(value);
 }
 
 function formatNumericString(value: string, lang: Lang): string | null {
@@ -309,62 +317,54 @@ function formatNumericString(value: string, lang: Lang): string | null {
   return percent ? `${formattedNumber}%` : formattedNumber;
 }
 
+const primitiveFormatCache = new Map<string, string>();
+const objectFormatCache = new WeakMap<object, Map<Lang, string>>();
+
 function formatValue(raw?: MetricValue, lang: Lang = "es"): string {
   if (raw === null || raw === undefined) return "-";
   if (typeof raw === "number") {
     if (!Number.isFinite(raw)) return "-";
-    return formatNumberForLocale(raw, lang);
+    const key = `number:${lang}:${raw}`;
+    const cached = primitiveFormatCache.get(key);
+    if (cached !== undefined) return cached;
+    const formatted = formatNumberForLocale(raw, lang);
+    primitiveFormatCache.set(key, formatted);
+    return formatted;
   }
   if (typeof raw === "string") {
     const val = raw.trim();
-    if (!val || val.toUpperCase() === "N/A" || val === "NaN") return "-";
+    const key = `string:${lang}:${val}`;
+    const cached = primitiveFormatCache.get(key);
+    if (cached !== undefined) return cached;
+    if (!val || val.toUpperCase() === "N/A" || val === "NaN") {
+      primitiveFormatCache.set(key, "-");
+      return "-";
+    }
     const numericFormatted = formatNumericString(val, lang);
-    return numericFormatted ?? val;
+    const result = numericFormatted ?? val;
+    primitiveFormatCache.set(key, result);
+    return result;
   }
   if (typeof raw === "object") {
+    const existing = objectFormatCache.get(raw as object);
+    const cached = existing?.get(lang);
+    if (cached !== undefined) return cached;
     const nested =
       ("value" in raw ? raw.value : undefined) ??
       ("label" in raw ? raw.label : undefined);
-    return formatValue(nested as MetricValue, lang);
+    const result = formatValue(nested as MetricValue, lang);
+    if (existing) {
+      existing.set(lang, result);
+    } else {
+      objectFormatCache.set(raw as object, new Map<Lang, string>([[lang, result]]));
+    }
+    return result;
   }
   return "-";
 }
 
-function metricValueMatches(raw: MetricValue | undefined, query: string): boolean {
-  if (raw === null || raw === undefined) return false;
-  if (typeof raw === "object") {
-    return (
-      metricValueMatches((raw as { value?: MetricValue }).value, query) ||
-      metricValueMatches((raw as { label?: MetricValue }).label, query)
-    );
-  }
-  return String(raw).toLowerCase().includes(query);
-}
-
-function rowMatchesQuery(row: FundRow, query: string): boolean {
-  const baseValues: (MetricValue | undefined)[] = [
-    row.name,
-    row.isin,
-    row.category,
-    row.comment,
-    row.morningstarId,
-    row.morningstarRating,
-    row.ter,
-    row.url,
-  ];
-
-  if (typeof row.indexed === "boolean") {
-    baseValues.push(row.indexed ? "index indexado indexed" : "active activa");
-  }
-
-  const metricValues: MetricValue[] = [
-    ...Object.values(row.performance ?? {}),
-    ...Object.values(row.sharpe ?? {}),
-    ...Object.values(row.volatility ?? {}),
-  ];
-
-  return [...baseValues, ...metricValues].some((value) => metricValueMatches(value, query));
-}
+const metricNumberPrimitiveCache = new Map<string, number | null>();
+const metricNumberObjectCache = new WeakMap<object, number | null>();
 
 function displayMetricLabel(label: PerformanceKey | RatioPeriod) {
   return label.replace(" Anual", "");
@@ -383,18 +383,34 @@ function getMetricNumber(raw?: MetricValue): number | null {
     return Number.isFinite(raw) ? raw : null;
   }
   if (typeof raw === "string") {
-    const cleaned = raw.replace(/[%\s]/g, "").replace(/,/g, ".");
-    if (!cleaned) return null;
+    const trimmed = raw.trim();
+    const key = trimmed;
+    if (metricNumberPrimitiveCache.has(key)) {
+      return metricNumberPrimitiveCache.get(key) ?? null;
+    }
+    const cleaned = trimmed.replace(/[%\s]/g, "").replace(/,/g, ".");
+    if (!cleaned) {
+      metricNumberPrimitiveCache.set(key, null);
+      return null;
+    }
     const parsed = Number.parseFloat(cleaned);
-    return Number.isFinite(parsed) ? parsed : null;
+    const result = Number.isFinite(parsed) ? parsed : null;
+    metricNumberPrimitiveCache.set(key, result);
+    return result;
   }
   if (typeof raw === "object") {
+    if (metricNumberObjectCache.has(raw as object)) {
+      return metricNumberObjectCache.get(raw as object) ?? null;
+    }
+    let result: number | null = null;
     if ("value" in raw && raw.value !== undefined) {
-      return getMetricNumber(raw.value as MetricValue);
+      result = getMetricNumber(raw.value as MetricValue);
     }
-    if ("label" in raw && raw.label !== undefined) {
-      return getMetricNumber(raw.label as MetricValue);
+    if (result === null && "label" in raw && raw.label !== undefined) {
+      result = getMetricNumber(raw.label as MetricValue);
     }
+    metricNumberObjectCache.set(raw as object, result);
+    return result;
   }
   return null;
 }
@@ -411,36 +427,99 @@ type MetricAccessor = "performance" | "sharpe" | "volatility";
 type ColumnStatsMap<T extends string> = Record<T, ColumnStats>;
 
 function collectColumnStats<T extends string>(
-  rows: FundRow[],
+  rowGroups: readonly FundRow[][],
   accessor: MetricAccessor,
   labels: readonly T[],
 ): ColumnStatsMap<T> {
   const stats = {} as ColumnStatsMap<T>;
-  labels.forEach((label) => {
+  for (const label of labels) {
     stats[label] = { min: null, max: null, maxPositive: null, minNegative: null };
-  });
+  }
 
-  rows.forEach((row) => {
-    const record = row[accessor] as MetricRecord<T> | undefined;
-    if (!record) return;
+  for (const rows of rowGroups) {
+    for (const row of rows) {
+      const record = row[accessor] as MetricRecord<T> | undefined;
+      if (!record) continue;
 
-    labels.forEach((label) => {
-      const value = getMetricNumber(record[label]);
-      if (value === null) return;
-      const column = stats[label];
-      column.min = column.min === null ? value : Math.min(column.min, value);
-      column.max = column.max === null ? value : Math.max(column.max, value);
-      if (value > 0) {
-        column.maxPositive =
-          column.maxPositive === null ? value : Math.max(column.maxPositive, value);
-      } else if (value < 0) {
-        column.minNegative =
-          column.minNegative === null ? value : Math.min(column.minNegative, value);
+      for (const label of labels) {
+        const value = getMetricNumber(record[label]);
+        if (value === null) continue;
+        const column = stats[label];
+        column.min = column.min === null ? value : Math.min(column.min, value);
+        column.max = column.max === null ? value : Math.max(column.max, value);
+        if (value > 0) {
+          column.maxPositive =
+            column.maxPositive === null ? value : Math.max(column.maxPositive, value);
+        } else if (value < 0) {
+          column.minNegative =
+            column.minNegative === null ? value : Math.min(column.minNegative, value);
+        }
       }
-    });
-  });
+    }
+  }
 
   return stats;
+}
+
+const SEARCH_INDEX_CACHE = new WeakMap<FundRow, string>();
+
+function collectSearchTokens(value: MetricValue | undefined, tokens: string[]): void {
+  if (value === null || value === undefined) return;
+  if (typeof value === "object") {
+    if ("value" in value) collectSearchTokens(value.value as MetricValue, tokens);
+    if ("label" in value) collectSearchTokens(value.label as MetricValue, tokens);
+    return;
+  }
+  tokens.push(String(value));
+}
+
+function getSearchIndex(row: FundRow): string {
+  const cached = SEARCH_INDEX_CACHE.get(row);
+  if (cached) return cached;
+
+  const tokens: string[] = [];
+  const baseValues: (MetricValue | undefined)[] = [
+    row.name,
+    row.isin,
+    row.category,
+    row.comment,
+    row.morningstarId,
+    row.morningstarRating,
+    row.ter,
+    row.url,
+  ];
+
+  for (const value of baseValues) {
+    collectSearchTokens(value, tokens);
+  }
+
+  if (typeof row.indexed === "boolean") {
+    tokens.push(row.indexed ? "index indexado indexed" : "active activa");
+  }
+
+  const metricGroups = [row.performance ?? {}, row.sharpe ?? {}, row.volatility ?? {}];
+  for (const group of metricGroups) {
+    for (const value of Object.values(group)) {
+      collectSearchTokens(value, tokens);
+    }
+  }
+
+  const normalized = Array.from(
+    new Set(
+      tokens
+        .map((token) => token.trim().toLowerCase())
+        .filter((token) => token.length > 0),
+    ),
+  ).join(" ");
+
+  SEARCH_INDEX_CACHE.set(row, normalized);
+  return normalized;
+}
+
+function rowMatchesQuery(row: FundRow, query: string): boolean {
+  if (!query) return true;
+  const index = getSearchIndex(row);
+  return index.includes(query);
 }
 
 type RGB = { r: number; g: number; b: number };
@@ -859,34 +938,37 @@ function CombinedTable({
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
+  const normalizedQuery = useMemo(
+    () => searchQuery.trim().toLowerCase(),
+    [searchQuery],
+  );
+
   const filteredFunds = useMemo(() => {
-    const normalized = searchQuery.trim().toLowerCase();
-    if (!normalized) return funds;
-    return funds.filter((row) => rowMatchesQuery(row, normalized));
-  }, [funds, searchQuery]);
+    if (!normalizedQuery) return funds;
+    return funds.filter((row) => rowMatchesQuery(row, normalizedQuery));
+  }, [funds, normalizedQuery]);
 
   const filteredPlans = useMemo(() => {
-    const normalized = searchQuery.trim().toLowerCase();
-    if (!normalized) return plans;
-    return plans.filter((row) => rowMatchesQuery(row, normalized));
-  }, [plans, searchQuery]);
-
-  const filteredForStats = useMemo(
-    () => [...filteredFunds, ...filteredPlans],
-    [filteredFunds, filteredPlans],
-  );
+    if (!normalizedQuery) return plans;
+    return plans.filter((row) => rowMatchesQuery(row, normalizedQuery));
+  }, [plans, normalizedQuery]);
 
   const performanceStats = useMemo(
-    () => collectColumnStats(filteredForStats, "performance", PERFORMANCE_LABELS),
-    [filteredForStats],
+    () =>
+      collectColumnStats(
+        [filteredFunds, filteredPlans],
+        "performance",
+        PERFORMANCE_LABELS,
+      ),
+    [filteredFunds, filteredPlans],
   );
   const sharpeStats = useMemo(
-    () => collectColumnStats(filteredForStats, "sharpe", RATIO_LABELS),
-    [filteredForStats],
+    () => collectColumnStats([filteredFunds, filteredPlans], "sharpe", RATIO_LABELS),
+    [filteredFunds, filteredPlans],
   );
   const volatilityStats = useMemo(
-    () => collectColumnStats(filteredForStats, "volatility", RATIO_LABELS),
-    [filteredForStats],
+    () => collectColumnStats([filteredFunds, filteredPlans], "volatility", RATIO_LABELS),
+    [filteredFunds, filteredPlans],
   );
 
   const sortedFunds = useMemo(
@@ -907,26 +989,26 @@ function CombinedTable({
     [sortedFunds, sortedPlans, texts.fundsTitle, texts.plansTitle],
   );
 
-  const visibleRowCount = sections.reduce(
-    (total, section) => total + section.rows.length,
-    0,
+  const visibleRowCount = useMemo(
+    () => sections.reduce((total, section) => total + section.rows.length, 0),
+    [sections],
   );
 
   const totalColumns =
     2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
   const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
 
-  const handleToggleTooltip = (id: string) => {
+  const handleToggleTooltip = useCallback((id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
-  };
-  const handleOpenTooltip = (id: string) => {
+  }, []);
+  const handleOpenTooltip = useCallback((id: string) => {
     setOpenTooltipId(id);
-  };
-  const handleCloseTooltip = (id: string) => {
+  }, []);
+  const handleCloseTooltip = useCallback((id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : prev));
-  };
+  }, []);
 
-  const handleSortChange = (key: SortKey, order: SortOrder | null) => {
+  const handleSortChange = useCallback((key: SortKey, order: SortOrder | null) => {
     setSortConfig((prev) => {
       if (!order) {
         if (!prev) return null;
@@ -938,7 +1020,14 @@ function CombinedTable({
       }
       return { key, order };
     });
-  };
+  }, []);
+
+  const handleSearchChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onSearchChange?.(event.target.value);
+    },
+    [onSearchChange],
+  );
 
   return (
     <section className="mt-6 sm:mt-8">
@@ -949,7 +1038,7 @@ function CombinedTable({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(event) => onSearchChange?.(event.target.value)}
+                onChange={handleSearchChange}
                 placeholder={texts.searchPlaceholder}
                 aria-label={texts.searchAriaLabel}
                 className="w-full rounded-2xl border border-slate-300/80 bg-white/90 py-2.5 pl-3.5 pr-10 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm transition focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200"
