@@ -13,6 +13,8 @@ const CACHE_DIR = process.env.CACHE_DIR
   : path.resolve(__dirname, "../cache");
 const CACHE_FILE = path.join(CACHE_DIR, "data.json");
 
+let refreshPromise = null;
+
 const PERFORMANCE_TARGETS = [
   { key: "1D", variants: ["1 día", "1 dia"] },
   { key: "1W", variants: ["1 semana"] },
@@ -697,6 +699,26 @@ async function writeCache(data) {
   await writeFile(CACHE_FILE, JSON.stringify(data, null, 2), "utf8");
 }
 
+function startRefresh() {
+  if (!refreshPromise) {
+    refreshPromise = buildPayload().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+function triggerBackgroundRefresh() {
+  const wasRefreshing = Boolean(refreshPromise);
+  const promise = startRefresh();
+  if (!wasRefreshing) {
+    promise.catch((err) => {
+      console.error("Background refresh failed:", err);
+    });
+  }
+  return promise;
+}
+
 async function fetchFund(entry) {
   const base = "https://lt.morningstar.com/xgnfa0k0aw/snapshot/snapshot.aspx";
   const urlPerf = `${base}?tab=1&Id=${encodeURIComponent(entry.morningstarId)}`;
@@ -775,8 +797,21 @@ async function buildPayload() {
 async function getData() {
   const cache = await readCache();
   const nowIso = new Date().toISOString();
-  if (cache && isWithinHours(cache.lastUpdated, nowIso, 4)) return cache;
-  return await buildPayload();
+
+  if (!cache) {
+    return await startRefresh();
+  }
+
+  const isFresh = isWithinHours(cache.lastUpdated, nowIso, 4);
+  if (isFresh) {
+    if (refreshPromise) {
+      return { ...cache, isUpdating: true };
+    }
+    return cache;
+  }
+
+  triggerBackgroundRefresh();
+  return { ...cache, isUpdating: true };
 }
 
 function sendJson(res, statusCode, body) {
@@ -799,7 +834,7 @@ const server = http.createServer(async (req, res) => {
         req.on("data", () => {});
         req.on("end", resolve);
       });
-      const data = await buildPayload();
+      const data = await startRefresh();
       sendJson(res, 200, data);
       return;
     }
