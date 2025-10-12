@@ -126,7 +126,7 @@ funds:
   morningstarId: F00001QFKV
   comment: No disponible MyInvestor
   indexed: true
-Activ- name: Vanguard Glb Stk Idx (Acc)
+- name: Vanguard Glb Stk Idx (Acc)
   isin: IE00B03HD191
   category: Global Large-Cap Blend Equity
   morningstarId: F0GBR052TN
