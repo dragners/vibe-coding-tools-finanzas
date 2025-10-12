@@ -56,6 +56,7 @@ export type ApiPayload = {
   lastUpdated: string;
   funds: FundRow[];
   plans: FundRow[];
+  isUpdating?: boolean;
 };
 
 type ApiStatus = "idle" | "loading" | "ready" | "refreshing" | "error";
@@ -1469,6 +1470,7 @@ export default function App() {
     null,
   );
   const dataRef = useRef<ApiPayload | null>(null);
+  const pendingRefreshTimeoutRef = useRef<number | null>(null);
 
   const lastUpdatedFormatted =
     (status === "ready" || status === "refreshing") && data
@@ -1482,17 +1484,20 @@ export default function App() {
     dataRef.current = data;
   }, [data]);
 
+  useEffect(() => {
+    return () => {
+      if (
+        typeof window !== "undefined" &&
+        pendingRefreshTimeoutRef.current !== null
+      ) {
+        window.clearTimeout(pendingRefreshTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const fetchData = useCallback(async (force = false) => {
     const hasExistingData = Boolean(dataRef.current);
-    setStatus((prev) => {
-      if (force && hasExistingData) {
-        return "refreshing";
-      }
-      if (prev === "ready" && hasExistingData) {
-        return prev;
-      }
-      return "loading";
-    });
+    setStatus(() => (hasExistingData ? "refreshing" : "loading"));
     setError(null);
     setUsingMockData((prev) => (hasExistingData ? prev : false));
     try {
@@ -1518,9 +1523,29 @@ export default function App() {
       setData(payload);
       dataRef.current = payload;
       setUsingMockData(false);
-      setStatus("ready");
+      setStatus(payload.isUpdating ? "refreshing" : "ready");
+
+      if (typeof window !== "undefined") {
+        if (pendingRefreshTimeoutRef.current !== null) {
+          window.clearTimeout(pendingRefreshTimeoutRef.current);
+          pendingRefreshTimeoutRef.current = null;
+        }
+        if (payload.isUpdating) {
+          pendingRefreshTimeoutRef.current = window.setTimeout(() => {
+            pendingRefreshTimeoutRef.current = null;
+            void fetchData();
+          }, 5000);
+        }
+      }
     } catch (err) {
       console.error(err);
+      if (
+        typeof window !== "undefined" &&
+        pendingRefreshTimeoutRef.current !== null
+      ) {
+        window.clearTimeout(pendingRefreshTimeoutRef.current);
+        pendingRefreshTimeoutRef.current = null;
+      }
       if (shouldUseMockData(err)) {
         setData(MOCK_PAYLOAD);
         dataRef.current = MOCK_PAYLOAD;
