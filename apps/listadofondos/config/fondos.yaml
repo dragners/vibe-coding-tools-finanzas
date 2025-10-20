@@ -13,12 +13,12 @@ funds:
   isin: ES0141116030
   category: Global Small/Mid-Cap Equity
   morningstarId: F000014ACV
-  comment: John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, Lo absorve la SICAV en Luxemburgo
+  comment: John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, Lo absorve la SICAV en Luxemburgo (1/12/25)
 - name: Hamco SICAV Quality Fund
   isin: LU3035951048
   category: Global Small/Mid-Cap Equity
-  morningstarId: ''
-  comment: Pendiente, nuevo fondo Julio 25 Luxemburgo
+  morningstarId: F000014ACV
+  comment: Nuevo fondo de John Tidd en la SICAV de Luxemburgo (2025)
 - name: Cobas International P (Acc)
   isin: LU1598719752
   category: Global Small/Mid-Cap Equity
