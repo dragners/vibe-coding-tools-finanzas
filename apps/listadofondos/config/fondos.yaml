@@ -17,7 +17,7 @@ funds:
 - name: Hamco SICAV Quality Fund
   isin: LU3035951048
   category: Global Small/Mid-Cap Equity
-  morningstarId: F000014ACV
+  morningstarId: 0P0001X8XY
   comment: Nuevo fondo de John Tidd en la SICAV de Luxemburgo (2025)
 - name: Cobas International P (Acc)
   isin: LU1598719752
