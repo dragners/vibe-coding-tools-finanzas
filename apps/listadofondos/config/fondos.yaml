@@ -63,7 +63,12 @@ funds:
   isin: IE00BH6XSF26
   category: Global Flex-Cap Equity
   morningstarId: F00000YZS6
-  comment: David B. Iben
+  comment: Gestor David B. Iben
+- name: GQG Partners Global Equity A
+  isin: IE00BH481053
+  category: Global Large-Cap Growth Equity
+  morningstarId: F000011K3W
+  comment: Gestor Rajiv Jain (ex-Vontobel)
 - name: JPM Euroland Dynamic D (Acc)
   isin: LU0661986348
   category: Europe Large-Cap Equity
@@ -78,7 +83,7 @@ funds:
   isin: LU0524465548
   category: Europe Small-Cap Equity
   morningstarId: F00000Q3YK
-  comment: Nicolas Walewski
+  comment: Gestor Nicolas Walewski
 - name: Fidelity Global Technology (Acc)
   isin: LU1213836080
   category: Sector Equity Technology
