@@ -53,7 +53,7 @@ funds:
   isin: ES0112231016
   category: Global Flexible Allocation
   morningstarId: F00001B0AP
-  comment: ''
+  comment: Fondo mixto, si te mantienes 5 años te cambian a la clase B con menos comisiones. Gestora Renta4
 - name: Fundsmith Equity T 
   isin: LU0690375422
   category: Global Large-Cap Growth Equity
@@ -130,6 +130,11 @@ funds:
   category: Sector Equity Ecology (ESG)
   morningstarId: F000014SSQ
   comment: ESG - Equipo de gestores
+- name: Impassive Wealth FI
+  isin: ES0147897005
+  category: Global Flexible Allocation
+  morningstarId: F00001155A
+  comment: Cartera permanente + BTC, parecido a mi cartera de inversión. Gestor Juan Manuel Rodríguez
 - name: Indexa RV internacional
   isin: ES0148019005
   category: Global Large-Cap Blend Equity
