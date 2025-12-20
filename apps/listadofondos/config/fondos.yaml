@@ -17,7 +17,7 @@ funds:
 - name: Hamco SICAV Global Value Fund 
   isin: LU3038481936
   category: Global Small/Mid-Cap Equity
-  morningstarId: 
+  morningstarId: F00001T5CX
   comment:  Viene del ES0141116030, John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, Lo absorve la SICAV en Luxemburgo (1/12/25)
 - name: Hamco SICAV Quality Fund
   isin: LU3035951048
