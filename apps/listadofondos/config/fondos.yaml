@@ -10,16 +10,11 @@ funds:
   morningstarId: F000011HLY
   comment: Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020
 - name: Hamco Global Value Fund R
-  isin: ES0141116030
-  category: Global Small/Mid-Cap Equity
-  morningstarId: F000014ACV
-  comment: Mergeado en LU3038481936. John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, Lo absorve la SICAV en Luxemburgo (1/12/25)
-- name: Hamco SICAV Global Value Fund 
   isin: LU3038481936
   category: Global Small/Mid-Cap Equity
   morningstarId: F00001T5CX
-  comment:  Viene del ES0141116030, John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, Lo absorve la SICAV en Luxemburgo (1/12/25)
-- name: Hamco SICAV Quality Fund
+  comment: John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, El fondo antiguo era ES0141116030 que se movio a la SICAV en Luxemburgo (1/12/25)
+- name: Hamco Quality Fund
   isin: LU3035951048
   category: Global Small/Mid-Cap Equity
   morningstarId: 0P0001X8XY
