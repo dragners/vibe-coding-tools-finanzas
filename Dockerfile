@@ -6,19 +6,23 @@ WORKDIR /build
 COPY apps/planvsfondo/package.json apps/planvsfondo/package-lock.json* ./apps/planvsfondo/
 COPY apps/comparadorhipotecas/package.json apps/comparadorhipotecas/package-lock.json* ./apps/comparadorhipotecas/
 COPY apps/listadofondos/package.json apps/listadofondos/package-lock.json* ./apps/listadofondos/
+COPY apps/portfolio-creator/package.json apps/portfolio-creator/package-lock.json* ./apps/portfolio-creator/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm ci) && \
     (cd apps/comparadorhipotecas && npm ci) && \
-    (cd apps/listadofondos && npm ci)
+    (cd apps/listadofondos && npm ci) && \
+    (cd apps/portfolio-creator && npm ci)
 
 # Copia fuentes y build
 COPY apps/planvsfondo/ ./apps/planvsfondo/
 COPY apps/comparadorhipotecas/ ./apps/comparadorhipotecas/
 COPY apps/listadofondos/ ./apps/listadofondos/
+COPY apps/portfolio-creator/ ./apps/portfolio-creator/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm run build) && \
     (cd apps/comparadorhipotecas && npm run build) && \
-    (cd apps/listadofondos && npm run build)
+    (cd apps/listadofondos && npm run build) && \
+    (cd apps/portfolio-creator && npm run build)
 
 # --- Runtime: Nginx sirviendo landing + apps ---
 FROM nginx:alpine AS runtime
@@ -31,8 +35,8 @@ COPY landing/ /usr/share/nginx/html/
 COPY --from=builder /build/apps/planvsfondo/dist/ /usr/share/nginx/html/planvsfondo/
 COPY --from=builder /build/apps/comparadorhipotecas/dist/ /usr/share/nginx/html/comparadorhipotecas/
 COPY --from=builder /build/apps/listadofondos/dist/ /usr/share/nginx/html/listadofondos/
+COPY --from=builder /build/apps/portfolio-creator/dist/ /usr/share/nginx/html/portfolio-creator/
 
 RUN chmod -R 755 /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
-
