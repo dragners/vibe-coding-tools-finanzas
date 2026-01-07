@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./index.css";
 
 type Lang = "es" | "en";
@@ -150,6 +150,7 @@ const TEXTS = {
     adjustPortfolio: "Modificar opciones",
     growthTitle: "Evolución estimada",
     contributedLine: "Capital aportado",
+    growthAxisSuffix: "años",
     happy: "¿Estás conforme con la cartera seleccionada?",
     addonsTitle: "Activos opcionales",
     addonsPromptLow:
@@ -167,10 +168,14 @@ const TEXTS = {
     monthlyLabel: "Aportación mensual",
     initialLabel: "Aportación inicial",
     fundsTitle: "Fondos recomendados",
-    askHelp:
-      "¿Necesitas alguna aclaración o quieres ajustar algo antes de finalizar?",
     farewell:
-      "Por último, recuerda que es importante **rebalancear la cartera una vez al año** para mantenerla alineada con tus objetivos y perfil de riesgo. A medida que los mercados fluctúan, los porcentajes de activos de tu cartera pueden desviarse de la distribución original que elegiste. El rebalanceo te ayuda a restaurar esos porcentajes y a gestionar el riesgo.\n\nAdemás, el rebalanceo **no tiene implicaciones fiscales**, ya que la fiscalidad de los fondos en España permite traspasos sin tributar las ganancias hasta el momento del rescate.\n---\n\nTodos los fondos mostrados se pueden contratar en plataformas como MyInvestor, Renta 4, IronIA o SelfBank, donde puedes buscar los ISIN que te he proporcionado para invertir directamente en los productos recomendados.\n\n**Si no tienes cuenta en MyInvestor, puedes crearla usando mi enlace de referido; así nos ayudas a crecer y te llevas 20€:**\n* https://myinvestor.page.link/5KGME27MEt19sMtJA \n* El código de referido es: RQU46\n\nSi te ha gustado, por favor danos 5 estrellas ★★★★★!",
+      "Por último, recuerda que es importante **rebalancear la cartera una vez al año** para mantenerla alineada con tus objetivos y perfil de riesgo. A medida que los mercados fluctúan, los porcentajes de activos de tu cartera pueden desviarse de la distribución original que elegiste. El rebalanceo te ayuda a restaurar esos porcentajes y a gestionar el riesgo.\n\nAdemás, el rebalanceo **no tiene implicaciones fiscales**, ya que la fiscalidad de los fondos en España permite traspasos sin tributar las ganancias hasta el momento del rescate.\n\nTodos los fondos mostrados se pueden contratar en plataformas como MyInvestor, Renta 4, IronIA o SelfBank, donde puedes buscar los ISIN que te he proporcionado para invertir directamente en los productos recomendados.",
+    referralTitle:
+      "Si no tienes cuenta en MyInvestor, puedes crearla usando mi enlace de referido; así nos ayudas a crecer y te llevas 20€:",
+    referralLink:
+      "https://newapp.myinvestor.es/do/signup?promotionalCode=RQU46",
+    referralLinkLabel: "Crear cuenta en MyInvestor",
+    referralCodeLabel: "El código de referido es: RQU46",
   },
   en: {
     back: "Back to Tools",
@@ -260,6 +265,7 @@ const TEXTS = {
     adjustPortfolio: "Modify options",
     growthTitle: "Projected growth",
     contributedLine: "Contributed capital",
+    growthAxisSuffix: "years",
     happy: "Are you happy with the selected portfolio?",
     addonsTitle: "Optional assets",
     addonsPromptLow:
@@ -277,10 +283,14 @@ const TEXTS = {
     monthlyLabel: "Monthly contribution",
     initialLabel: "Initial contribution",
     fundsTitle: "Recommended funds",
-    askHelp:
-      "Do you need any clarification or want to adjust something before finishing?",
     farewell:
-      "Lastly, remember that it is important **to rebalance the portfolio once a year** to keep it aligned with your goals and risk profile over time. As markets fluctuate, the percentages of assets in your portfolio may deviate from the original distribution you chose. Rebalancing helps you restore those percentages and manage risk.\n\nAdditionally, rebalancing **does not have tax implications**, as the taxation of funds in Spain allows for transfers without taxing the gains until the moment of withdrawal.\n---\n\nAll the funds shown can be contracted using platforms such as MyInvestor, Renta 4, IronIA, or SelfBank, where you can search for the ISINs I have provided to invest directly in the recommended products.\n\n**If you don't have a MyInvestor account, you can create one using my referral link; this way, you help us grow and earn yourself €20:**\n* https://myinvestor.page.link/5KGME27MEt19sMtJA \n* Referral code is: RQU46\n\nIf you liked it, please give us 5 stars ★★★★★!",
+      "Lastly, remember that it is important **to rebalance the portfolio once a year** to keep it aligned with your goals and risk profile over time. As markets fluctuate, the percentages of assets in your portfolio may deviate from the original distribution you chose. Rebalancing helps you restore those percentages and manage risk.\n\nAdditionally, rebalancing **does not have tax implications**, as the taxation of funds in Spain allows for transfers without taxing the gains until the moment of withdrawal.\n\nAll the funds shown can be contracted using platforms such as MyInvestor, Renta 4, IronIA, or SelfBank, where you can search for the ISINs I have provided to invest directly in the recommended products.",
+    referralTitle:
+      "If you don't have a MyInvestor account, you can create one using my referral link; this helps us grow and earns you €20:",
+    referralLink:
+      "https://newapp.myinvestor.es/do/signup?promotionalCode=RQU46",
+    referralLinkLabel: "Open a MyInvestor account",
+    referralCodeLabel: "Referral code: RQU46",
   },
 } as const;
 
@@ -934,7 +944,7 @@ const buildContributionSeries = (
 };
 
 const getRiskLabel = (risk: number, lang: Lang) =>
-  EXPLANATION_BY_RISK[risk]?.[lang] ?? "";
+  EXPLANATION_BY_RISK[Math.round(risk)]?.[lang] ?? "";
 
 const getPortfolioOptions = (risk: number, horizonYears: number) => {
   const horizonLabel =
@@ -964,7 +974,10 @@ const getAssetSummary = (allocation: Portfolio["allocation"]) =>
 const getSelectedFunds = (assetType: keyof Portfolio["allocation"]) =>
   FUNDS.filter((fund) => fund.assetType === assetType);
 
-const stars = (risk: number) => "★★★★★".slice(0, risk) + "☆☆☆☆☆".slice(0, 5 - risk);
+const stars = (risk: number) => {
+  const rounded = Math.round(risk);
+  return "★★★★★".slice(0, rounded) + "☆☆☆☆☆".slice(0, 5 - rounded);
+};
 
 const renderMarkdown = (text: string) => {
   const withLineBreaks = text.replace(/\n/g, "<br />");
@@ -982,16 +995,25 @@ const GrowthChart = ({
   series,
   contribution,
   labels,
+  years,
+  formatYAxisLabel,
 }: {
   series: { name: string; values: number[]; color: string }[];
   contribution: number[];
-  labels: { title: string; contributionLabel: string };
+  labels: { title: string; contributionLabel: string; xAxisSuffix: string };
+  years: number;
+  formatYAxisLabel: (value: number) => string;
 }) => {
   const allValues = [...series.flatMap((item) => item.values), ...contribution];
   const maxValue = Math.max(...allValues, 1);
   const width = 560;
   const height = 220;
   const padding = 24;
+  const xAxisY = height - padding;
+  const yAxisX = padding;
+  const xAxisLabel = years > 0 ? `${Math.round(years)}` : "0";
+  const yAxisMaxLabel = formatYAxisLabel(maxValue);
+  const yAxisMinLabel = formatYAxisLabel(0);
   const points = (values: number[]) =>
     values
       .map((value, index) => {
@@ -1023,6 +1045,58 @@ const GrowthChart = ({
           fill="#F8FAFC"
           stroke="#E2E8F0"
         />
+        <line
+          x1={yAxisX}
+          y1={xAxisY}
+          x2={width - padding}
+          y2={xAxisY}
+          stroke="#CBD5F5"
+          strokeWidth={1}
+        />
+        <line
+          x1={yAxisX}
+          y1={padding}
+          x2={yAxisX}
+          y2={xAxisY}
+          stroke="#CBD5F5"
+          strokeWidth={1}
+        />
+        <text
+          x={yAxisX}
+          y={xAxisY + 14}
+          fontSize="10"
+          fill="#64748B"
+          textAnchor="start"
+        >
+          0
+        </text>
+        <text
+          x={width - padding}
+          y={xAxisY + 14}
+          fontSize="10"
+          fill="#64748B"
+          textAnchor="end"
+        >
+          {xAxisLabel} {labels.xAxisSuffix}
+        </text>
+        <text
+          x={yAxisX - 6}
+          y={padding + 4}
+          fontSize="10"
+          fill="#64748B"
+          textAnchor="end"
+        >
+          {yAxisMaxLabel}
+        </text>
+        <text
+          x={yAxisX - 6}
+          y={xAxisY}
+          fontSize="10"
+          fill="#64748B"
+          textAnchor="end"
+        >
+          {yAxisMinLabel}
+        </text>
         <polyline
           points={points(contribution)}
           fill="none"
@@ -1126,7 +1200,7 @@ export default function App() {
   };
 
   const updateRisk = (delta: number) => {
-    setRisk((prev) => clamp(prev + delta, 0, 5));
+    setRisk((prev) => clamp(Number((prev + delta).toFixed(1)), 0, 5));
   };
 
   const confirmRisk = () => {
@@ -1134,7 +1208,12 @@ export default function App() {
   };
 
   const confirmPortfolio = () => {
-    if (selectedPortfolio) setPhase("addons");
+    if (!selectedPortfolio) return;
+    if (showAddons) {
+      setPhase("addons");
+      return;
+    }
+    setPhase("final");
   };
 
   const confirmAddons = () => {
@@ -1151,6 +1230,14 @@ export default function App() {
   };
 
   const currentQuestion = QUESTIONS[step];
+
+  useEffect(() => {
+    if (!isRetirementGoal(answers.goal)) return;
+    if (computedYearsTo67 <= 0) return;
+    const nextHorizon = String(computedYearsTo67);
+    if (answers.horizon === nextHorizon) return;
+    setAnswers((prev) => ({ ...prev, horizon: nextHorizon }));
+  }, [answers.goal, answers.horizon, computedYearsTo67]);
 
   const disclaimerLang = getDisclaimerLang(lang);
   const disclaimer = DISCLAIMER[disclaimerLang];
@@ -1333,6 +1420,7 @@ export default function App() {
                   <div className="mt-6 flex items-center gap-3">
                     <input
                       type="number"
+                      step={1}
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
                       value={answers.horizon}
                       onChange={(e) => handleAnswer("horizon", e.target.value)}
@@ -1349,6 +1437,7 @@ export default function App() {
                   <p className="mt-2 text-sm text-slate-500">{texts.initialTip}</p>
                   <input
                     type="number"
+                    step={100}
                     className="mt-6 w-full rounded-2xl border border-slate-200 px-4 py-3 text-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
                     value={answers.initial}
                     onChange={(e) => handleAnswer("initial", e.target.value)}
@@ -1363,6 +1452,7 @@ export default function App() {
                   <p className="mt-2 text-sm text-slate-500">{texts.monthlyTip}</p>
                   <input
                     type="number"
+                    step={10}
                     className="mt-6 w-full rounded-2xl border border-slate-200 px-4 py-3 text-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
                     value={answers.monthly}
                     onChange={(e) => handleAnswer("monthly", e.target.value)}
@@ -1455,14 +1545,14 @@ export default function App() {
               <button
                 type="button"
                 className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={() => updateRisk(-1)}
+                onClick={() => updateRisk(-0.5)}
               >
                 {texts.lower}
               </button>
               <button
                 type="button"
                 className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={() => updateRisk(1)}
+                onClick={() => updateRisk(0.5)}
               >
                 {texts.raise}
               </button>
@@ -1620,7 +1710,10 @@ export default function App() {
                 labels={{
                   title: texts.growthTitle,
                   contributionLabel: texts.contributedLine,
+                  xAxisSuffix: texts.growthAxisSuffix,
                 }}
+                years={horizonYears}
+                formatYAxisLabel={(value) => formatCurrency(value, lang)}
               />
             )}
 
@@ -1741,7 +1834,16 @@ export default function App() {
         {phase === "final" && selectedPortfolio && (
           <section className="grid gap-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-              <h2 className="text-2xl font-semibold text-slate-900">{texts.finalTitle}</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-2xl font-semibold text-slate-900">{texts.finalTitle}</h2>
+                <button
+                  type="button"
+                  className="rounded-full bg-cyan-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
+                  onClick={restartForm}
+                >
+                  {texts.editAnswers}
+                </button>
+              </div>
               <p className="mt-2 text-sm text-slate-600">
                 {texts.option} {selectedPortfolio.name} · {texts.risk}: {selectedPortfolio.risk}
               </p>
@@ -1826,22 +1928,25 @@ export default function App() {
               <p className="mt-2 text-sm text-slate-600">
                 {texts.implementationSubtitle}
               </p>
-              <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                <p>{texts.askHelp}</p>
+              <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-cyan-900">
+                <p className="text-lg font-semibold">{texts.referralTitle}</p>
+                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+                  <li>
+                    <a
+                      href={texts.referralLink}
+                      className="font-semibold text-cyan-800 underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {texts.referralLinkLabel}
+                    </a>
+                  </li>
+                  <li>{texts.referralCodeLabel}</li>
+                </ul>
               </div>
               <div className="mt-6 text-sm text-slate-700">
                 <div dangerouslySetInnerHTML={renderMarkdown(texts.farewell)} />
               </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={restartForm}
-              >
-                {texts.editAnswers}
-              </button>
             </div>
           </section>
         )}
