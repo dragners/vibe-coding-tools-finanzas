@@ -177,7 +177,11 @@ const TEXTS = {
     askHelp:
       "¿Necesitas alguna aclaración o quieres ajustar algo antes de finalizar?",
     farewell:
-      "Por último, recuerda que es importante **rebalancear la cartera una vez al año** para mantenerla alineada con tus objetivos y perfil de riesgo. A medida que los mercados fluctúan, los porcentajes de activos de tu cartera pueden desviarse de la distribución original que elegiste. El rebalanceo te ayuda a restaurar esos porcentajes y a gestionar el riesgo.\n\nAdemás, el rebalanceo **no tiene implicaciones fiscales**, ya que la fiscalidad de los fondos en España permite traspasos sin tributar las ganancias hasta el momento del rescate.\n---\n\nSi te ha gustado, por favor danos 5 estrellas ★★★★★!\n\n**Si no tienes cuenta en MyInvestor, puedes crearla usando mi enlace de referido; así nos ayudas a crecer y te llevas 25€:**\n* https://myinvestor.page.link/5KGME27MEt19sMtJA \n* El código de referido es: RQU46",
+      "Por último, recuerda que es importante **rebalancear la cartera una vez al año** para mantenerla alineada con tus objetivos y perfil de riesgo. A medida que los mercados fluctúan, los porcentajes de activos de tu cartera pueden desviarse de la distribución original que elegiste. El rebalanceo te ayuda a restaurar esos porcentajes y a gestionar el riesgo.\n\nAdemás, el rebalanceo **no tiene implicaciones fiscales**, ya que la fiscalidad de los fondos en España permite traspasos sin tributar las ganancias hasta el momento del rescate.",
+    referralTitle:
+      "Si no tienes cuenta en MyInvestor, puedes crearla usando mi enlace de referido; así nos ayudas a crecer y te llevas 20€:",
+    referralLinkLabel: "Crear cuenta con MyInvestor",
+    referralCode: "El código de referido es: RQU46",
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
   },
   en: {
@@ -293,7 +297,11 @@ const TEXTS = {
     askHelp:
       "Do you need any clarification or want to adjust something before finishing?",
     farewell:
-      "Lastly, remember that it is important **to rebalance the portfolio once a year** to keep it aligned with your goals and risk profile over time. As markets fluctuate, the percentages of assets in your portfolio may deviate from the original distribution you chose. Rebalancing helps you restore those percentages and manage risk.\n\nAdditionally, rebalancing **does not have tax implications**, as the taxation of funds in Spain allows for transfers without taxing the gains until the moment of withdrawal.\n---\n\nIf you liked it, please give us 5 stars ★★★★★!\n\n**If you don't have a MyInvestor account, you can create one using my referral link; this way, you help us grow and earn yourself €25:**\n* https://myinvestor.page.link/5KGME27MEt19sMtJA \n* Referral code is: RQU46",
+      "Lastly, remember that it is important **to rebalance the portfolio once a year** to keep it aligned with your goals and risk profile over time. As markets fluctuate, the percentages of assets in your portfolio may deviate from the original distribution you chose. Rebalancing helps you restore those percentages and manage risk.\n\nAdditionally, rebalancing **does not have tax implications**, as the taxation of funds in Spain allows for transfers without taxing the gains until the moment of withdrawal.",
+    referralTitle:
+      "If you don't have a MyInvestor account, you can create one using my referral link; this way, you help us grow and earn yourself €20:",
+    referralLinkLabel: "Create a MyInvestor account",
+    referralCode: "Referral code is: RQU46",
     footer: "© David Gonzalez, want to know more about me? Visit",
   },
 } as const;
@@ -1274,9 +1282,6 @@ export default function App() {
                       }`}
                       onClick={() => setSelectedPortfolio(portfolio)}
                     >
-                      <p className="text-xs uppercase text-slate-400">
-                        {texts.option}
-                      </p>
                       <h4 className="mt-1 text-lg font-semibold text-slate-900">
                         {optionLabel(index)}
                       </h4>
@@ -1457,7 +1462,16 @@ export default function App() {
         {phase === "final" && selectedPortfolio && (
           <section className="grid gap-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-              <h2 className="text-2xl font-semibold text-slate-900">{texts.finalTitle}</h2>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <h2 className="text-2xl font-semibold text-slate-900">{texts.finalTitle}</h2>
+                <button
+                  type="button"
+                  className="rounded-full bg-cyan-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
+                  onClick={restartForm}
+                >
+                  {texts.editAnswers}
+                </button>
+              </div>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                 <span>{selectedOptionLabel}</span>
                 <span aria-hidden>·</span>
@@ -1553,23 +1567,30 @@ export default function App() {
               <p className="mt-3 text-sm text-slate-600">
                 {texts.implementationNote}
               </p>
-              <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                <p>{texts.askHelp}</p>
+              <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
+                <p className="text-base font-semibold text-cyan-900">
+                  {texts.referralTitle}
+                </p>
+                <ul className="mt-3 space-y-1 text-sm">
+                  <li>
+                    •{" "}
+                    <a
+                      href="https://newapp.myinvestor.es/do/signup?promotionalCode=RQU46"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-cyan-700 underline"
+                    >
+                      {texts.referralLinkLabel}
+                    </a>
+                  </li>
+                  <li>• {texts.referralCode}</li>
+                </ul>
               </div>
               <div className="mt-6 text-sm text-slate-700">
                 <div dangerouslySetInnerHTML={renderMarkdown(texts.farewell)} />
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={restartForm}
-              >
-                {texts.editAnswers}
-              </button>
-            </div>
           </section>
         )}
 
