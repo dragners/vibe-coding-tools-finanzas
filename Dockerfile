@@ -6,23 +6,23 @@ WORKDIR /build
 COPY apps/planvsfondo/package.json apps/planvsfondo/package-lock.json* ./apps/planvsfondo/
 COPY apps/comparadorhipotecas/package.json apps/comparadorhipotecas/package-lock.json* ./apps/comparadorhipotecas/
 COPY apps/listadofondos/package.json apps/listadofondos/package-lock.json* ./apps/listadofondos/
-COPY apps/portfolio-creator/package.json apps/portfolio-creator/package-lock.json* ./apps/portfolio-creator/
+COPY apps/portfoliocreator/package.json apps/portfoliocreator/package-lock.json* ./apps/portfoliocreator/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm ci) && \
     (cd apps/comparadorhipotecas && npm ci) && \
     (cd apps/listadofondos && npm ci) && \
-    (cd apps/portfolio-creator && npm ci)
+    (cd apps/portfoliocreator && npm ci)
 
 # Copia fuentes y build
 COPY apps/planvsfondo/ ./apps/planvsfondo/
 COPY apps/comparadorhipotecas/ ./apps/comparadorhipotecas/
 COPY apps/listadofondos/ ./apps/listadofondos/
-COPY apps/portfolio-creator/ ./apps/portfolio-creator/
+COPY apps/portfoliocreator/ ./apps/portfoliocreator/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm run build) && \
     (cd apps/comparadorhipotecas && npm run build) && \
     (cd apps/listadofondos && npm run build) && \
-    (cd apps/portfolio-creator && npm run build)
+    (cd apps/portfoliocreator && npm run build)
 
 # --- Runtime: Nginx sirviendo landing + apps ---
 FROM nginx:alpine AS runtime
@@ -35,7 +35,7 @@ COPY landing/ /usr/share/nginx/html/
 COPY --from=builder /build/apps/planvsfondo/dist/ /usr/share/nginx/html/planvsfondo/
 COPY --from=builder /build/apps/comparadorhipotecas/dist/ /usr/share/nginx/html/comparadorhipotecas/
 COPY --from=builder /build/apps/listadofondos/dist/ /usr/share/nginx/html/listadofondos/
-COPY --from=builder /build/apps/portfolio-creator/dist/ /usr/share/nginx/html/portfolio-creator/
+COPY --from=builder /build/apps/portfoliocreator/dist/ /usr/share/nginx/html/portfoliocreator/
 
 RUN chmod -R 755 /usr/share/nginx/html
 EXPOSE 80

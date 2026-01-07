@@ -64,7 +64,7 @@ const BITCOIN_INFO =
 const TEXTS = {
   es: {
     back: "Volver a Herramientas",
-    title: "Portfolio Creator",
+    title: "Portfoliocreator",
     subtitle:
       "Crea una cartera personalizada con preguntas guiadas, explicaciones claras y resultados ordenados.",
     language: "Idioma",
@@ -174,7 +174,7 @@ const TEXTS = {
   },
   en: {
     back: "Back to Tools",
-    title: "Portfolio Creator",
+    title: "Portfoliocreator",
     subtitle:
       "Create a tailored portfolio with guided questions, clear explanations, and structured results.",
     language: "Language",
