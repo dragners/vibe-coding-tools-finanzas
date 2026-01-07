@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./index.css";
+import portfoliosData from "./data/Carteras.json";
+import fundsData from "./data/Fondos.json";
 
 type Lang = "es" | "en";
 
@@ -78,6 +80,7 @@ const TEXTS = {
     progress: (current: number, total: number) =>
       `Pregunta ${current} de ${total}`,
     goal: "¿Cuál es tu objetivo financiero?",
+    goalPlaceholder: "Selecciona tu objetivo",
     goalTip:
       "El tipo de inversión y riesgo se adapta dependiendo de tu objetivo financiero y tu plazo de inversión.",
     goalOptions: [
@@ -193,6 +196,7 @@ const TEXTS = {
     progress: (current: number, total: number) =>
       `Question ${current} of ${total}`,
     goal: "What is your financial goal?",
+    goalPlaceholder: "Select your goal",
     goalTip:
       "Select your main goal so we can tailor the recommendations.",
     goalOptions: [
@@ -294,492 +298,8 @@ const TEXTS = {
   },
 } as const;
 
-const PORTFOLIOS: Portfolio[] = [
-  {
-    name: "Cash",
-    risk: 0.0,
-    horizon: "Short-term",
-    allocation: {
-      moneyMarket: 100,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 0,
-      mediumTermBondsEUR: 0,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 2.0,
-    volatility: 0.5,
-  },
-  {
-    name: "Cash+RFCortoBONOS",
-    risk: 0.3,
-    horizon: "Short-term",
-    allocation: {
-      moneyMarket: 50,
-      globalShortBonds: 50,
-      globalCorporateShortBonds: 0,
-      globalEquities: 0,
-      mediumTermBondsEUR: 0,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 2.5,
-    volatility: 1.25,
-  },
-  {
-    name: "RFCortoBONOS+CORP",
-    risk: 0.6,
-    horizon: "Short-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 50,
-      globalCorporateShortBonds: 50,
-      globalEquities: 0,
-      mediumTermBondsEUR: 0,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 3.0,
-    volatility: 2.5,
-  },
-  {
-    name: "05/95",
-    risk: 1.1,
-    horizon: "Medium-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 5,
-      mediumTermBondsEUR: 95,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 3.2,
-    volatility: 4.76,
-  },
-  {
-    name: "15/85",
-    risk: 1.7,
-    horizon: "Medium-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 15,
-      mediumTermBondsEUR: 85,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 3.6,
-    volatility: 5.43,
-  },
-  {
-    name: "25/75",
-    risk: 2.1,
-    horizon: "Medium-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 25,
-      mediumTermBondsEUR: 75,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 4.0,
-    volatility: 6.1,
-  },
-  {
-    name: "35/65",
-    risk: 2.5,
-    horizon: "Medium-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 35,
-      mediumTermBondsEUR: 65,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 4.4,
-    volatility: 6.77,
-  },
-  {
-    name: "35/65+EM",
-    risk: 2.6,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 31.5,
-      mediumTermBondsEUR: 65,
-      emergingMarkets: 3.5,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 4.47,
-    volatility: 7.5,
-  },
-  {
-    name: "35/65+EM+SC",
-    risk: 2.7,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 28,
-      mediumTermBondsEUR: 65,
-      emergingMarkets: 3.5,
-      globalSmallCaps: 3.5,
-    },
-    annualReturn: 4.51,
-    volatility: 8.0,
-  },
-  {
-    name: "45/55",
-    risk: 2.9,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 45,
-      mediumTermBondsEUR: 55,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 4.8,
-    volatility: 8.44,
-  },
-  {
-    name: "45/55+EM",
-    risk: 3.0,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 40.5,
-      mediumTermBondsEUR: 55,
-      emergingMarkets: 4.5,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 4.89,
-    volatility: 9.2,
-  },
-  {
-    name: "45/55+EM+SC",
-    risk: 3.1,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 36,
-      mediumTermBondsEUR: 55,
-      emergingMarkets: 4.5,
-      globalSmallCaps: 4.5,
-    },
-    annualReturn: 4.94,
-    volatility: 9.54,
-  },
-  {
-    name: "55/45",
-    risk: 3.2,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 55,
-      mediumTermBondsEUR: 45,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 5.2,
-    volatility: 10.11,
-  },
-  {
-    name: "55/45+EM",
-    risk: 3.4,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 49.5,
-      mediumTermBondsEUR: 45,
-      emergingMarkets: 5.5,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 5.31,
-    volatility: 10.91,
-  },
-  {
-    name: "55/45+EM+SC",
-    risk: 3.5,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 44,
-      mediumTermBondsEUR: 45,
-      emergingMarkets: 5.5,
-      globalSmallCaps: 5.5,
-    },
-    annualReturn: 5.37,
-    volatility: 11.28,
-  },
-  {
-    name: "65/35",
-    risk: 3.7,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 65,
-      mediumTermBondsEUR: 35,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 5.6,
-    volatility: 11.77,
-  },
-  {
-    name: "65/35+EM",
-    risk: 3.9,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 58.5,
-      mediumTermBondsEUR: 35,
-      emergingMarkets: 6.5,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 5.73,
-    volatility: 12.6,
-  },
-  {
-    name: "65/35+EM+SC",
-    risk: 4.0,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 52,
-      mediumTermBondsEUR: 35,
-      emergingMarkets: 6.5,
-      globalSmallCaps: 6.5,
-    },
-    annualReturn: 5.8,
-    volatility: 13.0,
-  },
-  {
-    name: "75/25",
-    risk: 4.1,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 75,
-      mediumTermBondsEUR: 25,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 6.0,
-    volatility: 13.39,
-  },
-  {
-    name: "75/25+EM",
-    risk: 4.3,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 67.5,
-      mediumTermBondsEUR: 25,
-      emergingMarkets: 7.5,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 6.15,
-    volatility: 14.25,
-  },
-  {
-    name: "75/25+EM+SC",
-    risk: 4.4,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 60,
-      mediumTermBondsEUR: 25,
-      emergingMarkets: 7.5,
-      globalSmallCaps: 7.5,
-    },
-    annualReturn: 6.23,
-    volatility: 14.68,
-  },
-  {
-    name: "85/15",
-    risk: 4.3,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 85,
-      mediumTermBondsEUR: 15,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 6.4,
-    volatility: 15.0,
-  },
-  {
-    name: "85/15+EM",
-    risk: 4.5,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 76.5,
-      mediumTermBondsEUR: 15,
-      emergingMarkets: 8.5,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 6.57,
-    volatility: 15.9,
-  },
-  {
-    name: "85/15+EM+SC",
-    risk: 4.6,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 68,
-      mediumTermBondsEUR: 15,
-      emergingMarkets: 8.5,
-      globalSmallCaps: 8.5,
-    },
-    annualReturn: 6.66,
-    volatility: 16.35,
-  },
-  {
-    name: "100/00",
-    risk: 4.5,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 100,
-      mediumTermBondsEUR: 0,
-      emergingMarkets: 0,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 7.0,
-    volatility: 16.5,
-  },
-  {
-    name: "100/00+EM",
-    risk: 4.8,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 90,
-      mediumTermBondsEUR: 0,
-      emergingMarkets: 10,
-      globalSmallCaps: 0,
-    },
-    annualReturn: 7.2,
-    volatility: 16.8,
-  },
-  {
-    name: "100/00+EM+SC",
-    risk: 5.0,
-    horizon: "Long-term",
-    allocation: {
-      moneyMarket: 0,
-      globalShortBonds: 0,
-      globalCorporateShortBonds: 0,
-      globalEquities: 80,
-      mediumTermBondsEUR: 0,
-      emergingMarkets: 10,
-      globalSmallCaps: 10,
-    },
-    annualReturn: 7.3,
-    volatility: 17.27,
-  },
-];
-
-const FUNDS: Fund[] = [
-  {
-    assetType: "moneyMarket",
-    name: "Vanguard Euro Money Market Fund",
-    isin: "IE00B49ZLJ78",
-    ter: "0.10%",
-    url: "https://www.vanguardinvestor.co.uk/",
-  },
-  {
-    assetType: "globalShortBonds",
-    name: "iShares Global Short-Term Bond Fund",
-    isin: "IE00B3F81R35",
-    ter: "0.20%",
-    url: "https://www.ishares.com/",
-  },
-  {
-    assetType: "globalCorporateShortBonds",
-    name: "SPDR Short-Term Corporate Bond Fund",
-    isin: "IE00BCRY6557",
-    ter: "0.15%",
-    url: "https://www.ssga.com/",
-  },
-  {
-    assetType: "globalEquities",
-    name: "Vanguard FTSE All-World",
-    isin: "IE00BK5BQT80",
-    ter: "0.22%",
-    url: "https://www.vanguardinvestor.co.uk/",
-  },
-  {
-    assetType: "mediumTermBondsEUR",
-    name: "Amundi Euro Government Bond",
-    isin: "LU0503631637",
-    ter: "0.14%",
-    url: "https://www.amundi.com/",
-  },
-  {
-    assetType: "emergingMarkets",
-    name: "iShares Core MSCI EM",
-    isin: "IE00BKM4GZ66",
-    ter: "0.18%",
-    url: "https://www.ishares.com/",
-  },
-  {
-    assetType: "globalSmallCaps",
-    name: "SPDR MSCI World Small Cap",
-    isin: "IE00BCBJG560",
-    ter: "0.45%",
-    url: "https://www.ssga.com/",
-  },
-];
+const PORTFOLIOS = portfoliosData as Portfolio[];
+const FUNDS = fundsData as Fund[];
 
 const QUESTIONS: {
   id: QuestionId;
@@ -1341,33 +861,16 @@ export default function App() {
           </div>
         </header>
 
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
-          <h2 className="text-sm font-semibold text-amber-700">
-            {texts.disclaimerTitle}
-          </h2>
-          <div className="mt-2 leading-relaxed" dangerouslySetInnerHTML={renderMarkdown(disclaimer)} />
-        </section>
-
         {phase === "form" && (
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <>
+            <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+              <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                 {texts.progress(step + 1, totalQuestions)}
               </p>
-              <div className="flex items-center gap-2">
-                {step > 0 && (
-                  <button
-                    type="button"
-                    className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:border-slate-400"
-                    onClick={handlePrevious}
-                  >
-                    {texts.previous}
-                  </button>
-                )}
               </div>
-            </div>
 
-            <div className="mt-6 grid gap-6">
+              <div className="mt-6 grid gap-6">
               {currentQuestion.id === "goal" && (
                 <div>
                   <h2 className="text-2xl font-semibold text-slate-900">
@@ -1380,7 +883,7 @@ export default function App() {
                     onChange={(e) => handleAnswer("goal", e.target.value)}
                   >
                     <option value="" disabled>
-                      {texts.goalTip}
+                      {texts.goalPlaceholder}
                     </option>
                     {texts.goalOptions.map((option) => (
                       <option key={option} value={option}>
@@ -1509,8 +1012,8 @@ export default function App() {
               )}
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-sm text-slate-500">
+              <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div className="text-sm text-slate-500">
                 {summaryItems.length > 0 && (
                   <div className="flex flex-wrap gap-3">
                     {summaryItems.map((item) => (
@@ -1520,16 +1023,35 @@ export default function App() {
                     ))}
                   </div>
                 )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                  {step > 0 && (
+                    <button
+                      type="button"
+                      className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:border-slate-400"
+                      onClick={handlePrevious}
+                    >
+                      {texts.previous}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
+                    onClick={handleNext}
+                  >
+                    {step === totalQuestions - 1 ? texts.start : texts.next}
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                className="rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
-                onClick={handleNext}
-              >
-                {step === totalQuestions - 1 ? texts.start : texts.next}
-              </button>
-            </div>
-          </section>
+            </section>
+
+            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+              <h2 className="text-sm font-semibold text-amber-700">
+                {texts.disclaimerTitle}
+              </h2>
+              <div className="mt-2 leading-relaxed" dangerouslySetInnerHTML={renderMarkdown(disclaimer)} />
+            </section>
+          </>
         )}
 
         {phase === "risk" && (
@@ -1950,6 +1472,18 @@ export default function App() {
             </div>
           </section>
         )}
+
+        <footer className="text-sm text-slate-500">
+          <span>{texts.footer}</span>{" "}
+          <a
+            href="https://dragner.net/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-cyan-600 hover:underline"
+          >
+            dragner.net
+          </a>
+        </footer>
       </div>
     </div>
   );
