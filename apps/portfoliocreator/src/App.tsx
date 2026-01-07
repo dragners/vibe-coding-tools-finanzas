@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./index.css";
 import portfoliosData from "./data/Carteras.json";
 import fundsData from "./data/Fondos.json";
@@ -153,6 +153,8 @@ const TEXTS = {
     adjustPortfolio: "Modificar opciones",
     growthTitle: "Evolución estimada",
     contributedLine: "Capital aportado",
+    growthAxisYears: "Años",
+    growthAxisValue: "€",
     happy: "¿Estás conforme con la cartera seleccionada?",
     addonsTitle: "Activos opcionales",
     addonsPromptLow:
@@ -267,6 +269,8 @@ const TEXTS = {
     adjustPortfolio: "Modify options",
     growthTitle: "Projected growth",
     contributedLine: "Contributed capital",
+    growthAxisYears: "Years",
+    growthAxisValue: "€",
     happy: "Are you happy with the selected portfolio?",
     addonsTitle: "Optional assets",
     addonsPromptLow:
@@ -499,7 +503,12 @@ const getAssetSummary = (allocation: Portfolio["allocation"]) =>
 const getSelectedFunds = (assetType: keyof Portfolio["allocation"]) =>
   FUNDS.filter((fund) => fund.assetType === assetType);
 
-const stars = (risk: number) => "★★★★★".slice(0, risk) + "☆☆☆☆☆".slice(0, 5 - risk);
+const starsWithHalf = (risk: number) => {
+  const fullStars = Math.floor(risk);
+  const hasHalf = risk % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+  return `${"★".repeat(fullStars)}${hasHalf ? "½" : ""}${"☆".repeat(emptyStars)}`;
+};
 
 const renderMarkdown = (text: string) => {
   const withLineBreaks = text.replace(/\n/g, "<br />");
@@ -521,7 +530,7 @@ const GrowthChart = ({
 }: {
   series: { name: string; values: number[]; color: string }[];
   contribution: number[];
-  labels: { title: string; contributionLabel: string };
+  labels: { title: string; contributionLabel: string; axisYears: string; axisValue: string };
   lang: Lang;
 }) => {
   const allValues = [...series.flatMap((item) => item.values), ...contribution];
@@ -625,6 +634,22 @@ const GrowthChart = ({
             </text>
           </g>
         ))}
+        <text
+          x={padding.left - 24}
+          y={padding.top - 4}
+          textAnchor="start"
+          className="text-[10px] fill-slate-400"
+        >
+          {labels.axisValue}
+        </text>
+        <text
+          x={width - padding.right}
+          y={height - 8}
+          textAnchor="end"
+          className="text-[10px] fill-slate-400"
+        >
+          {labels.axisYears}
+        </text>
         <polyline
           points={points(contribution)}
           fill="none"
@@ -665,6 +690,15 @@ export default function App() {
     "form",
   );
   const [goalError, setGoalError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<QuestionId, string>>({
+    goal: "",
+    age: "",
+    horizon: "",
+    initial: "",
+    monthly: "",
+    experience: "",
+    return: "",
+  });
   const [answers, setAnswers] = useState<Answers>({
     goal: "",
     age: "",
@@ -703,17 +737,51 @@ export default function App() {
     [risk, horizonYears],
   );
 
-  const riskExplanation = getRiskLabel(risk, lang);
+  const riskExplanation = getRiskLabel(Math.round(risk), lang);
+
+  useEffect(() => {
+    if (isRetirementGoal(answers.goal) && computedYearsTo67 > 0) {
+      setAnswers((prev) => ({
+        ...prev,
+        horizon: String(computedYearsTo67),
+      }));
+      setFieldErrors((prev) => ({ ...prev, horizon: "" }));
+    }
+  }, [answers.goal, computedYearsTo67]);
 
   const handleAnswer = (key: keyof Answers, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
     if (key === "goal") setGoalError(false);
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => ({ ...prev, [key]: "" }));
+    }
   };
 
   const handleNext = () => {
     if (currentQuestion.id === "goal" && !answers.goal) {
       setGoalError(true);
       return;
+    }
+    if (currentQuestion.id !== "goal") {
+      const value = answers[currentQuestion.id];
+      const isNumber =
+        currentQuestion.id === "age" ||
+        currentQuestion.id === "horizon" ||
+        currentQuestion.id === "initial" ||
+        currentQuestion.id === "monthly";
+      const isValid = isNumber
+        ? parseNumber(value) > 0
+        : value !== "";
+      if (!isValid) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          [currentQuestion.id]:
+            lang === "es"
+              ? "Completa este campo para continuar."
+              : "Please complete this field to continue.",
+        }));
+        return;
+      }
     }
     if (step < totalQuestions - 1) {
       setStep((prev) => prev + 1);
@@ -729,7 +797,7 @@ export default function App() {
   };
 
   const updateRisk = (delta: number) => {
-    setRisk((prev) => clamp(prev + delta, 0, 5));
+    setRisk((prev) => clamp(Number((prev + delta).toFixed(1)), 0, 5));
   };
 
   const confirmRisk = () => {
@@ -737,7 +805,13 @@ export default function App() {
   };
 
   const confirmPortfolio = () => {
-    if (selectedPortfolio) setPhase("addons");
+    if (!selectedPortfolio) return;
+    if (!showAddons) {
+      setAddons({ gold: false, realEstate: false, bitcoin: false });
+      setPhase("final");
+      return;
+    }
+    setPhase("addons");
   };
 
   const confirmAddons = () => {
@@ -751,6 +825,15 @@ export default function App() {
     setSelectedPortfolio(null);
     setAddons({ gold: false, realEstate: false, bitcoin: false });
     setGoalError(false);
+    setFieldErrors({
+      goal: "",
+      age: "",
+      horizon: "",
+      initial: "",
+      monthly: "",
+      experience: "",
+      return: "",
+    });
   };
 
   const currentQuestion = QUESTIONS[step];
@@ -913,6 +996,9 @@ export default function App() {
                     value={answers.age}
                     onChange={(e) => handleAnswer("age", e.target.value)}
                   />
+                  {fieldErrors.age && (
+                    <p className="mt-2 text-sm text-rose-600">{fieldErrors.age}</p>
+                  )}
                 </div>
               )}
               {currentQuestion.id === "horizon" && (
@@ -930,6 +1016,9 @@ export default function App() {
                     />
                     <span className="text-sm text-slate-500">{texts.horizonYears}</span>
                   </div>
+                  {fieldErrors.horizon && (
+                    <p className="mt-2 text-sm text-rose-600">{fieldErrors.horizon}</p>
+                  )}
                 </div>
               )}
               {currentQuestion.id === "initial" && (
@@ -941,9 +1030,13 @@ export default function App() {
                   <input
                     type="number"
                     className="mt-6 w-full rounded-2xl border border-slate-200 px-4 py-3 text-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                    step={100}
                     value={answers.initial}
                     onChange={(e) => handleAnswer("initial", e.target.value)}
                   />
+                  {fieldErrors.initial && (
+                    <p className="mt-2 text-sm text-rose-600">{fieldErrors.initial}</p>
+                  )}
                 </div>
               )}
               {currentQuestion.id === "monthly" && (
@@ -955,9 +1048,13 @@ export default function App() {
                   <input
                     type="number"
                     className="mt-6 w-full rounded-2xl border border-slate-200 px-4 py-3 text-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                    step={10}
                     value={answers.monthly}
                     onChange={(e) => handleAnswer("monthly", e.target.value)}
                   />
+                  {fieldErrors.monthly && (
+                    <p className="mt-2 text-sm text-rose-600">{fieldErrors.monthly}</p>
+                  )}
                 </div>
               )}
               {currentQuestion.id === "experience" && (
@@ -982,6 +1079,9 @@ export default function App() {
                       </button>
                     ))}
                   </div>
+                  {fieldErrors.experience && (
+                    <p className="mt-2 text-sm text-rose-600">{fieldErrors.experience}</p>
+                  )}
                 </div>
               )}
               {currentQuestion.id === "return" && (
@@ -1006,6 +1106,9 @@ export default function App() {
                       </button>
                     ))}
                   </div>
+                  {fieldErrors.return && (
+                    <p className="mt-2 text-sm text-rose-600">{fieldErrors.return}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -1056,7 +1159,7 @@ export default function App() {
           <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
             <h2 className="text-2xl font-semibold text-slate-900">{texts.riskTitle}</h2>
             <p className="mt-4 text-lg font-semibold text-cyan-700">
-              {texts.riskSummary(risk, stars(risk))}
+              {texts.riskSummary(risk, starsWithHalf(risk))}
             </p>
             <p className="mt-2 text-sm text-slate-500">{riskExplanation}</p>
             <p className="mt-3 text-sm text-slate-600">{texts.riskPrompt}</p>
@@ -1065,14 +1168,14 @@ export default function App() {
               <button
                 type="button"
                 className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={() => updateRisk(-1)}
+                onClick={() => updateRisk(-0.5)}
               >
                 {texts.lower}
               </button>
               <button
                 type="button"
                 className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={() => updateRisk(1)}
+                onClick={() => updateRisk(0.5)}
               >
                 {texts.raise}
               </button>
@@ -1230,6 +1333,8 @@ export default function App() {
                 labels={{
                   title: texts.growthTitle,
                   contributionLabel: texts.contributedLine,
+                  axisYears: texts.growthAxisYears,
+                  axisValue: texts.growthAxisValue,
                 }}
                 lang={lang}
               />
@@ -1360,7 +1465,7 @@ export default function App() {
                   {texts.risk}:
                 </span>
                 <span className="text-lg font-semibold text-amber-500">
-                  {stars(Math.round(selectedPortfolio.risk))}
+                  {starsWithHalf(selectedPortfolio.risk)}
                 </span>
               </div>
               {addonAllocations.length > 0 && (
