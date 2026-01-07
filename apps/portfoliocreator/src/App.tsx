@@ -167,13 +167,15 @@ const TEXTS = {
     implementationTitle: "Cómo implementarla",
     implementationSubtitle:
       "Calculamos cuánto invertir en cada tipo de activo, tanto en la aportación inicial como en las aportaciones mensuales. Te recomendamos configurar aportaciones automáticas para invertir de forma pasiva.",
+    implementationNote:
+      "Todos los fondos mostrados se pueden contratar en plataformas como MyInvestor, Renta 4, IronIA o SelfBank, donde puedes buscar los ISIN que te he proporcionado para invertir directamente en los productos recomendados.",
     monthlyLabel: "Aportación mensual",
     initialLabel: "Aportación inicial",
     fundsTitle: "Fondos recomendados",
     askHelp:
       "¿Necesitas alguna aclaración o quieres ajustar algo antes de finalizar?",
     farewell:
-      "Por último, recuerda que es importante **rebalancear la cartera una vez al año** para mantenerla alineada con tus objetivos y perfil de riesgo. A medida que los mercados fluctúan, los porcentajes de activos de tu cartera pueden desviarse de la distribución original que elegiste. El rebalanceo te ayuda a restaurar esos porcentajes y a gestionar el riesgo.\n\nAdemás, el rebalanceo **no tiene implicaciones fiscales**, ya que la fiscalidad de los fondos en España permite traspasos sin tributar las ganancias hasta el momento del rescate.\n---\n\nTodos los fondos mostrados se pueden contratar en plataformas como MyInvestor, Renta 4, IronIA o SelfBank, donde puedes buscar los ISIN que te he proporcionado para invertir directamente en los productos recomendados.\n\n**Si no tienes cuenta en MyInvestor, puedes crearla usando mi enlace de referido; así nos ayudas a crecer y te llevas 20€:**\n* https://myinvestor.page.link/5KGME27MEt19sMtJA \n* El código de referido es: RQU46\n\nSi te ha gustado, por favor danos 5 estrellas ★★★★★!",
+      "Por último, recuerda que es importante **rebalancear la cartera una vez al año** para mantenerla alineada con tus objetivos y perfil de riesgo. A medida que los mercados fluctúan, los porcentajes de activos de tu cartera pueden desviarse de la distribución original que elegiste. El rebalanceo te ayuda a restaurar esos porcentajes y a gestionar el riesgo.\n\nAdemás, el rebalanceo **no tiene implicaciones fiscales**, ya que la fiscalidad de los fondos en España permite traspasos sin tributar las ganancias hasta el momento del rescate.\n---\n\nSi te ha gustado, por favor danos 5 estrellas ★★★★★!\n\n**Si no tienes cuenta en MyInvestor, puedes crearla usando mi enlace de referido; así nos ayudas a crecer y te llevas 25€:**\n* https://myinvestor.page.link/5KGME27MEt19sMtJA \n* El código de referido es: RQU46",
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
   },
   en: {
@@ -279,13 +281,15 @@ const TEXTS = {
     implementationTitle: "How to implement it",
     implementationSubtitle:
       "We calculate how much to allocate to each asset type for both the initial and monthly contributions. We recommend setting up automatic contributions for a passive approach.",
+    implementationNote:
+      "All the funds shown can be contracted using platforms such as MyInvestor, Renta 4, IronIA, or SelfBank, where you can search for the ISINs I have provided to invest directly in the recommended products.",
     monthlyLabel: "Monthly contribution",
     initialLabel: "Initial contribution",
     fundsTitle: "Recommended funds",
     askHelp:
       "Do you need any clarification or want to adjust something before finishing?",
     farewell:
-      "Lastly, remember that it is important **to rebalance the portfolio once a year** to keep it aligned with your goals and risk profile over time. As markets fluctuate, the percentages of assets in your portfolio may deviate from the original distribution you chose. Rebalancing helps you restore those percentages and manage risk.\n\nAdditionally, rebalancing **does not have tax implications**, as the taxation of funds in Spain allows for transfers without taxing the gains until the moment of withdrawal.\n---\n\nAll the funds shown can be contracted using platforms such as MyInvestor, Renta 4, IronIA, or SelfBank, where you can search for the ISINs I have provided to invest directly in the recommended products.\n\n**If you don't have a MyInvestor account, you can create one using my referral link; this way, you help us grow and earn yourself €20:**\n* https://myinvestor.page.link/5KGME27MEt19sMtJA \n* Referral code is: RQU46\n\nIf you liked it, please give us 5 stars ★★★★★!",
+      "Lastly, remember that it is important **to rebalance the portfolio once a year** to keep it aligned with your goals and risk profile over time. As markets fluctuate, the percentages of assets in your portfolio may deviate from the original distribution you chose. Rebalancing helps you restore those percentages and manage risk.\n\nAdditionally, rebalancing **does not have tax implications**, as the taxation of funds in Spain allows for transfers without taxing the gains until the moment of withdrawal.\n---\n\nIf you liked it, please give us 5 stars ★★★★★!\n\n**If you don't have a MyInvestor account, you can create one using my referral link; this way, you help us grow and earn yourself €25:**\n* https://myinvestor.page.link/5KGME27MEt19sMtJA \n* Referral code is: RQU46",
     footer: "© David Gonzalez, want to know more about me? Visit",
   },
 } as const;
@@ -369,6 +373,15 @@ const formatCurrency = (value: number, lang: Lang) =>
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
+  });
+
+const formatAxisCurrency = (value: number, lang: Lang) =>
+  value.toLocaleString(lang === "es" ? "es-ES" : "en-US", {
+    style: "currency",
+    currency: "EUR",
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 1,
   });
 
 const formatPercent = (value: number) => `${value.toFixed(2)}%`;
@@ -504,26 +517,53 @@ const GrowthChart = ({
   series,
   contribution,
   labels,
+  lang,
 }: {
   series: { name: string; values: number[]; color: string }[];
   contribution: number[];
   labels: { title: string; contributionLabel: string };
+  lang: Lang;
 }) => {
   const allValues = [...series.flatMap((item) => item.values), ...contribution];
   const maxValue = Math.max(...allValues, 1);
+  const months = Math.max(contribution.length - 1, 1);
+  const totalYears = Math.max(1, Math.round(months / 12));
   const width = 560;
-  const height = 220;
-  const padding = 24;
+  const height = 240;
+  const padding = {
+    top: 16,
+    right: 16,
+    bottom: 36,
+    left: 58,
+  };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const xTickCount = Math.min(8, Math.max(5, totalYears + 1));
+  const yTickCount = 6;
+  const xTicks = Array.from({ length: xTickCount }, (_, index) => {
+    const ratio = index / (xTickCount - 1);
+    const monthIndex = Math.round(months * ratio);
+    return {
+      yearLabel: Math.round(monthIndex / 12),
+      x: padding.left + ratio * chartWidth,
+    };
+  });
+  const yTicks = Array.from({ length: yTickCount }, (_, index) => {
+    const value = maxValue * (1 - index / (yTickCount - 1));
+    return {
+      value,
+      y: padding.top + (index / (yTickCount - 1)) * chartHeight,
+    };
+  });
   const points = (values: number[]) =>
     values
       .map((value, index) => {
         const x =
-          padding +
-          (index / (values.length - 1)) * (width - padding * 2);
+          padding.left + (index / (values.length - 1)) * chartWidth;
         const y =
           height -
-          padding -
-          (value / maxValue) * (height - padding * 2);
+          padding.bottom -
+          (value / maxValue) * chartHeight;
         return `${x},${y}`;
       })
       .join(" ");
@@ -538,13 +578,53 @@ const GrowthChart = ({
         aria-label={labels.title}
       >
         <rect
-          x={padding}
-          y={padding}
-          width={width - padding * 2}
-          height={height - padding * 2}
+          x={padding.left}
+          y={padding.top}
+          width={chartWidth}
+          height={chartHeight}
           fill="#F8FAFC"
           stroke="#E2E8F0"
         />
+        {yTicks.map((tick) => (
+          <g key={`y-${tick.value}`}>
+            <line
+              x1={padding.left}
+              x2={width - padding.right}
+              y1={tick.y}
+              y2={tick.y}
+              stroke="#E2E8F0"
+              strokeDasharray="4 4"
+            />
+            <text
+              x={padding.left - 8}
+              y={tick.y + 3}
+              textAnchor="end"
+              className="text-[10px] fill-slate-400"
+            >
+              {formatAxisCurrency(tick.value, lang)}
+            </text>
+          </g>
+        ))}
+        {xTicks.map((tick, index) => (
+          <g key={`x-${index}`}>
+            <line
+              x1={tick.x}
+              x2={tick.x}
+              y1={padding.top}
+              y2={height - padding.bottom}
+              stroke="#E2E8F0"
+              strokeDasharray="4 4"
+            />
+            <text
+              x={tick.x}
+              y={height - padding.bottom + 16}
+              textAnchor="middle"
+              className="text-[10px] fill-slate-400"
+            >
+              {tick.yearLabel}
+            </text>
+          </g>
+        ))}
         <polyline
           points={points(contribution)}
           fill="none"
@@ -605,6 +685,7 @@ export default function App() {
   });
 
   const texts = TEXTS[lang];
+  const optionLabel = (index: number) => `${texts.option} ${index + 1}`;
   const totalQuestions = QUESTIONS.length;
 
   const computedYearsTo67 = useMemo(() => {
@@ -679,11 +760,11 @@ export default function App() {
 
   const growthSeries = useMemo(() => {
     if (!selectedPortfolio) return [];
-    return options.map((portfolio, index) => ({
-      name: `${texts.option} ${index + 1}: ${portfolio.name}`,
-      values: buildGrowthSeries(
-        initial,
-        monthly,
+      return options.map((portfolio, index) => ({
+        name: optionLabel(index),
+        values: buildGrowthSeries(
+          initial,
+          monthly,
         horizonYears,
         portfolio.annualReturn,
       ),
@@ -700,6 +781,11 @@ export default function App() {
   const assetSummary = selectedPortfolio
     ? getAssetSummary(selectedPortfolio.allocation)
     : [];
+  const selectedOptionIndex = selectedPortfolio
+    ? options.findIndex((portfolio) => portfolio.name === selectedPortfolio.name)
+    : -1;
+  const selectedOptionLabel =
+    selectedOptionIndex >= 0 ? optionLabel(selectedOptionIndex) : texts.option;
 
   const showAddons = risk >= 3;
   const showBitcoin = risk >= 4;
@@ -1086,10 +1172,10 @@ export default function App() {
                       onClick={() => setSelectedPortfolio(portfolio)}
                     >
                       <p className="text-xs uppercase text-slate-400">
-                        {texts.option} {index + 1}
+                        {texts.option}
                       </p>
                       <h4 className="mt-1 text-lg font-semibold text-slate-900">
-                        {portfolio.name}
+                        {optionLabel(index)}
                       </h4>
                       <p className="mt-3 text-xs text-slate-500">{texts.assets}</p>
                       <ul className="mt-2 space-y-1 text-sm text-slate-700">
@@ -1145,6 +1231,7 @@ export default function App() {
                   title: texts.growthTitle,
                   contributionLabel: texts.contributedLine,
                 }}
+                lang={lang}
               />
             )}
 
@@ -1266,9 +1353,16 @@ export default function App() {
           <section className="grid gap-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
               <h2 className="text-2xl font-semibold text-slate-900">{texts.finalTitle}</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                {texts.option} {selectedPortfolio.name} · {texts.risk}: {selectedPortfolio.risk}
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                <span>{selectedOptionLabel}</span>
+                <span aria-hidden>·</span>
+                <span className="text-lg font-semibold text-slate-800">
+                  {texts.risk}:
+                </span>
+                <span className="text-lg font-semibold text-amber-500">
+                  {stars(Math.round(selectedPortfolio.risk))}
+                </span>
+              </div>
               {addonAllocations.length > 0 && (
                 <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                   <p className="font-semibold text-slate-900">
@@ -1319,24 +1413,25 @@ export default function App() {
                       <p className="mt-4 text-xs font-semibold text-slate-400">
                         {texts.fundsTitle}
                       </p>
-                      <ul className="mt-2 space-y-2 text-sm text-slate-600">
-                        {funds.map((fund) => (
-                          <li key={fund.isin} className="rounded-xl border border-slate-100 p-3">
-                            <p className="font-semibold text-slate-800">{fund.name}</p>
-                            <p className="text-xs text-slate-500">
-                              ISIN: {fund.isin} · TER: {fund.ter}
-                            </p>
-                            <a
-                              href={fund.url}
-                              className="text-xs font-semibold text-cyan-600 underline"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {fund.url}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="mt-2 rounded-xl border border-slate-100 p-3">
+                        <ul className="space-y-2 text-sm text-slate-600">
+                          {funds.map((fund) => (
+                            <li key={fund.isin}>
+                              <a
+                                href={fund.url}
+                                className="font-semibold text-slate-800 hover:underline"
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {fund.name}
+                              </a>
+                              <p className="text-xs text-slate-500">
+                                ISIN: {fund.isin} · TER: {fund.ter}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   );
                 })}
@@ -1349,6 +1444,9 @@ export default function App() {
               </h3>
               <p className="mt-2 text-sm text-slate-600">
                 {texts.implementationSubtitle}
+              </p>
+              <p className="mt-3 text-sm text-slate-600">
+                {texts.implementationNote}
               </p>
               <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
                 <p>{texts.askHelp}</p>
