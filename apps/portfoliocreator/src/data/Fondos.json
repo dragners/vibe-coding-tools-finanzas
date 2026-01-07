@@ -1,0 +1,51 @@
+[
+  {
+    "assetType": "moneyMarket",
+    "name": "Vanguard Euro Money Market Fund",
+    "isin": "IE00B49ZLJ78",
+    "ter": "0.10%",
+    "url": "https://www.vanguardinvestor.co.uk/"
+  },
+  {
+    "assetType": "globalShortBonds",
+    "name": "iShares Global Short-Term Bond Fund",
+    "isin": "IE00B3F81R35",
+    "ter": "0.20%",
+    "url": "https://www.ishares.com/"
+  },
+  {
+    "assetType": "globalCorporateShortBonds",
+    "name": "SPDR Short-Term Corporate Bond Fund",
+    "isin": "IE00BCRY6557",
+    "ter": "0.15%",
+    "url": "https://www.ssga.com/"
+  },
+  {
+    "assetType": "globalEquities",
+    "name": "Vanguard FTSE All-World",
+    "isin": "IE00BK5BQT80",
+    "ter": "0.22%",
+    "url": "https://www.vanguardinvestor.co.uk/"
+  },
+  {
+    "assetType": "mediumTermBondsEUR",
+    "name": "Amundi Euro Government Bond",
+    "isin": "LU0503631637",
+    "ter": "0.14%",
+    "url": "https://www.amundi.com/"
+  },
+  {
+    "assetType": "emergingMarkets",
+    "name": "iShares Core MSCI EM",
+    "isin": "IE00BKM4GZ66",
+    "ter": "0.18%",
+    "url": "https://www.ishares.com/"
+  },
+  {
+    "assetType": "globalSmallCaps",
+    "name": "SPDR MSCI World Small Cap",
+    "isin": "IE00BCBJG560",
+    "ter": "0.45%",
+    "url": "https://www.ssga.com/"
+  }
+]
