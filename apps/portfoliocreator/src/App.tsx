@@ -1607,16 +1607,16 @@ export default function App() {
                         </span>
                       </label>
 
-                      <div className="mt-4">
+                      <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                         <div className="flex items-center justify-between text-[11px] text-slate-500">
                           <span>{texts.addonsAllocationLabel}</span>
                           <span>
                             {texts.addonsRecommendedLabel}: {recommended}%
                           </span>
                         </div>
-                        <div className="mt-2 flex items-center gap-3">
+                        <div className="mt-2 flex items-center justify-between gap-3">
                           <input
-                            type="range"
+                            type="number"
                             min={0}
                             max={max}
                             step={1}
@@ -1632,31 +1632,13 @@ export default function App() {
                               }));
                             }}
                             disabled={!state.enabled}
-                            className="h-2 w-full cursor-pointer accent-cyan-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="w-full bg-transparent text-lg font-semibold text-slate-800 outline-none disabled:cursor-not-allowed disabled:text-slate-400"
                           />
-                          <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm">
-                            <input
-                              type="number"
-                              min={0}
-                              max={max}
-                              step={1}
-                              value={state.percent}
-                              onChange={(e) => {
-                                const value = parseNumber(e.target.value);
-                                setAddons((prev) => ({
-                                  ...prev,
-                                  [addon.key]: {
-                                    ...prev[addon.key],
-                                    percent: clamp(value, 0, max),
-                                  },
-                                }));
-                              }}
-                              disabled={!state.enabled}
-                              className="w-12 bg-transparent text-right text-xs text-slate-700 outline-none disabled:cursor-not-allowed"
-                            />
-                            %
-                          </div>
+                          <span className="text-sm font-semibold text-slate-500">%</span>
                         </div>
+                        <p className="mt-1 text-[11px] text-slate-500">
+                          {texts.addonsRecommendedLabel}: {recommended}% · Max {max}%
+                        </p>
                       </div>
 
                       {state.enabled && (
