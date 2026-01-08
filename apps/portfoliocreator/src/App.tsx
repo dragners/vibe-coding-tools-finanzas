@@ -67,6 +67,7 @@ type AddonProduct = {
   ter?: string;
   url: string;
   type: "fund" | "etc" | "exchange";
+  description?: Record<Lang, string>;
 };
 
 const DISCLAIMER = {
@@ -192,18 +193,12 @@ const TEXTS = {
     addonsRecommendedLabel: "Recomendado",
     addonsSelectedLabel: "Seleccionado",
     addonsConfirm: "Confirmar extras",
-    productTypeLabel: "Tipo",
-    productTypeOptions: {
-      fund: "Fondo",
-      etc: "ETC",
-      exchange: "Exchange",
-    },
     finalTitle: "Tu cartera final",
     implementationTitle: "Cómo implementarla",
     implementationSubtitle:
       "Calculamos cuánto invertir en cada tipo de activo, tanto en la aportación inicial como en las aportaciones mensuales. Te recomendamos configurar **aportaciones automáticas** para invertir de forma pasiva.",
     implementationNote:
-      "Todos los fondos mostrados se pueden contratar en plataformas como **MyInvestor**, **Renta 4**, **TradeRepublic**, **IronIA** o **SelfBank**, donde puedes **buscar los ISIN proporcionados** para invertir directamente en los productos recomendados.",
+      "Los fondos mostrados se pueden contratar en plataformas como **MyInvestor**, **Renta 4**, **TradeRepublic**, **IronIA** o **SelfBank**, donde puedes **buscar los ISIN proporcionados** para invertir directamente en los productos recomendados.",
     monthlyLabel: "Aportación mensual",
     initialLabel: "Aportación inicial",
     fundsTitle: "Fondos recomendados",
@@ -317,12 +312,6 @@ const TEXTS = {
     addonsRecommendedLabel: "Recommended",
     addonsSelectedLabel: "Selected",
     addonsConfirm: "Confirm add-ons",
-    productTypeLabel: "Type",
-    productTypeOptions: {
-      fund: "Fund",
-      etc: "ETC",
-      exchange: "Exchange",
-    },
     finalTitle: "Your final portfolio",
     implementationTitle: "How to implement it",
     implementationSubtitle:
@@ -478,16 +467,20 @@ const ADDON_PRODUCTS: Record<AddonKey, AddonProduct[]> = {
   realEstate: REIT_FUNDS,
   bitcoin: [
     {
+      name: "Binance",
+      url: BINANCE_REFERRAL_URL,
+      type: "exchange",
+      description: {
+        es: "Puedes comprar Bitcoin directamente en un exchange como Binance o mediante un ETF.",
+        en: "You can buy Bitcoin directly through an exchange like Binance or via an ETF.",
+      },
+    },
+    {
       name: "ETC Group Physical Bitcoin (BTCE)",
       isin: "DE000A27Z304",
       ter: "2%",
       url: "https://etc-group.com/products/etc-group-physical-bitcoin/",
       type: "etc",
-    },
-    {
-      name: "Binance",
-      url: BINANCE_REFERRAL_URL,
-      type: "exchange",
     },
   ],
 };
@@ -1119,6 +1112,16 @@ export default function App() {
         }))
         .filter((asset) => asset.value > 0)
     : [];
+  const getFundsTitle = (key: AddonKey | keyof Portfolio["allocation"]) => {
+    if (key === "gold") {
+      return lang === "es" ? "ETF recomendado" : "Recommended ETF";
+    }
+    if (key === "bitcoin") {
+      return lang === "es" ? "Opciones de inversión" : "Investment options";
+    }
+    return texts.fundsTitle;
+  };
+
   const finalAssets = [
     ...adjustedAssetSummary.map((asset) => ({
       key: asset.key,
@@ -1781,7 +1784,7 @@ export default function App() {
                         </li>
                       </ul>
                       <p className="mt-4 text-sm font-semibold text-slate-700">
-                        {texts.fundsTitle}
+                        {getFundsTitle(asset.key)}
                       </p>
                       <div className="mt-2 rounded-xl border border-slate-100 p-3">
                         <ul className="space-y-2 text-sm text-slate-600">
@@ -1795,11 +1798,13 @@ export default function App() {
                               >
                             {product.name}
                           </a>
+                          {product.description?.[lang] && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              {product.description[lang]}
+                            </p>
+                          )}
                           <p className="text-xs text-slate-500">
                             <span className="inline-flex items-center gap-2">
-                              <span>
-                                {texts.productTypeLabel}: {texts.productTypeOptions[product.type]}
-                              </span>
                               {product.isin && (
                                 <>
                                   <span>ISIN: {product.isin}</span>
