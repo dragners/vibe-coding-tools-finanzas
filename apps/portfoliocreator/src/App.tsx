@@ -51,6 +51,16 @@ type Fund = {
   url: string;
 };
 
+type AddonKey = "gold" | "realEstate" | "bitcoin";
+
+type AddonState = Record<
+  AddonKey,
+  {
+    enabled: boolean;
+    percent: number;
+  }
+>;
+
 const DISCLAIMER = {
   es: `**Disclaimer**: _La información compartida aquí se ofrece únicamente con fines informativos y no constituye una recomendación de inversión, ni una invitación, solicitud u obligación de realizar ninguna operación o transacción. El contenido es solo informativo y no debe servir como base para decisiones de inversión.\n\nEsta App está diseñada para carteras informativas destinadas a residentes fiscales en España y disponibles a través de entidades registradas en la CNMV.\n\nEste servicio no sustituye el asesoramiento financiero profesional. Se recomienda consultar con un asesor financiero autorizado antes de realizar cualquier inversión._`,
   en: `**Disclaimer**: _The information shared here is provided for informational purposes only and does not constitute an investment recommendation, nor an invitation, solicitation, or obligation to carry out any operation or transaction. The content is for informational purposes only and should not serve as the basis for any investment decisions.\n\nThis AI is designed for informational portfolios aimed at Spanish tax residents and available through entities registered with the CNMV.\n\nThis service does not replace professional financial advice. It is recommended to consult with a licensed financial advisor before making any investments._`,
@@ -62,6 +72,24 @@ const GOLD_INFO =
 
 const BITCOIN_INFO =
   "<strong>Bitcoin</strong>: It is generally recommended to allocate around <strong>2%</strong> to Bitcoin. You can invest by buying BTC directly through <a href=\"https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00IKTM62Y7\" target=\"_blank\" rel=\"noreferrer\" class=\"text-cyan-600 underline\"><strong>Binance</strong></a>, or through the <strong>ETC Group Physical Bitcoin</strong> with ticker <strong>BTCE</strong>, ISIN <strong>DE000A27Z304</strong>, and a <strong>TER of 2% (High TER)</strong>.";
+
+const ADDON_RECOMMENDED: Record<AddonKey, number> = {
+  gold: 5,
+  realEstate: 5,
+  bitcoin: 2,
+};
+
+const ADDON_LIMITS: Record<AddonKey, number> = {
+  gold: 10,
+  realEstate: 10,
+  bitcoin: 5,
+};
+
+const createDefaultAddons = (): AddonState => ({
+  gold: { enabled: false, percent: ADDON_RECOMMENDED.gold },
+  realEstate: { enabled: false, percent: ADDON_RECOMMENDED.realEstate },
+  bitcoin: { enabled: false, percent: ADDON_RECOMMENDED.bitcoin },
+});
 
 const TEXTS = {
   es: {
@@ -158,6 +186,9 @@ const TEXTS = {
     gold: "Oro",
     realEstate: "Inmobiliario",
     bitcoin: "Bitcoin",
+    addonsAllocationLabel: "Asignación",
+    addonsRecommendedLabel: "Recomendado",
+    addonsSelectedLabel: "Seleccionado",
     addonsConfirm: "Confirmar extras",
     finalTitle: "Tu cartera final",
     implementationTitle: "Cómo implementarla",
@@ -274,6 +305,9 @@ const TEXTS = {
     gold: "Gold",
     realEstate: "Real estate",
     bitcoin: "Bitcoin",
+    addonsAllocationLabel: "Allocation",
+    addonsRecommendedLabel: "Recommended",
+    addonsSelectedLabel: "Selected",
     addonsConfirm: "Confirm add-ons",
     finalTitle: "Your final portfolio",
     implementationTitle: "How to implement it",
@@ -844,11 +878,7 @@ export default function App() {
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
     null,
   );
-  const [addons, setAddons] = useState({
-    gold: false,
-    realEstate: false,
-    bitcoin: false,
-  });
+  const [addons, setAddons] = useState<AddonState>(() => createDefaultAddons());
 
   const texts = TEXTS[lang];
   const optionLabel = (index: number) => `${texts.option} ${index + 1}`;
@@ -922,7 +952,7 @@ export default function App() {
   const confirmPortfolio = () => {
     if (!selectedPortfolio) return;
     if (!showAddons) {
-      setAddons({ gold: false, realEstate: false, bitcoin: false });
+      setAddons(createDefaultAddons());
       setPhase("final");
       return;
     }
@@ -938,7 +968,7 @@ export default function App() {
     setStep(0);
     setRisk(0);
     setSelectedPortfolio(null);
-    setAddons({ gold: false, realEstate: false, bitcoin: false });
+    setAddons(createDefaultAddons());
     setFieldErrors({
       age: "",
       horizon: "",
@@ -998,11 +1028,15 @@ export default function App() {
   ].filter((item) => item.value);
 
   const addonAllocations = [
-    ...(addons.gold ? [{ key: "gold", label: texts.gold, percent: 5 }] : []),
-    ...(addons.realEstate
-      ? [{ key: "realEstate", label: texts.realEstate, percent: 5 }]
+    ...(addons.gold.enabled
+      ? [{ key: "gold", label: texts.gold, percent: addons.gold.percent }]
       : []),
-    ...(addons.bitcoin ? [{ key: "bitcoin", label: texts.bitcoin, percent: 2 }] : []),
+    ...(addons.realEstate.enabled
+      ? [{ key: "realEstate", label: texts.realEstate, percent: addons.realEstate.percent }]
+      : []),
+    ...(addons.bitcoin.enabled
+      ? [{ key: "bitcoin", label: texts.bitcoin, percent: addons.bitcoin.percent }]
+      : []),
   ];
 
   return (
@@ -1468,69 +1502,173 @@ export default function App() {
               {showAddons ? texts.addonsPrompt : texts.addonsPromptLow}
             </p>
             {showAddons && (
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={addons.gold}
-                    onChange={(e) =>
-                      setAddons((prev) => ({ ...prev, gold: e.target.checked }))
-                    }
-                  />
-                  {texts.gold}
-                </label>
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={addons.realEstate}
-                    onChange={(e) =>
-                      setAddons((prev) => ({ ...prev, realEstate: e.target.checked }))
-                    }
-                  />
-                  {texts.realEstate}
-                </label>
-                {showBitcoin && (
-                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={addons.bitcoin}
-                      onChange={(e) =>
-                        setAddons((prev) => ({ ...prev, bitcoin: e.target.checked }))
-                      }
-                    />
-                    {texts.bitcoin}
-                  </label>
-                )}
-              </div>
-            )}
-            {showAddons && (addons.gold || addons.bitcoin || addons.realEstate) && (
-              <div className="mt-6 space-y-4 text-sm text-slate-600">
-                {addons.gold && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                {([
+                  {
+                    key: "gold",
+                    label: texts.gold,
+                    info: (
+                      <div
+                        className="text-xs text-amber-900"
+                        dangerouslySetInnerHTML={{ __html: GOLD_INFO }}
+                      />
+                    ),
+                    tone: "amber",
+                  },
+                  {
+                    key: "realEstate",
+                    label: texts.realEstate,
+                    info: (
+                      <>
+                        <p className="text-xs font-semibold text-emerald-900">
+                          Real Estate
+                        </p>
+                        <p className="text-xs text-emerald-800">
+                          {lang === "es"
+                            ? "Añadiremos REITs (inmobiliario cotizado) para diversificar la cartera."
+                            : "We will add REITs (listed real estate) to diversify the portfolio."}
+                        </p>
+                      </>
+                    ),
+                    tone: "emerald",
+                  },
+                  ...(showBitcoin
+                    ? [
+                        {
+                          key: "bitcoin",
+                          label: texts.bitcoin,
+                          info: (
+                            <div
+                              className="text-xs text-slate-900"
+                              dangerouslySetInnerHTML={{ __html: BITCOIN_INFO }}
+                            />
+                          ),
+                          tone: "slate",
+                        },
+                      ]
+                    : []),
+                ] as Array<{
+                  key: AddonKey;
+                  label: string;
+                  info: React.ReactNode;
+                  tone: "amber" | "emerald" | "slate";
+                }>).map((addon) => {
+                  const state = addons[addon.key];
+                  const recommended = ADDON_RECOMMENDED[addon.key];
+                  const max = ADDON_LIMITS[addon.key];
+                  const badgeText = state.enabled
+                    ? `${texts.addonsSelectedLabel} ${state.percent}%`
+                    : `${texts.addonsRecommendedLabel} ${recommended}%`;
+                  const infoToneStyles =
+                    addon.tone === "amber"
+                      ? "border-amber-200 bg-amber-50"
+                      : addon.tone === "emerald"
+                        ? "border-emerald-200 bg-emerald-50"
+                        : "border-slate-200 bg-slate-50";
+
+                  return (
                     <div
-                      className="text-sm text-amber-900"
-                      dangerouslySetInnerHTML={{ __html: GOLD_INFO }}
-                    />
-                  </div>
-                )}
-                {addons.bitcoin && (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div
-                      className="text-sm text-slate-900"
-                      dangerouslySetInnerHTML={{ __html: BITCOIN_INFO }}
-                    />
-                  </div>
-                )}
-                {addons.realEstate && (
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                    <p className="font-semibold text-emerald-900">Real Estate</p>
-                    <p>
-                      {lang === "es"
-                        ? "Añadiremos un 5% de REITs (inmobiliario cotizado) para diversificar la cartera."
-                        : "We will add a 5% allocation to REITs (listed real estate) to diversify the portfolio."}
-                    </p>
-                  </div>
-                )}
+                      key={addon.key}
+                      className={`rounded-2xl border p-4 shadow-sm transition ${
+                        state.enabled
+                          ? "border-cyan-200 bg-cyan-50/50"
+                          : "border-slate-200 bg-white"
+                      }`}
+                    >
+                      <label className="flex items-start justify-between gap-3">
+                        <span className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-4 w-4 accent-cyan-600"
+                            checked={state.enabled}
+                            onChange={() =>
+                              setAddons((prev) => ({
+                                ...prev,
+                                [addon.key]: {
+                                  enabled: !prev[addon.key].enabled,
+                                  percent: !prev[addon.key].enabled
+                                    ? recommended
+                                    : prev[addon.key].percent,
+                                },
+                              }))
+                            }
+                          />
+                          <span>
+                            <span className="block text-sm font-semibold text-slate-800">
+                              {addon.label}
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              {texts.addonsRecommendedLabel}: {recommended}%
+                            </span>
+                          </span>
+                        </span>
+                        <span className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
+                          {badgeText}
+                        </span>
+                      </label>
+
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500">
+                          <span>{texts.addonsAllocationLabel}</span>
+                          <span>
+                            {texts.addonsRecommendedLabel}: {recommended}%
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-3">
+                          <input
+                            type="range"
+                            min={0}
+                            max={max}
+                            step={1}
+                            value={state.percent}
+                            onChange={(e) => {
+                              const value = parseNumber(e.target.value);
+                              setAddons((prev) => ({
+                                ...prev,
+                                [addon.key]: {
+                                  ...prev[addon.key],
+                                  percent: clamp(value, 0, max),
+                                },
+                              }));
+                            }}
+                            disabled={!state.enabled}
+                            className="h-2 w-full cursor-pointer accent-cyan-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          />
+                          <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm">
+                            <input
+                              type="number"
+                              min={0}
+                              max={max}
+                              step={1}
+                              value={state.percent}
+                              onChange={(e) => {
+                                const value = parseNumber(e.target.value);
+                                setAddons((prev) => ({
+                                  ...prev,
+                                  [addon.key]: {
+                                    ...prev[addon.key],
+                                    percent: clamp(value, 0, max),
+                                  },
+                                }));
+                              }}
+                              disabled={!state.enabled}
+                              className="w-12 bg-transparent text-right text-xs text-slate-700 outline-none disabled:cursor-not-allowed"
+                            />
+                            %
+                          </div>
+                        </div>
+                      </div>
+
+                      {state.enabled && (
+                        <div
+                          className={`mt-4 rounded-xl border p-3 ${infoToneStyles}`}
+                        >
+                          {addon.info}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
             <div className="mt-6 flex flex-wrap gap-3">
