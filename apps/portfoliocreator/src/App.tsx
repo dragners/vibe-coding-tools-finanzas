@@ -306,8 +306,95 @@ const TEXTS = {
   },
 } as const;
 
-const PORTFOLIOS = portfoliosData as Portfolio[];
-const FUNDS = fundsData as Fund[];
+const parseNumber = (value: string | number | null | undefined) => {
+  if (typeof value === "number") return value;
+  if (!value) return 0;
+  const normalized = value.replace(/,/g, ".");
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const normalizeText = (value: string) => value.trim().toLowerCase();
+
+const ASSET_TYPE_MAP: Record<string, keyof Portfolio["allocation"]> = {
+  "money market": "moneyMarket",
+  "money market funds": "moneyMarket",
+  "global short-term bonds": "globalShortBonds",
+  "global corporate short-term bonds": "globalCorporateShortBonds",
+  "global equities": "globalEquities",
+  "medium-term bonds eur": "mediumTermBondsEUR",
+  "emerging markets": "emergingMarkets",
+  "global small caps equities": "globalSmallCaps",
+};
+
+const mapAssetType = (value: string) => {
+  const normalized = normalizeText(value);
+  return ASSET_TYPE_MAP[normalized] ?? null;
+};
+
+const parsePortfolios = (data: unknown): Portfolio[] => {
+  if (!Array.isArray(data)) return [];
+  return data
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const record = row as Record<string, unknown>;
+      if ("Portfolio" in record) {
+        return {
+          name: String(record["Portfolio"] ?? ""),
+          risk: parseNumber(record["Risk"]),
+          horizon: String(record["Investment Horizon"] ?? "") as Portfolio["horizon"],
+          allocation: {
+            moneyMarket: parseNumber(record["Money Market (%)"]),
+            globalShortBonds: parseNumber(record["Global Short-Term Bonds (%)"]),
+            globalCorporateShortBonds: parseNumber(
+              record["Global Corporate Short-Term Bonds (%)"],
+            ),
+            globalEquities: parseNumber(record["Global Equities (%)"]),
+            mediumTermBondsEUR: parseNumber(record["Medium-Term Bonds EUR (%)"]),
+            emergingMarkets: parseNumber(record["Emerging Markets (%)"]),
+            globalSmallCaps: parseNumber(record["Global Small Caps Equities (%)"]),
+          },
+          annualReturn: parseNumber(record["Theoretical Annual Return (%)"]),
+          volatility: parseNumber(record["Estimated Volatility (%)"]),
+        };
+      }
+      if ("name" in record && "risk" in record && "allocation" in record) {
+        return record as Portfolio;
+      }
+      return null;
+    })
+    .filter((portfolio): portfolio is Portfolio =>
+      Boolean(portfolio && portfolio.name && portfolio.horizon),
+    );
+};
+
+const parseFunds = (data: unknown): Fund[] => {
+  if (!Array.isArray(data)) return [];
+  return data
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const record = row as Record<string, unknown>;
+      if ("Asset Type" in record) {
+        const assetType = mapAssetType(String(record["Asset Type"] ?? ""));
+        if (!assetType) return null;
+        return {
+          assetType,
+          name: String(record["Fund Name"] ?? ""),
+          isin: String(record["ISIN"] ?? ""),
+          ter: String(record["TER"] ?? ""),
+          url: String(record["Link"] ?? ""),
+        };
+      }
+      if ("assetType" in record && "name" in record) {
+        return record as Fund;
+      }
+      return null;
+    })
+    .filter((fund): fund is Fund => Boolean(fund && fund.assetType && fund.name));
+};
+
+const PORTFOLIOS = parsePortfolios(portfoliosData);
+const FUNDS = parseFunds(fundsData);
 
 const QUESTIONS: {
   id: QuestionId;
@@ -373,12 +460,6 @@ const EXPLANATION_BY_RISK: Record<number, { es: string; en: string }> = {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
-
-const parseNumber = (value: string) => {
-  const normalized = value.replace(/,/g, ".");
-  const parsed = parseFloat(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
 
 const formatCurrency = (value: number, lang: Lang) =>
   value.toLocaleString(lang === "es" ? "es-ES" : "en-US", {
