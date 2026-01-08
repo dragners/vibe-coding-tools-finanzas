@@ -1,51 +1,128 @@
 [
-  {
-    "assetType": "moneyMarket",
-    "name": "Vanguard Euro Money Market Fund",
-    "isin": "IE00B49ZLJ78",
-    "ter": "0.10%",
-    "url": "https://www.vanguardinvestor.co.uk/"
-  },
-  {
-    "assetType": "globalShortBonds",
-    "name": "iShares Global Short-Term Bond Fund",
-    "isin": "IE00B3F81R35",
-    "ter": "0.20%",
-    "url": "https://www.ishares.com/"
-  },
-  {
-    "assetType": "globalCorporateShortBonds",
-    "name": "SPDR Short-Term Corporate Bond Fund",
-    "isin": "IE00BCRY6557",
-    "ter": "0.15%",
-    "url": "https://www.ssga.com/"
-  },
-  {
-    "assetType": "globalEquities",
-    "name": "Vanguard FTSE All-World",
-    "isin": "IE00BK5BQT80",
-    "ter": "0.22%",
-    "url": "https://www.vanguardinvestor.co.uk/"
-  },
-  {
-    "assetType": "mediumTermBondsEUR",
-    "name": "Amundi Euro Government Bond",
-    "isin": "LU0503631637",
-    "ter": "0.14%",
-    "url": "https://www.amundi.com/"
-  },
-  {
-    "assetType": "emergingMarkets",
-    "name": "iShares Core MSCI EM",
-    "isin": "IE00BKM4GZ66",
-    "ter": "0.18%",
-    "url": "https://www.ishares.com/"
-  },
-  {
-    "assetType": "globalSmallCaps",
-    "name": "SPDR MSCI World Small Cap",
-    "isin": "IE00BCBJG560",
-    "ter": "0.45%",
-    "url": "https://www.ssga.com/"
-  }
+    {
+        "Asset Type":"Global Equities",
+        "Fund Name":"iShares Developed World Index Fund D Acc",
+        "ISIN":"IE00BD0NCM55",
+        "TER":"0,12%",
+        "Link":"http:\/\/blackrock.com\/es\/productos\/287649\/"
+    },
+    {
+        "Asset Type":"Global Equities",
+        "Fund Name":"Fidelity MSCI World Index Fund P-ACC-EUR",
+        "ISIN":"IE00BYX5NX33",
+        "TER":"0,12%",
+        "Link":"http:\/\/www.fondosfidelity.es\/fondos\/ficha\/IE00BYX5NX33"
+    },
+    {
+        "Asset Type":"Global Equities",
+        "Fund Name":"Vanguard Global Stock Index Fund EUR Acc",
+        "ISIN":"IE00B03HD191",
+        "TER":"0,18%",
+        "Link":"https:\/\/www.ie.vanguard\/products\/fund\/equity\/9837\/global-stock-index-fund-eur-acc"
+    },
+    {
+        "Asset Type":"Global Small Caps Equities",
+        "Fund Name":"Vanguard Global Small-Cap Index Fund EUR Acc",
+        "ISIN":"IE00B42W4L06",
+        "TER":"0,29%",
+        "Link":"https:\/\/www.ie.vanguard\/products\/fund\/equity\/9159\/global-small-cap-index-fund-eur-acc"
+    },
+    {
+        "Asset Type":"REIT",
+        "Fund Name":"iShares Developed Real Estate Index Fund Inst Acc",
+        "ISIN":"IE00B83YJG36",
+        "TER":"0,22%",
+        "Link":"https:\/\/www.blackrock.com\/es\/productos\/249682\/"
+    },
+    {
+        "Asset Type":"REIT",
+        "Fund Name":"Amundi Index FTSE EPRA NAREIT Global - AE (C)",
+        "ISIN":"LU1328852659",
+        "TER":"0,34%",
+        "Link":"https:\/\/www.amundi.es\/retail\/product\/view\/LU1328852659"
+    },
+    {
+        "Asset Type":"Emerging Markets",
+        "Fund Name":"iShares Emerging Markets Index Fund D Acc",
+        "ISIN":"IE00BYWYCC39",
+        "TER":"0,20%",
+        "Link":"https:\/\/www.blackrock.com\/es\/productos\/287635\/"
+    },
+    {
+        "Asset Type":"Emerging Markets",
+        "Fund Name":"Vanguard Emerging Markets Stock Index Fund EUR Acc",
+        "ISIN":"IE0031786696",
+        "TER":"0,23%",
+        "Link":"https:\/\/www.ie.vanguard\/products\/fund\/equity\/9229\/emerging-markets-stock-index-fund-eur-acc"
+    },
+    {
+        "Asset Type":"Emerging Markets",
+        "Fund Name":"Fidelity MSCI Emerging Markets Index Fund P-ACC-EUR",
+        "ISIN":"IE00BYX5M476",
+        "TER":"0,20%",
+        "Link":"https:\/\/www.fondosfidelity.es\/fondos\/ficha\/IE00BYX5M476"
+    },
+    {
+        "Asset Type":"Emerging Markets",
+        "Fund Name":"Amundi Funds Index Equity Emerging Markets - IE (C)",
+        "ISIN":"LU0996175948",
+        "TER":"0,20%",
+        "Link":"https:\/\/www.amundi.es\/profesional\/product\/view\/LU0996175948"
+    },
+    {
+        "Asset Type":"Medium-Term Bonds EUR",
+        "Fund Name":"Vanguard Global Bond Index Fund EUR Hedged Acc",
+        "ISIN":"IE00B18GC888",
+        "TER":"0,15%",
+        "Link":"https:\/\/www.ie.vanguard\/products\/fund\/bond\/9197\/global-bond-index-fund-eur-hedged-acc"
+    },
+    {
+        "Asset Type":"Medium-Term Bonds EUR",
+        "Fund Name":"Vanguard Euro Government Bond Index Fund EUR Acc",
+        "ISIN":"IE0007472990",
+        "TER":"0,12%",
+        "Link":"https:\/\/www.ie.vanguard\/products\/fund\/bond\/9971\/euro-government-bond-index-fund-eur-acc"
+    },
+    {
+        "Asset Type":"Medium-Term Bonds EUR",
+        "Fund Name":"iShares Ultra High Quality Euro Government Bond Index Fund",
+        "ISIN":"IE00B4XCK338",
+        "TER":"0,13%",
+        "Link":"https:\/\/www.blackrock.com\/es\/productos\/229107\/"
+    },
+    {
+        "Asset Type":"Medium-Term Bonds EUR",
+        "Fund Name":"Amundi Index J.P. Morgan GBI Global Govies - AHE (C)",
+        "ISIN":"LU0389812933",
+        "TER":"0,35%",
+        "Link":"https:\/\/www.amundi.es\/retail\/product\/view\/LU0389812933"
+    },
+    {
+        "Asset Type":"Money Market Funds",
+        "Fund Name":"Groupama Tr\u00e9sorerie IC",
+        "ISIN":"FR0000989626",
+        "TER":"0,08%",
+        "Link":"https:\/\/www.morningstar.es\/es\/funds\/snapshot\/snapshot.aspx?id=F0GBR04M6M&tab=1"
+    },
+    {
+        "Asset Type":"Money Market Funds",
+        "Fund Name":"AXA Tresor Court Terme C",
+        "ISIN":"FR0000447823",
+        "TER":"0,07%",
+        "Link":"https:\/\/www.morningstar.es\/es\/funds\/snapshot\/snapshot.aspx?id=F0GBR04EZP&tab=1"
+    },
+    {
+        "Asset Type":"Global Short-Term Bonds",
+        "Fund Name":"Vanguard Global Short-Term Bond Index Fund Investor EUR Hedged Acc",
+        "ISIN":"IE00BH65QP47",
+        "TER":"0,15%",
+        "Link":"https:\/\/www.ie.vanguard\/products\/fund\/bond\/9262\/global-short-term-bond-index-fund-investor-eur-hedged-shares"
+    },
+    {
+        "Asset Type":"Global Corporate Short-Term Bonds",
+        "Fund Name":"Vanguard Global Short-Term Corporate Bond Index Fund EUR Hedged Acc ",
+        "ISIN":"IE00BDFB7290",
+        "TER":"0,18%",
+        "Link":"https:\/\/www.ie.vanguard\/products\/fund\/bond\/9544\/global-short-term-corporate-bond-index-fund-eur-hedged-acc"
+    }
 ]
