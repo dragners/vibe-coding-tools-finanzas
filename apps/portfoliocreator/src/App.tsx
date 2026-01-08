@@ -1598,7 +1598,7 @@ export default function App() {
                               {addon.label}
                             </span>
                             <span className="text-xs text-slate-500">
-                              {texts.addonsRecommendedLabel}: {recommended}%
+                              {texts.addonsAllocationLabel}: {state.percent}%
                             </span>
                           </span>
                         </span>
@@ -1607,16 +1607,16 @@ export default function App() {
                         </span>
                       </label>
 
-                      <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                      <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                         <div className="flex items-center justify-between text-[11px] text-slate-500">
                           <span>{texts.addonsAllocationLabel}</span>
                           <span>
-                            {texts.addonsRecommendedLabel}: {recommended}%
+                            {texts.addonsRecommendedLabel}: {recommended}% · Max {max}%
                           </span>
                         </div>
-                        <div className="mt-2 flex items-center justify-between gap-3">
+                        <div className="mt-3 flex items-center gap-3">
                           <input
-                            type="number"
+                            type="range"
                             min={0}
                             max={max}
                             step={1}
@@ -1632,13 +1632,12 @@ export default function App() {
                               }));
                             }}
                             disabled={!state.enabled}
-                            className="w-full bg-transparent text-lg font-semibold text-slate-800 outline-none disabled:cursor-not-allowed disabled:text-slate-400"
+                            className="h-2 w-full cursor-pointer accent-cyan-600 disabled:cursor-not-allowed disabled:opacity-40"
                           />
-                          <span className="text-sm font-semibold text-slate-500">%</span>
+                          <span className="min-w-[2.5rem] text-right text-sm font-semibold text-slate-700">
+                            {state.percent}%
+                          </span>
                         </div>
-                        <p className="mt-1 text-[11px] text-slate-500">
-                          {texts.addonsRecommendedLabel}: {recommended}% · Max {max}%
-                        </p>
                       </div>
 
                       {state.enabled && (
