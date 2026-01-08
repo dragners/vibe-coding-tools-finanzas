@@ -1648,10 +1648,41 @@ export default function App() {
                               <span>ISIN: {fund.isin}</span>
                               <button
                                 type="button"
-                                className="rounded-full border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:border-slate-400"
+                                className={`rounded-full border border-slate-200 p-1 text-slate-600 hover:border-slate-400 ${
+                                  copiedIsin === fund.isin ? "bg-cyan-50 text-cyan-700" : ""
+                                }`}
                                 onClick={() => handleCopyIsin(fund.isin)}
+                                aria-label={copiedIsin === fund.isin ? texts.copied : texts.copyIsin}
+                                title={copiedIsin === fund.isin ? texts.copied : texts.copyIsin}
                               >
-                                {copiedIsin === fund.isin ? texts.copied : texts.copyIsin}
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  className="h-3.5 w-3.5"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    d="M9 8.5A2.5 2.5 0 0 1 11.5 6H18a2.5 2.5 0 0 1 2.5 2.5V18A2.5 2.5 0 0 1 18 20.5h-6.5A2.5 2.5 0 0 1 9 18V8.5Z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.6"
+                                  />
+                                  <path
+                                    d="M6 3.5h6.5A2.5 2.5 0 0 1 15 6v1.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.6"
+                                  />
+                                  <rect
+                                    x="3.5"
+                                    y="3.5"
+                                    width="8"
+                                    height="11"
+                                    rx="2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.6"
+                                  />
+                                </svg>
                               </button>
                             </span>
                             <span className="ml-1">· TER: {fund.ter}</span>
