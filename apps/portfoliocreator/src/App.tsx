@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import "./index.css";
 import portfoliosData from "./data/Carteras.json";
 import fundsData from "./data/Fondos.json";
@@ -66,9 +66,9 @@ const BITCOIN_INFO =
 const TEXTS = {
   es: {
     back: "Volver a Herramientas",
-    title: "Portfoliocreator",
+    title: "Portfolio Creator",
     subtitle:
-      "Crea una cartera personalizada con preguntas guiadas, explicaciones claras y resultados ordenados.",
+      "Crea una cartera indexada personalizada basada en tus preferencias con preguntas guiadas y explicaciones claras.",
     language: "Idioma",
     langES: "ES",
     langEN: "EN",
@@ -120,8 +120,8 @@ const TEXTS = {
     },
     disclaimerTitle: "Aviso importante",
     riskTitle: "Tu perfil de riesgo",
-    riskSummary: (riskValue: number, starValue: string) =>
-      `Tu perfil de riesgo es ${riskValue} de 5: ${starValue}.`,
+    riskSummary: (riskValue: number) =>
+      `Tu perfil de riesgo es ${riskValue} de 5.`,
     riskPrompt:
       "¿Quieres confirmar este perfil, bajarlo o subirlo?",
     riskHint:
@@ -139,7 +139,7 @@ const TEXTS = {
     summaryReturn: "Rentabilidad buscada",
     summaryYearsTo67: "Años hasta los 67",
     totalContributed: "Capital total aportado",
-    portfolioGuideTitle: "Cómo interpretar estas carteras",
+    portfolioGuideTitle: "Carteras personalizadas a tu riesgo",
     portfolioGuideText:
       "Aquí tienes opciones personalizadas con distintas combinaciones de activos. Cada una incluye su riesgo, rentabilidad teórica y valor estimado. Recuerda que el rendimiento pasado no garantiza resultados futuros.",
     portfolioOptions: "Opciones de cartera",
@@ -168,9 +168,9 @@ const TEXTS = {
     finalTitle: "Tu cartera final",
     implementationTitle: "Cómo implementarla",
     implementationSubtitle:
-      "Calculamos cuánto invertir en cada tipo de activo, tanto en la aportación inicial como en las aportaciones mensuales. Te recomendamos configurar aportaciones automáticas para invertir de forma pasiva.",
+      "Calculamos cuánto invertir en cada tipo de activo, tanto en la aportación inicial como en las aportaciones mensuales. Te recomendamos configurar **aportaciones automáticas** para invertir de forma pasiva.",
     implementationNote:
-      "Todos los fondos mostrados se pueden contratar en plataformas como MyInvestor, Renta 4, IronIA o SelfBank, donde puedes buscar los ISIN que te he proporcionado para invertir directamente en los productos recomendados.",
+      "Todos los fondos mostrados se pueden contratar en plataformas como **MyInvestor**, **Renta 4**, **TradeRepublic**, **IronIA** o **SelfBank**, donde puedes **buscar los ISIN proporcionados** para invertir directamente en los productos recomendados.",
     monthlyLabel: "Aportación mensual",
     initialLabel: "Aportación inicial",
     fundsTitle: "Fondos recomendados",
@@ -179,14 +179,14 @@ const TEXTS = {
     farewell:
       "Por último, recuerda que es importante **rebalancear la cartera una vez al año** para mantenerla alineada con tus objetivos y perfil de riesgo. A medida que los mercados fluctúan, los porcentajes de activos de tu cartera pueden desviarse de la distribución original que elegiste. El rebalanceo te ayuda a restaurar esos porcentajes y a gestionar el riesgo.\n\nAdemás, el rebalanceo **no tiene implicaciones fiscales**, ya que la fiscalidad de los fondos en España permite traspasos sin tributar las ganancias hasta el momento del rescate.",
     referralTitle:
-      "Si no tienes cuenta en MyInvestor, puedes crearla usando mi enlace de referido; así nos ayudas a crecer y te llevas 20€:",
+      "Si no tienes cuenta en MyInvestor, puedes crearla usando el enlace de referido; así nos ayudas a crecer y te llevas 25€:",
     referralLinkLabel: "Crear cuenta con MyInvestor",
     referralCode: "El código de referido es: RQU46",
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
   },
   en: {
     back: "Back to Tools",
-    title: "Portfoliocreator",
+    title: "Portfolio Creator",
     subtitle:
       "Create a tailored portfolio with guided questions, clear explanations, and structured results.",
     language: "Language",
@@ -240,8 +240,8 @@ const TEXTS = {
     },
     disclaimerTitle: "Important disclaimer",
     riskTitle: "Your risk profile",
-    riskSummary: (riskValue: number, starValue: string) =>
-      `Your risk profile is ${riskValue} out of 5: ${starValue}.`,
+    riskSummary: (riskValue: number) =>
+      `Your risk profile is ${riskValue} out of 5.`,
     riskPrompt:
       "Do you want to confirm, lower, or raise this risk level?",
     riskHint:
@@ -290,7 +290,7 @@ const TEXTS = {
     implementationSubtitle:
       "We calculate how much to allocate to each asset type for both the initial and monthly contributions. We recommend setting up automatic contributions for a passive approach.",
     implementationNote:
-      "All the funds shown can be contracted using platforms such as MyInvestor, Renta 4, IronIA, or SelfBank, where you can search for the ISINs I have provided to invest directly in the recommended products.",
+      "All the funds shown can be contracted using platforms such as MyInvestor, Renta 4, TradeRepublic, IronIA, or SelfBank, where you can search for the provided ISINs to invest directly in the recommended products.",
     monthlyLabel: "Monthly contribution",
     initialLabel: "Initial contribution",
     fundsTitle: "Recommended funds",
@@ -299,7 +299,7 @@ const TEXTS = {
     farewell:
       "Lastly, remember that it is important **to rebalance the portfolio once a year** to keep it aligned with your goals and risk profile over time. As markets fluctuate, the percentages of assets in your portfolio may deviate from the original distribution you chose. Rebalancing helps you restore those percentages and manage risk.\n\nAdditionally, rebalancing **does not have tax implications**, as the taxation of funds in Spain allows for transfers without taxing the gains until the moment of withdrawal.",
     referralTitle:
-      "If you don't have a MyInvestor account, you can create one using my referral link; this way, you help us grow and earn yourself €20:",
+      "If you don't have a MyInvestor account, you can create one using the referral link; this way, you help us grow and earn yourself €25:",
     referralLinkLabel: "Create a MyInvestor account",
     referralCode: "Referral code is: RQU46",
     footer: "© David Gonzalez, want to know more about me? Visit",
@@ -312,6 +312,13 @@ const parseNumber = (value: string | number | null | undefined) => {
   const normalized = value.replace(/,/g, ".");
   const parsed = parseFloat(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const parseTerValue = (value: string) => {
+  if (!value) return Number.POSITIVE_INFINITY;
+  const normalized = value.replace("%", "").replace(/,/g, ".").trim();
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
 };
 
 const normalizeText = (value: string) => value.trim().toLowerCase();
@@ -590,13 +597,39 @@ const getAssetSummary = (allocation: Portfolio["allocation"]) =>
     }));
 
 const getSelectedFunds = (assetType: keyof Portfolio["allocation"]) =>
-  FUNDS.filter((fund) => fund.assetType === assetType);
+  FUNDS.filter((fund) => fund.assetType === assetType).sort(
+    (a, b) => parseTerValue(a.ter) - parseTerValue(b.ter),
+  );
 
-const starsWithHalf = (risk: number) => {
-  const fullStars = Math.floor(risk);
-  const hasHalf = risk % 1 >= 0.5;
-  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-  return `${"★".repeat(fullStars)}${hasHalf ? "½" : ""}${"☆".repeat(emptyStars)}`;
+const StarRating = ({ rating, className = "" }: { rating: number; className?: string }) => {
+  const id = useId();
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const fillAmount = Math.max(0, Math.min(1, rating - index));
+    const gradientId = `${id}-star-${index}`;
+    return (
+      <svg
+        key={gradientId}
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset={`${fillAmount * 100}%`} stopColor="#F59E0B" />
+            <stop offset={`${fillAmount * 100}%`} stopColor="#E2E8F0" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M12 3.5l2.91 5.9 6.51.95-4.71 4.59 1.11 6.47L12 18.4l-5.82 3.01 1.11-6.47L2.58 10.35l6.51-.95L12 3.5z"
+          fill={`url(#${gradientId})`}
+          stroke="#F59E0B"
+          strokeWidth="1"
+        />
+      </svg>
+    );
+  });
+
+  return <span className={`inline-flex items-center gap-0.5 ${className}`}>{stars}</span>;
 };
 
 const renderMarkdown = (text: string) => {
@@ -697,7 +730,7 @@ const GrowthChart = ({
               x={padding.left - 8}
               y={tick.y + 3}
               textAnchor="end"
-              className="text-[10px] fill-slate-400"
+              className="text-[8px] fill-slate-400"
             >
               {formatAxisCurrency(tick.value, lang)}
             </text>
@@ -717,7 +750,7 @@ const GrowthChart = ({
               x={tick.x}
               y={height - padding.bottom + 16}
               textAnchor="middle"
-              className="text-[10px] fill-slate-400"
+              className="text-[8px] fill-slate-400"
             >
               {tick.yearLabel}
             </text>
@@ -727,7 +760,7 @@ const GrowthChart = ({
           x={padding.left - 24}
           y={padding.top - 4}
           textAnchor="start"
-          className="text-[10px] fill-slate-400"
+          className="text-[8px] fill-slate-400"
         >
           {labels.axisValue}
         </text>
@@ -735,7 +768,7 @@ const GrowthChart = ({
           x={width - padding.right}
           y={height - 8}
           textAnchor="end"
-          className="text-[10px] fill-slate-400"
+          className="text-[8px] fill-slate-400"
         >
           {labels.axisYears}
         </text>
@@ -953,12 +986,6 @@ export default function App() {
   const assetSummary = selectedPortfolio
     ? getAssetSummary(selectedPortfolio.allocation)
     : [];
-  const selectedOptionIndex = selectedPortfolio
-    ? options.findIndex((portfolio) => portfolio.name === selectedPortfolio.name)
-    : -1;
-  const selectedOptionLabel =
-    selectedOptionIndex >= 0 ? optionLabel(selectedOptionIndex) : texts.option;
-
   const showAddons = risk >= 3;
   const showBitcoin = risk >= 4;
 
@@ -1248,8 +1275,9 @@ export default function App() {
           <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
             <h2 className="text-2xl font-semibold text-slate-900">{texts.riskTitle}</h2>
             <p className="mt-4 text-lg font-semibold text-cyan-700">
-              {texts.riskSummary(risk, starsWithHalf(risk))}
+              {texts.riskSummary(risk)}
             </p>
+            <StarRating rating={risk} className="mt-2" />
             <p className="mt-2 text-sm text-slate-500">{riskExplanation}</p>
             <p className="mt-3 text-sm text-slate-600">{texts.riskPrompt}</p>
             <p className="mt-4 text-sm text-slate-600">{texts.riskHint}</p>
@@ -1282,8 +1310,8 @@ export default function App() {
         {phase === "options" && (
           <section className="grid gap-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-              <h2 className="text-2xl font-semibold text-slate-900">{texts.summaryTitle}</h2>
-              <div className="mt-6 grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
+              <h2 className="text-xl font-semibold text-slate-900">{texts.summaryTitle}</h2>
+              <div className="mt-4 grid gap-3 text-xs text-slate-600 sm:grid-cols-2">
                 <div>
                   <p className="text-xs uppercase text-slate-400">{texts.summaryGoal}</p>
                   <p className="font-semibold text-slate-900">{answers.goal}</p>
@@ -1331,9 +1359,9 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm">
+              <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm">
                 <p className="text-slate-500">{texts.totalContributed}</p>
-                <p className="text-lg font-semibold text-slate-900">
+                <p className="text-base font-semibold text-slate-900">
                   {formatCurrency(totalContributed, lang)}
                 </p>
               </div>
@@ -1342,7 +1370,6 @@ export default function App() {
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
               <h2 className="text-xl font-semibold text-slate-900">{texts.portfolioGuideTitle}</h2>
               <p className="mt-3 text-sm text-slate-600">{texts.portfolioGuideText}</p>
-              <h3 className="mt-6 text-lg font-semibold text-slate-900">{texts.portfolioOptions}</h3>
               <div className="mt-4 grid gap-4 lg:grid-cols-3">
                 {options.map((portfolio, index) => {
                   const totalValue = computePortfolioValue(
@@ -1363,48 +1390,48 @@ export default function App() {
                       }`}
                       onClick={() => setSelectedPortfolio(portfolio)}
                     >
-                      <h4 className="mt-1 text-lg font-semibold text-slate-900">
-                        {optionLabel(index)}
-                      </h4>
-                      <p className="mt-3 text-xs text-slate-500">{texts.assets}</p>
-                      <ul className="mt-2 space-y-1 text-sm text-slate-700">
-                        {assets.map((asset) => (
-                          <li key={asset.key}>
-                            {ASSET_LABELS[lang][asset.key]}: {asset.value}%
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="mt-4 text-sm text-slate-600">
-                        <p>
-                          {texts.risk}: {portfolio.risk} ({getRiskLabel(Math.round(portfolio.risk), lang)})
-                        </p>
-                        <p>
-                          {texts.theoreticalReturn}: {formatPercent(portfolio.annualReturn)}
-                        </p>
-                        <p>
-                          {texts.volatility}: {formatPercent(portfolio.volatility)}
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-base font-semibold text-slate-900">
+                          {optionLabel(index)}
+                        </h4>
+                        <div className="text-xs font-semibold text-cyan-700">
+                          {texts.risk}: {portfolio.risk}
+                        </div>
                       </div>
-                      <p className="mt-4 text-sm font-semibold text-slate-900">
-                        {texts.estimatedValue}: {formatCurrency(totalValue, lang)}
-                      </p>
+                      <div className="mt-3 rounded-2xl bg-white/70 p-3 text-xs text-slate-600">
+                        <div className="flex flex-wrap gap-2">
+                          {assets.map((asset) => (
+                            <span
+                              key={asset.key}
+                              className="rounded-full bg-slate-100 px-3 py-1 text-slate-700"
+                            >
+                              {ASSET_LABELS[lang][asset.key]} · {asset.value}%
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-2 rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
+                        <div className="flex items-center justify-between">
+                          <span>{texts.theoreticalReturn}</span>
+                          <span className="font-semibold text-slate-900">
+                            {formatPercent(portfolio.annualReturn)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>{texts.volatility}</span>
+                          <span className="font-semibold text-slate-900">
+                            {formatPercent(portfolio.volatility)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>{texts.estimatedValue}</span>
+                          <span className="font-semibold text-slate-900">
+                            {formatCurrency(totalValue, lang)}
+                          </span>
+                        </div>
+                      </div>
                       <p className="mt-3 text-xs text-slate-500">
-                        {portfolio.allocation.emergingMarkets > 0
-                          ? lang === "es"
-                            ? "Incluye mercados emergentes, con más potencial y volatilidad."
-                            : "Includes emerging markets, which adds potential and volatility."
-                          : lang === "es"
-                          ? "Menor exposición a mercados emergentes, con volatilidad contenida."
-                          : "Lower exposure to emerging markets, keeping volatility contained."}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {portfolio.allocation.globalSmallCaps > 0
-                          ? lang === "es"
-                            ? "Añade small caps globales para mayor crecimiento potencial."
-                            : "Adds global small caps for higher growth potential."
-                          : lang === "es"
-                          ? "Sin small caps, prioriza estabilidad."
-                          : "No small caps, prioritizes stability."}
+                        {getRiskLabel(Math.round(portfolio.risk), lang)}
                       </p>
                     </button>
                   );
@@ -1553,15 +1580,11 @@ export default function App() {
                   {texts.editAnswers}
                 </button>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                <span>{selectedOptionLabel}</span>
-                <span aria-hidden>·</span>
-                <span className="text-lg font-semibold text-slate-800">
-                  {texts.risk}:
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                <span className="text-xl font-semibold text-slate-800">
+                  {texts.risk}
                 </span>
-                <span className="text-lg font-semibold text-amber-500">
-                  {starsWithHalf(selectedPortfolio.risk)}
-                </span>
+                <StarRating rating={selectedPortfolio.risk} />
               </div>
               {addonAllocations.length > 0 && (
                 <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
@@ -1599,18 +1622,28 @@ export default function App() {
                       key={asset.key}
                       className="rounded-2xl border border-slate-200 p-4"
                     >
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-slate-700">
                         {ASSET_LABELS[lang][asset.key]} ({asset.value}%)
                       </p>
-                      <div className="mt-3 text-xs text-slate-500">
-                        <p>
-                          {texts.initialLabel}: {formatCurrency(initialAllocation, lang)}
-                        </p>
-                        <p>
-                          {texts.monthlyLabel}: {formatCurrency(monthlyAllocation, lang)}
-                        </p>
-                      </div>
-                      <p className="mt-4 text-xs font-semibold text-slate-400">
+                      <ul className="mt-3 space-y-1 text-sm text-slate-700 list-disc pl-4">
+                        <li>
+                          <span className="font-semibold text-slate-900">
+                            {texts.initialLabel}:
+                          </span>{" "}
+                          <span className="font-semibold text-slate-900">
+                            {formatCurrency(initialAllocation, lang)}
+                          </span>
+                        </li>
+                        <li>
+                          <span className="font-semibold text-slate-900">
+                            {texts.monthlyLabel}:
+                          </span>{" "}
+                          <span className="font-semibold text-slate-900">
+                            {formatCurrency(monthlyAllocation, lang)}
+                          </span>
+                        </li>
+                      </ul>
+                      <p className="mt-4 text-sm font-semibold text-slate-700">
                         {texts.fundsTitle}
                       </p>
                       <div className="mt-2 rounded-xl border border-slate-100 p-3">
@@ -1642,14 +1675,16 @@ export default function App() {
               <h3 className="text-xl font-semibold text-slate-900">
                 {texts.implementationTitle}
               </h3>
-              <p className="mt-2 text-sm text-slate-600">
-                {texts.implementationSubtitle}
-              </p>
-              <p className="mt-3 text-sm text-slate-600">
-                {texts.implementationNote}
-              </p>
+              <div
+                className="mt-2 text-sm text-slate-600"
+                dangerouslySetInnerHTML={renderMarkdown(texts.implementationNote)}
+              />
+              <div
+                className="mt-3 text-sm text-slate-600"
+                dangerouslySetInnerHTML={renderMarkdown(texts.implementationSubtitle)}
+              />
               <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
-                <p className="text-base font-semibold text-cyan-900">
+                <p className="text-[15px] font-semibold text-cyan-900">
                   {texts.referralTitle}
                 </p>
                 <ul className="mt-3 space-y-1 text-sm">
