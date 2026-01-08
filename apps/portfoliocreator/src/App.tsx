@@ -1310,8 +1310,8 @@ export default function App() {
         {phase === "options" && (
           <section className="grid gap-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-              <h2 className="text-2xl font-semibold text-slate-900">{texts.summaryTitle}</h2>
-              <div className="mt-6 grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
+              <h2 className="text-xl font-semibold text-slate-900">{texts.summaryTitle}</h2>
+              <div className="mt-4 grid gap-3 text-xs text-slate-600 sm:grid-cols-2">
                 <div>
                   <p className="text-xs uppercase text-slate-400">{texts.summaryGoal}</p>
                   <p className="font-semibold text-slate-900">{answers.goal}</p>
@@ -1359,9 +1359,9 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm">
+              <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm">
                 <p className="text-slate-500">{texts.totalContributed}</p>
-                <p className="text-lg font-semibold text-slate-900">
+                <p className="text-base font-semibold text-slate-900">
                   {formatCurrency(totalContributed, lang)}
                 </p>
               </div>
@@ -1370,7 +1370,6 @@ export default function App() {
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
               <h2 className="text-xl font-semibold text-slate-900">{texts.portfolioGuideTitle}</h2>
               <p className="mt-3 text-sm text-slate-600">{texts.portfolioGuideText}</p>
-              <h3 className="mt-6 text-lg font-semibold text-slate-900">{texts.portfolioOptions}</h3>
               <div className="mt-4 grid gap-4 lg:grid-cols-3">
                 {options.map((portfolio, index) => {
                   const totalValue = computePortfolioValue(
@@ -1391,48 +1390,48 @@ export default function App() {
                       }`}
                       onClick={() => setSelectedPortfolio(portfolio)}
                     >
-                      <h4 className="mt-1 text-lg font-semibold text-slate-900">
-                        {optionLabel(index)}
-                      </h4>
-                      <p className="mt-3 text-xs text-slate-500">{texts.assets}</p>
-                      <ul className="mt-2 space-y-1 text-sm text-slate-700">
-                        {assets.map((asset) => (
-                          <li key={asset.key}>
-                            {ASSET_LABELS[lang][asset.key]}: {asset.value}%
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="mt-4 text-sm text-slate-600">
-                        <p>
-                          {texts.risk}: {portfolio.risk} ({getRiskLabel(Math.round(portfolio.risk), lang)})
-                        </p>
-                        <p>
-                          {texts.theoreticalReturn}: {formatPercent(portfolio.annualReturn)}
-                        </p>
-                        <p>
-                          {texts.volatility}: {formatPercent(portfolio.volatility)}
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-base font-semibold text-slate-900">
+                          {optionLabel(index)}
+                        </h4>
+                        <div className="text-xs font-semibold text-cyan-700">
+                          {texts.risk}: {portfolio.risk}
+                        </div>
                       </div>
-                      <p className="mt-4 text-sm font-semibold text-slate-900">
-                        {texts.estimatedValue}: {formatCurrency(totalValue, lang)}
-                      </p>
+                      <div className="mt-3 rounded-2xl bg-white/70 p-3 text-xs text-slate-600">
+                        <div className="flex flex-wrap gap-2">
+                          {assets.map((asset) => (
+                            <span
+                              key={asset.key}
+                              className="rounded-full bg-slate-100 px-3 py-1 text-slate-700"
+                            >
+                              {ASSET_LABELS[lang][asset.key]} · {asset.value}%
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-2 rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
+                        <div className="flex items-center justify-between">
+                          <span>{texts.theoreticalReturn}</span>
+                          <span className="font-semibold text-slate-900">
+                            {formatPercent(portfolio.annualReturn)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>{texts.volatility}</span>
+                          <span className="font-semibold text-slate-900">
+                            {formatPercent(portfolio.volatility)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>{texts.estimatedValue}</span>
+                          <span className="font-semibold text-slate-900">
+                            {formatCurrency(totalValue, lang)}
+                          </span>
+                        </div>
+                      </div>
                       <p className="mt-3 text-xs text-slate-500">
-                        {portfolio.allocation.emergingMarkets > 0
-                          ? lang === "es"
-                            ? "Incluye mercados emergentes, con más potencial y volatilidad."
-                            : "Includes emerging markets, which adds potential and volatility."
-                          : lang === "es"
-                          ? "Menor exposición a mercados emergentes, con volatilidad contenida."
-                          : "Lower exposure to emerging markets, keeping volatility contained."}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {portfolio.allocation.globalSmallCaps > 0
-                          ? lang === "es"
-                            ? "Añade small caps globales para mayor crecimiento potencial."
-                            : "Adds global small caps for higher growth potential."
-                          : lang === "es"
-                          ? "Sin small caps, prioriza estabilidad."
-                          : "No small caps, prioritizes stability."}
+                        {getRiskLabel(Math.round(portfolio.risk), lang)}
                       </p>
                     </button>
                   );
