@@ -176,6 +176,8 @@ const TEXTS = {
       "Si no tienes cuenta en MyInvestor, puedes crearla usando el enlace de referido; así nos ayudas a crecer y te llevas 25€:",
     referralLinkLabel: "Crear cuenta con MyInvestor",
     referralCode: "El código de referido es: RQU46",
+    copyIsin: "Copiar ISIN",
+    copied: "ISIN copiado",
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
   },
   en: {
@@ -290,6 +292,8 @@ const TEXTS = {
       "If you don't have a MyInvestor account, you can create one using the referral link; this way, you help us grow and earn yourself €25:",
     referralLinkLabel: "Create a MyInvestor account",
     referralCode: "Referral code is: RQU46",
+    copyIsin: "Copy ISIN",
+    copied: "ISIN copied",
     footer: "© David Gonzalez, want to know more about me? Visit",
   },
 } as const;
@@ -836,6 +840,7 @@ export default function App() {
     drawdown: "",
   });
   const [risk, setRisk] = useState(0);
+  const [copiedIsin, setCopiedIsin] = useState<string | null>(null);
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
     null,
   );
@@ -865,6 +870,14 @@ export default function App() {
     if (fieldErrors[key]) {
       setFieldErrors((prev) => ({ ...prev, [key]: "" }));
     }
+  };
+
+  const handleCopyIsin = (isin: string) => {
+    if (!navigator?.clipboard) return;
+    void navigator.clipboard.writeText(isin).then(() => {
+      setCopiedIsin(isin);
+      window.setTimeout(() => setCopiedIsin(null), 1500);
+    });
   };
 
   const handleNext = () => {
@@ -1628,13 +1641,23 @@ export default function App() {
                                 target="_blank"
                                 rel="noreferrer"
                               >
-                                {fund.name}
-                              </a>
-                              <p className="text-xs text-slate-500">
-                                ISIN: {fund.isin} · TER: {fund.ter}
-                              </p>
-                            </li>
-                          ))}
+                            {fund.name}
+                          </a>
+                          <p className="text-xs text-slate-500">
+                            <span className="inline-flex items-center gap-2">
+                              <span>ISIN: {fund.isin}</span>
+                              <button
+                                type="button"
+                                className="rounded-full border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:border-slate-400"
+                                onClick={() => handleCopyIsin(fund.isin)}
+                              >
+                                {copiedIsin === fund.isin ? texts.copied : texts.copyIsin}
+                              </button>
+                            </span>
+                            <span className="ml-1">· TER: {fund.ter}</span>
+                          </p>
+                        </li>
+                      ))}
                         </ul>
                       </div>
                     </div>
