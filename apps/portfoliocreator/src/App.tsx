@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
 import "./index.css";
 import portfoliosData from "./data/Carteras.json";
 import fundsData from "./data/Fondos.json";
@@ -8,22 +8,22 @@ type Lang = "es" | "en";
 type RiskPreference = "high" | "moderate" | "low" | "safest";
 
 type QuestionId =
-  | "goal"
   | "age"
   | "horizon"
   | "initial"
   | "monthly"
   | "experience"
-  | "return";
+  | "return"
+  | "drawdown";
 
 type Answers = {
-  goal: string;
   age: string;
   horizon: string;
   initial: string;
   monthly: string;
   experience: string;
   return: RiskPreference | "";
+  drawdown: "buy" | "hold" | "sell" | "";
 };
 
 type Portfolio = {
@@ -79,21 +79,8 @@ const TEXTS = {
     restart: "Reiniciar formulario",
     progress: (current: number, total: number) =>
       `Pregunta ${current} de ${total}`,
-    goal: "¿Cuál es tu objetivo financiero?",
-    goalPlaceholder: "Selecciona tu objetivo",
-    goalTip:
-      "El tipo de inversión y riesgo se adapta dependiendo de tu objetivo financiero y tu plazo de inversión.",
-    goalOptions: [
-      "Jubilación",
-      "Comprar vivienda",
-      "Independencia financiera",
-      "Ahorro",
-      "Estudios",
-      "Otro objetivo",
-    ],
     age: "¿Cuántos años tienes?",
-    ageTip:
-      "Si tu objetivo es la jubilación, calcularemos automáticamente cuántos años faltan hasta los 67.",
+    ageTip: "La edad ayuda a estimar tu capacidad para asumir volatilidad.",
     horizon: "¿Cuál es tu horizonte de inversión?",
     horizonTip:
       "Es el periodo durante el cual planeas mantener tus inversiones. Un horizonte largo suele permitir asumir más volatilidad.",
@@ -118,6 +105,14 @@ const TEXTS = {
       low: "Baja, con menos volatilidad",
       safest: "La más segura, no quiero volatilidad",
     },
+    drawdown: "¿Qué harías si tus inversiones cayeran un 15%?",
+    drawdownTip:
+      "Tu reacción ante caídas es clave para medir la tolerancia al riesgo.",
+    drawdownOptions: {
+      buy: "Compraría más para aprovechar la bajada",
+      hold: "Mantendría la inversión y esperaría",
+      sell: "Vendería para evitar más pérdidas",
+    },
     disclaimerTitle: "Aviso importante",
     riskTitle: "Tu perfil de riesgo",
     riskSummary: (riskValue: number) =>
@@ -130,14 +125,13 @@ const TEXTS = {
     lower: "Bajar riesgo",
     raise: "Subir riesgo",
     summaryTitle: "Resumen de tus datos",
-    summaryGoal: "Objetivo",
     summaryAge: "Edad",
     summaryHorizon: "Horizonte",
     summaryInitial: "Inversión inicial",
     summaryMonthly: "Aportación mensual",
     summaryExperience: "Experiencia previa",
     summaryReturn: "Rentabilidad buscada",
-    summaryYearsTo67: "Años hasta los 67",
+    summaryDrawdown: "Reacción ante caídas",
     totalContributed: "Capital total aportado",
     portfolioGuideTitle: "Carteras personalizadas a tu riesgo",
     portfolioGuideText:
@@ -199,21 +193,8 @@ const TEXTS = {
     restart: "Restart form",
     progress: (current: number, total: number) =>
       `Question ${current} of ${total}`,
-    goal: "What is your financial goal?",
-    goalPlaceholder: "Select your goal",
-    goalTip:
-      "Select your main goal so we can tailor the recommendations.",
-    goalOptions: [
-      "Retirement",
-      "Buying a home",
-      "Financial independence",
-      "Savings",
-      "Education",
-      "Other goal",
-    ],
     age: "How old are you?",
-    ageTip:
-      "If your goal is retirement, we will calculate how many years remain until age 67.",
+    ageTip: "Your age helps estimate your ability to take on volatility.",
     horizon: "What is your investment time horizon?",
     horizonTip:
       "This is the period you plan to hold your investments. A longer horizon often allows more volatility.",
@@ -238,6 +219,14 @@ const TEXTS = {
       low: "Low, with less volatility",
       safest: "Safest, I don't want volatility",
     },
+    drawdown: "What would you do if your investments dropped 15%?",
+    drawdownTip:
+      "How you react to drawdowns is key to understanding risk tolerance.",
+    drawdownOptions: {
+      buy: "Buy more to take advantage of the drop",
+      hold: "Hold and wait it out",
+      sell: "Sell to avoid further losses",
+    },
     disclaimerTitle: "Important disclaimer",
     riskTitle: "Your risk profile",
     riskSummary: (riskValue: number) =>
@@ -250,14 +239,13 @@ const TEXTS = {
     lower: "Lower risk",
     raise: "Raise risk",
     summaryTitle: "Summary of your inputs",
-    summaryGoal: "Goal",
     summaryAge: "Age",
     summaryHorizon: "Horizon",
     summaryInitial: "Initial investment",
     summaryMonthly: "Monthly contribution",
     summaryExperience: "Previous experience",
     summaryReturn: "Target return",
-    summaryYearsTo67: "Years until 67",
+    summaryDrawdown: "Drawdown reaction",
     totalContributed: "Total contributed capital",
     portfolioGuideTitle: "How to interpret these portfolios",
     portfolioGuideText:
@@ -407,13 +395,13 @@ const QUESTIONS: {
   id: QuestionId;
   type: "text" | "number" | "select" | "choice";
 }[] = [
-  { id: "goal", type: "text" },
   { id: "age", type: "number" },
   { id: "horizon", type: "number" },
   { id: "initial", type: "number" },
   { id: "monthly", type: "number" },
   { id: "experience", type: "choice" },
   { id: "return", type: "select" },
+  { id: "drawdown", type: "select" },
 ];
 
 const ASSET_LABELS: Record<Lang, Record<keyof Portfolio["allocation"], string>> =
@@ -500,23 +488,30 @@ const computeRiskScore = (answers: Answers) => {
   const initial = parseNumber(answers.initial);
   const monthly = parseNumber(answers.monthly);
 
-  if (answers.return === "high") score += 3.5;
-  if (answers.return === "moderate") score += 2.5;
-  if (answers.return === "low") score += 1.5;
-  if (answers.return === "safest") score += 0.5;
+  if (answers.return === "high") score += 2.4;
+  if (answers.return === "moderate") score += 1.6;
+  if (answers.return === "low") score += 0.8;
+  if (answers.return === "safest") score += 0.2;
 
-  if (horizon >= 15) score += 1.2;
-  else if (horizon >= 8) score += 0.8;
-  else if (horizon >= 4) score += 0.4;
+  if (answers.drawdown === "buy") score += 2.0;
+  if (answers.drawdown === "hold") score += 1.0;
+  if (answers.drawdown === "sell") score -= 0.6;
+
+  if (horizon >= 15) score += 1.0;
+  else if (horizon >= 10) score += 0.8;
+  else if (horizon >= 5) score += 0.4;
   else score += 0.1;
 
-  if (answers.experience === "yes") score += 0.5;
+  if (answers.experience === "yes") score += 0.6;
 
-  if (age > 0 && age < 30) score += 0.6;
-  else if (age < 45) score += 0.3;
+  if (age > 0 && age < 30) score += 0.8;
+  else if (age < 45) score += 0.4;
+  else if (age < 60) score += 0.1;
   else if (age >= 60) score -= 0.4;
 
-  if (initial + monthly * 12 > 100000) score += 0.3;
+  const annualized = initial + monthly * 12;
+  if (annualized > 250000) score += 0.4;
+  else if (annualized > 100000) score += 0.2;
 
   return clamp(Math.round(score), 0, 5);
 };
@@ -571,21 +566,37 @@ const buildContributionSeries = (
 const getRiskLabel = (risk: number, lang: Lang) =>
   EXPLANATION_BY_RISK[risk]?.[lang] ?? "";
 
-const getPortfolioOptions = (risk: number, horizonYears: number) => {
-  const horizonLabel =
-    horizonYears <= 3 ? "Short-term" : horizonYears <= 7 ? "Medium-term" : "Long-term";
-  const candidates = PORTFOLIOS.filter(
-    (portfolio) => portfolio.horizon === horizonLabel,
+const getPortfolioOptions = (risk: number) => {
+  const sorted = [...PORTFOLIOS].sort((a, b) => a.risk - b.risk);
+  const below = [...sorted].reverse().find((portfolio) => portfolio.risk < risk);
+  const above = sorted.find((portfolio) => portfolio.risk > risk);
+  const same = sorted.reduce((closest, portfolio) => {
+    if (!closest) return portfolio;
+    const currentDiff = Math.abs(portfolio.risk - risk);
+    const closestDiff = Math.abs(closest.risk - risk);
+    if (currentDiff < closestDiff) return portfolio;
+    return closest;
+  }, null as Portfolio | null);
+
+  const selections = [below, same, above].filter(
+    (portfolio): portfolio is Portfolio => Boolean(portfolio),
   );
-  const sorted = [...candidates].sort(
-    (a, b) => Math.abs(a.risk - risk) - Math.abs(b.risk - risk),
+  const uniqueSelections = Array.from(
+    new Map(selections.map((portfolio) => [portfolio.name, portfolio])).values(),
   );
-  const options = sorted.slice(0, 3);
-  if (options.length >= 3) return options;
-  const fallback = [...PORTFOLIOS].sort(
-    (a, b) => Math.abs(a.risk - risk) - Math.abs(b.risk - risk),
+  if (uniqueSelections.length >= 3) return uniqueSelections.slice(0, 3);
+
+  const fallback = sorted.filter(
+    (portfolio) => !uniqueSelections.some((item) => item.name === portfolio.name),
   );
-  return fallback.slice(0, 3);
+  const closestFallback = fallback
+    .map((portfolio) => ({
+      portfolio,
+      diff: Math.abs(portfolio.risk - risk),
+    }))
+    .sort((a, b) => a.diff - b.diff)
+    .map((item) => item.portfolio);
+  return [...uniqueSelections, ...closestFallback].slice(0, 3);
 };
 
 const getAssetSummary = (allocation: Portfolio["allocation"]) =>
@@ -637,11 +648,6 @@ const renderMarkdown = (text: string) => {
   const withBold = withLineBreaks.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   const withItalic = withBold.replace(/_(.+?)_/g, "<em>$1</em>");
   return { __html: withItalic };
-};
-
-const isRetirementGoal = (goal: string) => {
-  const normalized = goal.toLowerCase();
-  return normalized.includes("jubil") || normalized.includes("retire");
 };
 
 const GrowthChart = ({
@@ -811,24 +817,23 @@ export default function App() {
   const [phase, setPhase] = useState<"form" | "risk" | "options" | "addons" | "final">(
     "form",
   );
-  const [goalError, setGoalError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<QuestionId, string>>({
-    goal: "",
     age: "",
     horizon: "",
     initial: "",
     monthly: "",
     experience: "",
     return: "",
+    drawdown: "",
   });
   const [answers, setAnswers] = useState<Answers>({
-    goal: "",
     age: "",
     horizon: "",
     initial: "",
     monthly: "",
     experience: "",
     return: "",
+    drawdown: "",
   });
   const [risk, setRisk] = useState(0);
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
@@ -844,66 +849,41 @@ export default function App() {
   const optionLabel = (index: number) => `${texts.option} ${index + 1}`;
   const totalQuestions = QUESTIONS.length;
 
-  const computedYearsTo67 = useMemo(() => {
-    const age = parseNumber(answers.age);
-    if (!age || age >= 67) return 0;
-    return 67 - age;
-  }, [answers.age]);
-
   const horizonYears = parseNumber(answers.horizon);
   const initial = parseNumber(answers.initial);
   const monthly = parseNumber(answers.monthly);
   const totalContributed = initial + monthly * horizonYears * 12;
   const options = useMemo(
-    () => getPortfolioOptions(risk, horizonYears),
-    [risk, horizonYears],
+    () => getPortfolioOptions(risk),
+    [risk],
   );
 
   const riskExplanation = getRiskLabel(Math.round(risk), lang);
 
-  useEffect(() => {
-    if (isRetirementGoal(answers.goal) && computedYearsTo67 > 0) {
-      setAnswers((prev) => ({
-        ...prev,
-        horizon: String(computedYearsTo67),
-      }));
-      setFieldErrors((prev) => ({ ...prev, horizon: "" }));
-    }
-  }, [answers.goal, computedYearsTo67]);
-
   const handleAnswer = (key: keyof Answers, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
-    if (key === "goal") setGoalError(false);
     if (fieldErrors[key]) {
       setFieldErrors((prev) => ({ ...prev, [key]: "" }));
     }
   };
 
   const handleNext = () => {
-    if (currentQuestion.id === "goal" && !answers.goal) {
-      setGoalError(true);
+    const value = answers[currentQuestion.id];
+    const isNumber =
+      currentQuestion.id === "age" ||
+      currentQuestion.id === "horizon" ||
+      currentQuestion.id === "initial" ||
+      currentQuestion.id === "monthly";
+    const isValid = isNumber ? parseNumber(value) > 0 : value !== "";
+    if (!isValid) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        [currentQuestion.id]:
+          lang === "es"
+            ? "Completa este campo para continuar."
+            : "Please complete this field to continue.",
+      }));
       return;
-    }
-    if (currentQuestion.id !== "goal") {
-      const value = answers[currentQuestion.id];
-      const isNumber =
-        currentQuestion.id === "age" ||
-        currentQuestion.id === "horizon" ||
-        currentQuestion.id === "initial" ||
-        currentQuestion.id === "monthly";
-      const isValid = isNumber
-        ? parseNumber(value) > 0
-        : value !== "";
-      if (!isValid) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          [currentQuestion.id]:
-            lang === "es"
-              ? "Completa este campo para continuar."
-              : "Please complete this field to continue.",
-        }));
-        return;
-      }
     }
     if (step < totalQuestions - 1) {
       setStep((prev) => prev + 1);
@@ -946,15 +926,14 @@ export default function App() {
     setRisk(0);
     setSelectedPortfolio(null);
     setAddons({ gold: false, realEstate: false, bitcoin: false });
-    setGoalError(false);
     setFieldErrors({
-      goal: "",
       age: "",
       horizon: "",
       initial: "",
       monthly: "",
       experience: "",
       return: "",
+      drawdown: "",
     });
   };
 
@@ -990,7 +969,6 @@ export default function App() {
   const showBitcoin = risk >= 4;
 
   const summaryItems = [
-    { label: texts.summaryGoal, value: answers.goal },
     { label: texts.summaryAge, value: answers.age },
     {
       label: texts.summaryHorizon,
@@ -1071,35 +1049,6 @@ export default function App() {
               </div>
 
               <div className="mt-6 grid gap-6">
-              {currentQuestion.id === "goal" && (
-                <div>
-                  <h2 className="text-2xl font-semibold text-slate-900">
-                    {texts.goal}
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-500">{texts.goalTip}</p>
-                  <select
-                    className="mt-6 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
-                    value={answers.goal}
-                    onChange={(e) => handleAnswer("goal", e.target.value)}
-                  >
-                    <option value="" disabled>
-                      {texts.goalPlaceholder}
-                    </option>
-                    {texts.goalOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  {goalError && (
-                    <p className="mt-2 text-sm text-rose-600">
-                      {lang === "es"
-                        ? "Selecciona una opción para continuar."
-                        : "Please select an option to continue."}
-                    </p>
-                  )}
-                </div>
-              )}
               {currentQuestion.id === "age" && (
                 <div>
                   <h2 className="text-2xl font-semibold text-slate-900">
@@ -1227,6 +1176,33 @@ export default function App() {
                   )}
                 </div>
               )}
+              {currentQuestion.id === "drawdown" && (
+                <div>
+                  <h2 className="text-2xl font-semibold text-slate-900">
+                    {texts.drawdown}
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-500">{texts.drawdownTip}</p>
+                  <div className="mt-6 grid gap-3">
+                    {Object.entries(texts.drawdownOptions).map(([key, label]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                            answers.drawdown === key
+                              ? "border-cyan-500 bg-cyan-50 text-cyan-700"
+                              : "border-slate-200 text-slate-600 hover:border-slate-400"
+                          }`}
+                          onClick={() => handleAnswer("drawdown", key as Answers["drawdown"])}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                  </div>
+                  {fieldErrors.drawdown && (
+                    <p className="mt-2 text-sm text-rose-600">{fieldErrors.drawdown}</p>
+                  )}
+                </div>
+              )}
             </div>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
@@ -1313,10 +1289,6 @@ export default function App() {
               <h2 className="text-xl font-semibold text-slate-900">{texts.summaryTitle}</h2>
               <div className="mt-4 grid gap-3 text-xs text-slate-600 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">{texts.summaryGoal}</p>
-                  <p className="font-semibold text-slate-900">{answers.goal}</p>
-                </div>
-                <div>
                   <p className="text-xs uppercase text-slate-400">{texts.summaryAge}</p>
                   <p className="font-semibold text-slate-900">{answers.age}</p>
                 </div>
@@ -1350,14 +1322,14 @@ export default function App() {
                     {answers.return ? texts.returnOptions[answers.return] : ""}
                   </p>
                 </div>
-                {isRetirementGoal(answers.goal) && (
-                  <div>
-                    <p className="text-xs uppercase text-slate-400">{texts.summaryYearsTo67}</p>
-                    <p className="font-semibold text-slate-900">
-                      {computedYearsTo67}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-xs uppercase text-slate-400">
+                    {texts.summaryDrawdown}
+                  </p>
+                  <p className="font-semibold text-slate-900">
+                    {answers.drawdown ? texts.drawdownOptions[answers.drawdown] : ""}
+                  </p>
+                </div>
               </div>
               <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm">
                 <p className="text-slate-500">{texts.totalContributed}</p>
