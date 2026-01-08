@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import "./index.css";
 import portfoliosData from "./data/Carteras.json";
 import fundsData from "./data/Fondos.json";
@@ -120,8 +120,8 @@ const TEXTS = {
     },
     disclaimerTitle: "Aviso importante",
     riskTitle: "Tu perfil de riesgo",
-    riskSummary: (riskValue: number, starValue: string) =>
-      `Tu perfil de riesgo es ${riskValue} de 5: ${starValue}.`,
+    riskSummary: (riskValue: number) =>
+      `Tu perfil de riesgo es ${riskValue} de 5.`,
     riskPrompt:
       "¿Quieres confirmar este perfil, bajarlo o subirlo?",
     riskHint:
@@ -240,8 +240,8 @@ const TEXTS = {
     },
     disclaimerTitle: "Important disclaimer",
     riskTitle: "Your risk profile",
-    riskSummary: (riskValue: number, starValue: string) =>
-      `Your risk profile is ${riskValue} out of 5: ${starValue}.`,
+    riskSummary: (riskValue: number) =>
+      `Your risk profile is ${riskValue} out of 5.`,
     riskPrompt:
       "Do you want to confirm, lower, or raise this risk level?",
     riskHint:
@@ -601,11 +601,35 @@ const getSelectedFunds = (assetType: keyof Portfolio["allocation"]) =>
     (a, b) => parseTerValue(a.ter) - parseTerValue(b.ter),
   );
 
-const starsWithHalf = (risk: number) => {
-  const fullStars = Math.floor(risk);
-  const hasHalf = risk % 1 >= 0.5;
-  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-  return `${"★".repeat(fullStars)}${hasHalf ? "⯪" : ""}${"☆".repeat(emptyStars)}`;
+const StarRating = ({ rating, className = "" }: { rating: number; className?: string }) => {
+  const id = useId();
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const fillAmount = Math.max(0, Math.min(1, rating - index));
+    const gradientId = `${id}-star-${index}`;
+    return (
+      <svg
+        key={gradientId}
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset={`${fillAmount * 100}%`} stopColor="#F59E0B" />
+            <stop offset={`${fillAmount * 100}%`} stopColor="#E2E8F0" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M12 3.5l2.91 5.9 6.51.95-4.71 4.59 1.11 6.47L12 18.4l-5.82 3.01 1.11-6.47L2.58 10.35l6.51-.95L12 3.5z"
+          fill={`url(#${gradientId})`}
+          stroke="#F59E0B"
+          strokeWidth="1"
+        />
+      </svg>
+    );
+  });
+
+  return <span className={`inline-flex items-center gap-0.5 ${className}`}>{stars}</span>;
 };
 
 const renderMarkdown = (text: string) => {
@@ -1251,8 +1275,9 @@ export default function App() {
           <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
             <h2 className="text-2xl font-semibold text-slate-900">{texts.riskTitle}</h2>
             <p className="mt-4 text-lg font-semibold text-cyan-700">
-              {texts.riskSummary(risk, starsWithHalf(risk))}
+              {texts.riskSummary(risk)}
             </p>
+            <StarRating rating={risk} className="mt-2" />
             <p className="mt-2 text-sm text-slate-500">{riskExplanation}</p>
             <p className="mt-3 text-sm text-slate-600">{texts.riskPrompt}</p>
             <p className="mt-4 text-sm text-slate-600">{texts.riskHint}</p>
@@ -1560,9 +1585,7 @@ export default function App() {
                 <span className="text-xl font-semibold text-slate-800">
                   {texts.risk}
                 </span>
-                <span className="text-xl font-semibold text-amber-500">
-                  {starsWithHalf(selectedPortfolio.risk)}
-                </span>
+                <StarRating rating={selectedPortfolio.risk} />
               </div>
               {addonAllocations.length > 0 && (
                 <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
