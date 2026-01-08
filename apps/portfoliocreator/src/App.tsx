@@ -471,8 +471,8 @@ const ADDON_PRODUCTS: Record<AddonKey, AddonProduct[]> = {
       url: BINANCE_REFERRAL_URL,
       type: "exchange",
       description: {
-        es: "Puedes comprar Bitcoin directamente en un exchange como Binance o mediante un ETF.",
-        en: "You can buy Bitcoin directly through an exchange like Binance or via an ETF.",
+        es: `Puedes comprar Bitcoin directamente en un exchange como <a href="${BINANCE_REFERRAL_URL}" target="_blank" rel="noreferrer" class="text-blue-600 hover:text-blue-700 underline">Binance</a> o mediante un ETF.`,
+        en: `You can buy Bitcoin directly through an exchange like <a href="${BINANCE_REFERRAL_URL}" target="_blank" rel="noreferrer" class="text-blue-600 hover:text-blue-700 underline">Binance</a> or via an ETF.`,
       },
     },
     {
@@ -1762,7 +1762,7 @@ export default function App() {
                       key={asset.key}
                       className="rounded-2xl border border-slate-200 p-4"
                     >
-                      <p className="text-sm font-semibold text-slate-700">
+                      <p className="text-base font-semibold text-slate-700">
                         {asset.label} ({formatPercent(asset.percent)})
                       </p>
                       <ul className="mt-3 space-y-1 text-sm text-slate-700 list-disc pl-4">
@@ -1783,7 +1783,7 @@ export default function App() {
                           </span>
                         </li>
                       </ul>
-                      <p className="mt-4 text-sm font-semibold text-slate-700">
+                      <p className="mt-2 text-sm font-semibold text-slate-700">
                         {getFundsTitle(asset.key)}
                       </p>
                       <div className="mt-2 rounded-xl border border-slate-100 p-3">
@@ -1792,16 +1792,17 @@ export default function App() {
                             <li key={`${asset.key}-${product.name}`}>
                               <a
                                 href={product.url}
-                                className="font-semibold text-slate-800 hover:underline"
+                                className="font-semibold text-blue-600 hover:text-blue-700 underline"
                                 target="_blank"
                                 rel="noreferrer"
                               >
                             {product.name}
                           </a>
                           {product.description?.[lang] && (
-                            <p className="mt-1 text-xs text-slate-500">
-                              {product.description[lang]}
-                            </p>
+                            <p
+                              className="mt-1 text-xs text-slate-500"
+                              dangerouslySetInnerHTML={{ __html: product.description[lang] }}
+                            />
                           )}
                           <p className="text-xs text-slate-500">
                             <span className="inline-flex items-center gap-2">
