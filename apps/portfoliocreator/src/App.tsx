@@ -66,7 +66,7 @@ const BITCOIN_INFO =
 const TEXTS = {
   es: {
     back: "Volver a Herramientas",
-    title: "Portfoliocreator",
+    title: "Portfolio Creator",
     subtitle:
       "Crea una cartera personalizada con preguntas guiadas, explicaciones claras y resultados ordenados.",
     language: "Idioma",
@@ -139,7 +139,7 @@ const TEXTS = {
     summaryReturn: "Rentabilidad buscada",
     summaryYearsTo67: "Años hasta los 67",
     totalContributed: "Capital total aportado",
-    portfolioGuideTitle: "Cómo interpretar estas carteras",
+    portfolioGuideTitle: "Carteras personalizadas a tu riesgo",
     portfolioGuideText:
       "Aquí tienes opciones personalizadas con distintas combinaciones de activos. Cada una incluye su riesgo, rentabilidad teórica y valor estimado. Recuerda que el rendimiento pasado no garantiza resultados futuros.",
     portfolioOptions: "Opciones de cartera",
@@ -170,7 +170,7 @@ const TEXTS = {
     implementationSubtitle:
       "Calculamos cuánto invertir en cada tipo de activo, tanto en la aportación inicial como en las aportaciones mensuales. Te recomendamos configurar aportaciones automáticas para invertir de forma pasiva.",
     implementationNote:
-      "Todos los fondos mostrados se pueden contratar en plataformas como MyInvestor, Renta 4, IronIA o SelfBank, donde puedes buscar los ISIN que te he proporcionado para invertir directamente en los productos recomendados.",
+      "Todos los fondos mostrados se pueden contratar en plataformas como MyInvestor, Renta 4, TradeRepublic, IronIA o SelfBank, donde puedes buscar los ISIN proporcionados para invertir directamente en los productos recomendados.",
     monthlyLabel: "Aportación mensual",
     initialLabel: "Aportación inicial",
     fundsTitle: "Fondos recomendados",
@@ -179,14 +179,14 @@ const TEXTS = {
     farewell:
       "Por último, recuerda que es importante **rebalancear la cartera una vez al año** para mantenerla alineada con tus objetivos y perfil de riesgo. A medida que los mercados fluctúan, los porcentajes de activos de tu cartera pueden desviarse de la distribución original que elegiste. El rebalanceo te ayuda a restaurar esos porcentajes y a gestionar el riesgo.\n\nAdemás, el rebalanceo **no tiene implicaciones fiscales**, ya que la fiscalidad de los fondos en España permite traspasos sin tributar las ganancias hasta el momento del rescate.",
     referralTitle:
-      "Si no tienes cuenta en MyInvestor, puedes crearla usando mi enlace de referido; así nos ayudas a crecer y te llevas 20€:",
+      "Si no tienes cuenta en MyInvestor, puedes crearla usando el enlace de referido; así nos ayudas a crecer y te llevas 25€:",
     referralLinkLabel: "Crear cuenta con MyInvestor",
     referralCode: "El código de referido es: RQU46",
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
   },
   en: {
     back: "Back to Tools",
-    title: "Portfoliocreator",
+    title: "Portfolio Creator",
     subtitle:
       "Create a tailored portfolio with guided questions, clear explanations, and structured results.",
     language: "Language",
@@ -259,7 +259,7 @@ const TEXTS = {
     summaryReturn: "Target return",
     summaryYearsTo67: "Years until 67",
     totalContributed: "Total contributed capital",
-    portfolioGuideTitle: "How to interpret these portfolios",
+    portfolioGuideTitle: "Portfolios tailored to your risk",
     portfolioGuideText:
       "Here are personalized options with different asset mixes. Each includes risk, theoretical annual return and estimated value. Remember that past performance does not guarantee future results.",
     portfolioOptions: "Portfolio options",
@@ -290,7 +290,7 @@ const TEXTS = {
     implementationSubtitle:
       "We calculate how much to allocate to each asset type for both the initial and monthly contributions. We recommend setting up automatic contributions for a passive approach.",
     implementationNote:
-      "All the funds shown can be contracted using platforms such as MyInvestor, Renta 4, IronIA, or SelfBank, where you can search for the ISINs I have provided to invest directly in the recommended products.",
+      "All the funds shown can be contracted using platforms such as MyInvestor, Renta 4, TradeRepublic, IronIA, or SelfBank, where you can search for the provided ISINs to invest directly in the recommended products.",
     monthlyLabel: "Monthly contribution",
     initialLabel: "Initial contribution",
     fundsTitle: "Recommended funds",
@@ -299,7 +299,7 @@ const TEXTS = {
     farewell:
       "Lastly, remember that it is important **to rebalance the portfolio once a year** to keep it aligned with your goals and risk profile over time. As markets fluctuate, the percentages of assets in your portfolio may deviate from the original distribution you chose. Rebalancing helps you restore those percentages and manage risk.\n\nAdditionally, rebalancing **does not have tax implications**, as the taxation of funds in Spain allows for transfers without taxing the gains until the moment of withdrawal.",
     referralTitle:
-      "If you don't have a MyInvestor account, you can create one using my referral link; this way, you help us grow and earn yourself €20:",
+      "If you don't have a MyInvestor account, you can create one using the referral link; this way, you help us grow and earn yourself €25:",
     referralLinkLabel: "Create a MyInvestor account",
     referralCode: "Referral code is: RQU46",
     footer: "© David Gonzalez, want to know more about me? Visit",
@@ -616,7 +616,7 @@ const GrowthChart = ({
               x={padding.left - 8}
               y={tick.y + 3}
               textAnchor="end"
-              className="text-[10px] fill-slate-400"
+              className="text-[9px] fill-slate-400"
             >
               {formatAxisCurrency(tick.value, lang)}
             </text>
@@ -636,7 +636,7 @@ const GrowthChart = ({
               x={tick.x}
               y={height - padding.bottom + 16}
               textAnchor="middle"
-              className="text-[10px] fill-slate-400"
+              className="text-[9px] fill-slate-400"
             >
               {tick.yearLabel}
             </text>
@@ -646,7 +646,7 @@ const GrowthChart = ({
           x={padding.left - 24}
           y={padding.top - 4}
           textAnchor="start"
-          className="text-[10px] fill-slate-400"
+          className="text-[9px] fill-slate-400"
         >
           {labels.axisValue}
         </text>
@@ -654,7 +654,7 @@ const GrowthChart = ({
           x={width - padding.right}
           y={height - 8}
           textAnchor="end"
-          className="text-[10px] fill-slate-400"
+          className="text-[9px] fill-slate-400"
         >
           {labels.axisYears}
         </text>
@@ -872,12 +872,6 @@ export default function App() {
   const assetSummary = selectedPortfolio
     ? getAssetSummary(selectedPortfolio.allocation)
     : [];
-  const selectedOptionIndex = selectedPortfolio
-    ? options.findIndex((portfolio) => portfolio.name === selectedPortfolio.name)
-    : -1;
-  const selectedOptionLabel =
-    selectedOptionIndex >= 0 ? optionLabel(selectedOptionIndex) : texts.option;
-
   const showAddons = risk >= 3;
   const showBitcoin = risk >= 4;
 
@@ -1472,13 +1466,11 @@ export default function App() {
                   {texts.editAnswers}
                 </button>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                <span>{selectedOptionLabel}</span>
-                <span aria-hidden>·</span>
-                <span className="text-lg font-semibold text-slate-800">
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-slate-600">
+                <span className="text-xl font-semibold text-slate-800">
                   {texts.risk}:
                 </span>
-                <span className="text-lg font-semibold text-amber-500">
+                <span className="text-2xl font-semibold text-amber-500">
                   {starsWithHalf(selectedPortfolio.risk)}
                 </span>
               </div>
@@ -1561,11 +1553,11 @@ export default function App() {
               <h3 className="text-xl font-semibold text-slate-900">
                 {texts.implementationTitle}
               </h3>
-              <p className="mt-2 text-sm text-slate-600">
-                {texts.implementationSubtitle}
-              </p>
               <p className="mt-3 text-sm text-slate-600">
                 {texts.implementationNote}
+              </p>
+              <p className="mt-2 text-sm text-slate-600">
+                {texts.implementationSubtitle}
               </p>
               <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
                 <p className="text-base font-semibold text-cyan-900">
