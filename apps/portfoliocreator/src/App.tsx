@@ -476,7 +476,7 @@ const ADDON_PRODUCTS: Record<AddonKey, AddonProduct[]> = {
       },
     },
     {
-      name: "ETC Group Physical Bitcoin (BTCE)",
+      name: "Bitwise Physical Bitcoin (BTCE)",
       isin: "DE000A27Z304",
       ter: "2%",
       url: "https://etc-group.com/products/etc-group-physical-bitcoin/",
@@ -1113,13 +1113,7 @@ export default function App() {
         .filter((asset) => asset.value > 0)
     : [];
   const getFundsTitle = (key: AddonKey | keyof Portfolio["allocation"]) => {
-    if (key === "gold") {
-      return lang === "es" ? "ETF recomendado" : "Recommended ETF";
-    }
-    if (key === "bitcoin") {
-      return lang === "es" ? "Opciones de inversión" : "Investment options";
-    }
-    return texts.fundsTitle;
+    return lang === "es" ? "Opciones de inversión" : "Investment options";
   };
 
   const finalAssets = [
@@ -1783,10 +1777,10 @@ export default function App() {
                           </span>
                         </li>
                       </ul>
-                      <p className="mt-2 text-sm font-semibold text-slate-700">
+                      <p className="mt-1 text-sm font-semibold text-slate-700">
                         {getFundsTitle(asset.key)}
                       </p>
-                      <div className="mt-2 rounded-xl border border-slate-100 p-3">
+                      <div className="mt-1 rounded-xl border border-slate-100 p-3">
                         <ul className="space-y-2 text-sm text-slate-600">
                           {asset.products.map((product) => (
                             <li key={`${asset.key}-${product.name}`}>
