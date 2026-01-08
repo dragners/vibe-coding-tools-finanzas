@@ -61,17 +61,19 @@ type AddonState = Record<
   }
 >;
 
+type AddonProduct = {
+  name: string;
+  isin?: string;
+  ter?: string;
+  url: string;
+  type: "fund" | "etc" | "exchange";
+};
+
 const DISCLAIMER = {
   es: `**Disclaimer**: _La información compartida aquí se ofrece únicamente con fines informativos y no constituye una recomendación de inversión, ni una invitación, solicitud u obligación de realizar ninguna operación o transacción. El contenido es solo informativo y no debe servir como base para decisiones de inversión.\n\nEsta App está diseñada para carteras informativas destinadas a residentes fiscales en España y disponibles a través de entidades registradas en la CNMV.\n\nEste servicio no sustituye el asesoramiento financiero profesional. Se recomienda consultar con un asesor financiero autorizado antes de realizar cualquier inversión._`,
   en: `**Disclaimer**: _The information shared here is provided for informational purposes only and does not constitute an investment recommendation, nor an invitation, solicitation, or obligation to carry out any operation or transaction. The content is for informational purposes only and should not serve as the basis for any investment decisions.\n\nThis AI is designed for informational portfolios aimed at Spanish tax residents and available through entities registered with the CNMV.\n\nThis service does not replace professional financial advice. It is recommended to consult with a licensed financial advisor before making any investments._`,
   ca: `**Disclaimer**: _La informació compartida aquí s'ofereix únicament amb finalitats informatives i no constitueix una recomanació d'inversió, ni una invitació, sol·licitud o obligació de realitzar cap operació o transacció. El contingut és només informatiu i no ha de servir com a base per a decisions d'inversió.\n\nAquesta IA està dissenyada per a carteres informatives adreçades a residents fiscals a Espanya i disponibles a través d'entitats registrades a la CNMV.\n\nAquest servei no substitueix l'assessorament financer professional. Es recomana consultar amb un assessor financer autoritzat abans de fer qualsevol inversió._`,
 };
-
-const GOLD_INFO =
-  "<strong>Gold</strong>: It is recommended to allocate around <strong>5%</strong> of the portfolio to gold. One way to invest in gold is through the ETF <strong>Xetra Gold</strong>, with ticker <strong>4GLD</strong>, ISIN <strong>DE000A0S9GB0</strong>, and a <strong>TER of 0%</strong>.";
-
-const BITCOIN_INFO =
-  "<strong>Bitcoin</strong>: It is generally recommended to allocate around <strong>2%</strong> to Bitcoin. You can invest by buying BTC directly through <a href=\"https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00IKTM62Y7\" target=\"_blank\" rel=\"noreferrer\" class=\"text-cyan-600 underline\"><strong>Binance</strong></a>, or through the <strong>ETC Group Physical Bitcoin</strong> with ticker <strong>BTCE</strong>, ISIN <strong>DE000A27Z304</strong>, and a <strong>TER of 2% (High TER)</strong>.";
 
 const ADDON_RECOMMENDED: Record<AddonKey, number> = {
   gold: 5,
@@ -190,6 +192,12 @@ const TEXTS = {
     addonsRecommendedLabel: "Recomendado",
     addonsSelectedLabel: "Seleccionado",
     addonsConfirm: "Confirmar extras",
+    productTypeLabel: "Tipo",
+    productTypeOptions: {
+      fund: "Fondo",
+      etc: "ETC",
+      exchange: "Exchange",
+    },
     finalTitle: "Tu cartera final",
     implementationTitle: "Cómo implementarla",
     implementationSubtitle:
@@ -309,6 +317,12 @@ const TEXTS = {
     addonsRecommendedLabel: "Recommended",
     addonsSelectedLabel: "Selected",
     addonsConfirm: "Confirm add-ons",
+    productTypeLabel: "Type",
+    productTypeOptions: {
+      fund: "Fund",
+      etc: "ETC",
+      exchange: "Exchange",
+    },
     finalTitle: "Your final portfolio",
     implementationTitle: "How to implement it",
     implementationSubtitle:
@@ -428,6 +442,55 @@ const parseFunds = (data: unknown): Fund[] => {
 
 const PORTFOLIOS = parsePortfolios(portfoliosData);
 const FUNDS = parseFunds(fundsData);
+
+const parseReitFunds = (data: unknown): AddonProduct[] => {
+  if (!Array.isArray(data)) return [];
+  return data
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const record = row as Record<string, unknown>;
+      if (String(record["Asset Type"] ?? "") !== "REIT") return null;
+      return {
+        name: String(record["Fund Name"] ?? ""),
+        isin: String(record["ISIN"] ?? ""),
+        ter: String(record["TER"] ?? ""),
+        url: String(record["Link"] ?? ""),
+        type: "fund" as const,
+      };
+    })
+    .filter((fund): fund is AddonProduct => Boolean(fund?.name));
+};
+
+const REIT_FUNDS = parseReitFunds(fundsData);
+const BINANCE_REFERRAL_URL =
+  "https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00IKTM62Y7";
+
+const ADDON_PRODUCTS: Record<AddonKey, AddonProduct[]> = {
+  gold: [
+    {
+      name: "Xetra Gold",
+      isin: "DE000A0S9GB0",
+      ter: "0%",
+      url: "https://www.xetra-gold.com/en/",
+      type: "etc",
+    },
+  ],
+  realEstate: REIT_FUNDS,
+  bitcoin: [
+    {
+      name: "ETC Group Physical Bitcoin (BTCE)",
+      isin: "DE000A27Z304",
+      ter: "2%",
+      url: "https://etc-group.com/products/etc-group-physical-bitcoin/",
+      type: "etc",
+    },
+    {
+      name: "Binance",
+      url: BINANCE_REFERRAL_URL,
+      type: "exchange",
+    },
+  ],
+};
 
 const QUESTIONS: {
   id: QuestionId;
@@ -649,6 +712,14 @@ const getSelectedFunds = (assetType: keyof Portfolio["allocation"]) =>
   FUNDS.filter((fund) => fund.assetType === assetType).sort(
     (a, b) => parseTerValue(a.ter) - parseTerValue(b.ter),
   );
+
+const mapFundToProduct = (fund: Fund): AddonProduct => ({
+  name: fund.name,
+  isin: fund.isin,
+  ter: fund.ter,
+  url: fund.url,
+  type: "fund",
+});
 
 const StarRating = ({ rating, className = "" }: { rating: number; className?: string }) => {
   const id = useId();
@@ -1005,9 +1076,6 @@ export default function App() {
     horizonYears,
   );
 
-  const assetSummary = selectedPortfolio
-    ? getAssetSummary(selectedPortfolio.allocation)
-    : [];
   const showAddons = risk >= 3;
   const showBitcoin = risk >= 4;
 
@@ -1037,6 +1105,33 @@ export default function App() {
     ...(addons.bitcoin.enabled
       ? [{ key: "bitcoin", label: texts.bitcoin, percent: addons.bitcoin.percent }]
       : []),
+  ];
+  const totalAddonPercent = addonAllocations.reduce(
+    (total, addon) => total + addon.percent,
+    0,
+  );
+  const coreAllocationScale = Math.max(0, (100 - totalAddonPercent) / 100);
+  const adjustedAssetSummary = selectedPortfolio
+    ? getAssetSummary(selectedPortfolio.allocation)
+        .map((asset) => ({
+          ...asset,
+          value: Number((asset.value * coreAllocationScale).toFixed(2)),
+        }))
+        .filter((asset) => asset.value > 0)
+    : [];
+  const finalAssets = [
+    ...adjustedAssetSummary.map((asset) => ({
+      key: asset.key,
+      label: ASSET_LABELS[lang][asset.key],
+      percent: asset.value,
+      products: getSelectedFunds(asset.key).map(mapFundToProduct),
+    })),
+    ...addonAllocations.map((addon) => ({
+      key: addon.key,
+      label: addon.label,
+      percent: addon.percent,
+      products: ADDON_PRODUCTS[addon.key],
+    })),
   ];
 
   return (
@@ -1507,51 +1602,22 @@ export default function App() {
                   {
                     key: "gold",
                     label: texts.gold,
-                    info: (
-                      <div
-                        className="text-xs text-amber-900"
-                        dangerouslySetInnerHTML={{ __html: GOLD_INFO }}
-                      />
-                    ),
-                    tone: "amber",
                   },
                   {
                     key: "realEstate",
                     label: texts.realEstate,
-                    info: (
-                      <>
-                        <p className="text-xs font-semibold text-emerald-900">
-                          Real Estate
-                        </p>
-                        <p className="text-xs text-emerald-800">
-                          {lang === "es"
-                            ? "Añadiremos REITs (inmobiliario cotizado) para diversificar la cartera."
-                            : "We will add REITs (listed real estate) to diversify the portfolio."}
-                        </p>
-                      </>
-                    ),
-                    tone: "emerald",
                   },
                   ...(showBitcoin
                     ? [
                         {
                           key: "bitcoin",
                           label: texts.bitcoin,
-                          info: (
-                            <div
-                              className="text-xs text-slate-900"
-                              dangerouslySetInnerHTML={{ __html: BITCOIN_INFO }}
-                            />
-                          ),
-                          tone: "slate",
                         },
                       ]
                     : []),
                 ] as Array<{
                   key: AddonKey;
                   label: string;
-                  info: React.ReactNode;
-                  tone: "amber" | "emerald" | "slate";
                 }>).map((addon) => {
                   const state = addons[addon.key];
                   const recommended = ADDON_RECOMMENDED[addon.key];
@@ -1559,12 +1625,6 @@ export default function App() {
                   const badgeText = state.enabled
                     ? `${texts.addonsSelectedLabel} ${state.percent}%`
                     : `${texts.addonsRecommendedLabel} ${recommended}%`;
-                  const infoToneStyles =
-                    addon.tone === "amber"
-                      ? "border-amber-200 bg-amber-50"
-                      : addon.tone === "emerald"
-                        ? "border-emerald-200 bg-emerald-50"
-                        : "border-slate-200 bg-slate-50";
 
                   return (
                     <div
@@ -1644,14 +1704,6 @@ export default function App() {
                           </span>
                         </div>
                       </div>
-
-                      {state.enabled && (
-                        <div
-                          className={`mt-4 rounded-xl border p-3 ${infoToneStyles}`}
-                        >
-                          {addon.info}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -1680,7 +1732,15 @@ export default function App() {
           <section className="grid gap-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <h2 className="text-2xl font-semibold text-slate-900">{texts.finalTitle}</h2>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-2xl font-semibold text-slate-900">{texts.finalTitle}</h2>
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <span className="font-semibold text-slate-800">
+                      {texts.risk}: {selectedPortfolio.risk}
+                    </span>
+                    <StarRating rating={selectedPortfolio.risk} />
+                  </div>
+                </div>
                 <button
                   type="button"
                   className="rounded-full bg-cyan-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
@@ -1689,50 +1749,18 @@ export default function App() {
                   {texts.editAnswers}
                 </button>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                <span className="text-xl font-semibold text-slate-800">
-                  {texts.risk}
-                </span>
-                <StarRating rating={selectedPortfolio.risk} />
-              </div>
-              {addonAllocations.length > 0 && (
-                <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  <p className="font-semibold text-slate-900">
-                    {lang === "es" ? "Extras seleccionados" : "Selected add-ons"}
-                  </p>
-                  <ul className="mt-2 space-y-1">
-                    {addonAllocations.map((addon) => {
-                      const initialAddon = initial * (addon.percent / 100);
-                      const monthlyAddon = monthly * (addon.percent / 100);
-                      return (
-                        <li key={addon.key}>
-                          {addon.label}: {addon.percent}% · {texts.initialLabel}{" "}
-                          {formatCurrency(initialAddon, lang)} · {texts.monthlyLabel}{" "}
-                          {formatCurrency(monthlyAddon, lang)}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <p className="mt-2 text-xs text-slate-500">
-                    {lang === "es"
-                      ? "Estas asignaciones deben restarse proporcionalmente del resto de activos de la cartera."
-                      : "These allocations should be deducted proportionally from the rest of the portfolio assets."}
-                  </p>
-                </div>
-              )}
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {assetSummary.map((asset) => {
-                  const allocation = asset.value / 100;
+                {finalAssets.map((asset) => {
+                  const allocation = asset.percent / 100;
                   const initialAllocation = initial * allocation;
                   const monthlyAllocation = monthly * allocation;
-                  const funds = getSelectedFunds(asset.key);
                   return (
                     <div
                       key={asset.key}
                       className="rounded-2xl border border-slate-200 p-4"
                     >
                       <p className="text-sm font-semibold text-slate-700">
-                        {ASSET_LABELS[lang][asset.key]} ({asset.value}%)
+                        {asset.label} ({formatPercent(asset.percent)})
                       </p>
                       <ul className="mt-3 space-y-1 text-sm text-slate-700 list-disc pl-4">
                         <li>
@@ -1757,59 +1785,70 @@ export default function App() {
                       </p>
                       <div className="mt-2 rounded-xl border border-slate-100 p-3">
                         <ul className="space-y-2 text-sm text-slate-600">
-                          {funds.map((fund) => (
-                            <li key={fund.isin}>
+                          {asset.products.map((product) => (
+                            <li key={`${asset.key}-${product.name}`}>
                               <a
-                                href={fund.url}
+                                href={product.url}
                                 className="font-semibold text-slate-800 hover:underline"
                                 target="_blank"
                                 rel="noreferrer"
                               >
-                            {fund.name}
+                            {product.name}
                           </a>
                           <p className="text-xs text-slate-500">
                             <span className="inline-flex items-center gap-2">
-                              <span>ISIN: {fund.isin}</span>
-                              <button
-                                type="button"
-                                className={`inline-flex items-center text-slate-600 hover:text-slate-800 ${
-                                  copiedIsin === fund.isin ? "text-cyan-700" : ""
-                                }`}
-                                onClick={() => handleCopyIsin(fund.isin)}
-                                aria-label={copiedIsin === fund.isin ? texts.copied : texts.copyIsin}
-                                title={copiedIsin === fund.isin ? texts.copied : texts.copyIsin}
-                              >
-                                <svg
-                                  viewBox="0 0 24 24"
-                                  className="h-3.5 w-3.5"
-                                  aria-hidden="true"
-                                >
-                                  <path
-                                    d="M9 8.5A2.5 2.5 0 0 1 11.5 6H18a2.5 2.5 0 0 1 2.5 2.5V18A2.5 2.5 0 0 1 18 20.5h-6.5A2.5 2.5 0 0 1 9 18V8.5Z"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.6"
-                                  />
-                                  <path
-                                    d="M6 3.5h6.5A2.5 2.5 0 0 1 15 6v1.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.6"
-                                  />
-                                  <rect
-                                    x="3.5"
-                                    y="3.5"
-                                    width="8"
-                                    height="11"
-                                    rx="2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.6"
-                                  />
-                                </svg>
-                              </button>
+                              <span>
+                                {texts.productTypeLabel}: {texts.productTypeOptions[product.type]}
+                              </span>
+                              {product.isin && (
+                                <>
+                                  <span>ISIN: {product.isin}</span>
+                                  <button
+                                    type="button"
+                                    className={`inline-flex items-center text-slate-600 hover:text-slate-800 ${
+                                      copiedIsin === product.isin ? "text-cyan-700" : ""
+                                    }`}
+                                    onClick={() => handleCopyIsin(product.isin ?? "")}
+                                    aria-label={
+                                      copiedIsin === product.isin ? texts.copied : texts.copyIsin
+                                    }
+                                    title={copiedIsin === product.isin ? texts.copied : texts.copyIsin}
+                                  >
+                                    <svg
+                                      viewBox="0 0 24 24"
+                                      className="h-3.5 w-3.5"
+                                      aria-hidden="true"
+                                    >
+                                      <path
+                                        d="M9 8.5A2.5 2.5 0 0 1 11.5 6H18a2.5 2.5 0 0 1 2.5 2.5V18A2.5 2.5 0 0 1 18 20.5h-6.5A2.5 2.5 0 0 1 9 18V8.5Z"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.6"
+                                      />
+                                      <path
+                                        d="M6 3.5h6.5A2.5 2.5 0 0 1 15 6v1.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.6"
+                                      />
+                                      <rect
+                                        x="3.5"
+                                        y="3.5"
+                                        width="8"
+                                        height="11"
+                                        rx="2"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.6"
+                                      />
+                                    </svg>
+                                  </button>
+                                </>
+                              )}
                             </span>
-                            <span className="ml-1">· TER: {fund.ter}</span>
+                            {product.ter && (
+                              <span className="ml-1">· TER: {product.ter}</span>
+                            )}
                           </p>
                         </li>
                       ))}
