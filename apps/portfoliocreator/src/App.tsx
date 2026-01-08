@@ -1621,6 +1621,11 @@ export default function App() {
                             max={max}
                             step={1}
                             value={state.percent}
+                            style={{
+                              background: `linear-gradient(to right, #0891b2 ${
+                                (state.percent / max) * 100
+                              }%, #e2e8f0 0%)`,
+                            }}
                             onChange={(e) => {
                               const value = parseNumber(e.target.value);
                               setAddons((prev) => ({
@@ -1632,7 +1637,7 @@ export default function App() {
                               }));
                             }}
                             disabled={!state.enabled}
-                            className="h-2 w-full cursor-pointer accent-cyan-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="h-2 w-full cursor-pointer appearance-none rounded-full disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow"
                           />
                           <span className="min-w-[2.5rem] text-right text-sm font-semibold text-slate-700">
                             {state.percent}%
