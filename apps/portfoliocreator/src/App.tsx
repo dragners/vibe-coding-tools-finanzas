@@ -68,7 +68,7 @@ const TEXTS = {
     back: "Volver a Herramientas",
     title: "Portfolio Creator",
     subtitle:
-      "Crea una cartera personalizada con preguntas guiadas, explicaciones claras y resultados ordenados.",
+      "Crea una cartera indexada personalizada basada en tus preferencias con preguntas guiadas y explicaciones claras.",
     language: "Idioma",
     langES: "ES",
     langEN: "EN",
@@ -170,7 +170,7 @@ const TEXTS = {
     implementationSubtitle:
       "Calculamos cuánto invertir en cada tipo de activo, tanto en la aportación inicial como en las aportaciones mensuales. Te recomendamos configurar aportaciones automáticas para invertir de forma pasiva.",
     implementationNote:
-      "Todos los fondos mostrados se pueden contratar en plataformas como MyInvestor, Renta 4, TradeRepublic, IronIA o SelfBank, donde puedes buscar los ISIN proporcionados para invertir directamente en los productos recomendados.",
+      "Todos los fondos mostrados se pueden contratar en plataformas como **MyInvestor**, **Renta 4**, **TradeRepublic**, **IronIA** o **SelfBank**, donde puedes **buscar los ISIN proporcionados** para invertir directamente en los productos recomendados.",
     monthlyLabel: "Aportación mensual",
     initialLabel: "Aportación inicial",
     fundsTitle: "Fondos recomendados",
@@ -312,6 +312,13 @@ const parseNumber = (value: string | number | null | undefined) => {
   const normalized = value.replace(/,/g, ".");
   const parsed = parseFloat(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const parseTerValue = (value: string) => {
+  if (!value) return Number.POSITIVE_INFINITY;
+  const normalized = value.replace("%", "").replace(/,/g, ".").trim();
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
 };
 
 const normalizeText = (value: string) => value.trim().toLowerCase();
@@ -590,13 +597,15 @@ const getAssetSummary = (allocation: Portfolio["allocation"]) =>
     }));
 
 const getSelectedFunds = (assetType: keyof Portfolio["allocation"]) =>
-  FUNDS.filter((fund) => fund.assetType === assetType);
+  FUNDS.filter((fund) => fund.assetType === assetType).sort(
+    (a, b) => parseTerValue(a.ter) - parseTerValue(b.ter),
+  );
 
 const starsWithHalf = (risk: number) => {
   const fullStars = Math.floor(risk);
   const hasHalf = risk % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-  return `${"★".repeat(fullStars)}${hasHalf ? "½" : ""}${"☆".repeat(emptyStars)}`;
+  return `${"★".repeat(fullStars)}${hasHalf ? "⯪" : ""}${"☆".repeat(emptyStars)}`;
 };
 
 const renderMarkdown = (text: string) => {
@@ -1594,12 +1603,22 @@ export default function App() {
                       <p className="text-sm font-semibold text-slate-900">
                         {ASSET_LABELS[lang][asset.key]} ({asset.value}%)
                       </p>
-                      <div className="mt-3 text-xs text-slate-500">
+                      <div className="mt-3 space-y-1 text-sm text-slate-700">
                         <p>
-                          {texts.initialLabel}: {formatCurrency(initialAllocation, lang)}
+                          <span className="font-semibold text-slate-900">
+                            {texts.initialLabel}:
+                          </span>{" "}
+                          <span className="font-semibold text-slate-900">
+                            {formatCurrency(initialAllocation, lang)}
+                          </span>
                         </p>
                         <p>
-                          {texts.monthlyLabel}: {formatCurrency(monthlyAllocation, lang)}
+                          <span className="font-semibold text-slate-900">
+                            {texts.monthlyLabel}:
+                          </span>{" "}
+                          <span className="font-semibold text-slate-900">
+                            {formatCurrency(monthlyAllocation, lang)}
+                          </span>
                         </p>
                       </div>
                       <p className="mt-4 text-xs font-semibold text-slate-400">
@@ -1634,14 +1653,15 @@ export default function App() {
               <h3 className="text-xl font-semibold text-slate-900">
                 {texts.implementationTitle}
               </h3>
-              <p className="mt-2 text-sm text-slate-600">
-                {texts.implementationNote}
-              </p>
+              <div
+                className="mt-2 text-sm text-slate-600"
+                dangerouslySetInnerHTML={renderMarkdown(texts.implementationNote)}
+              />
               <p className="mt-3 text-sm text-slate-600">
                 {texts.implementationSubtitle}
               </p>
               <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
-                <p className="text-base font-semibold text-cyan-900">
+                <p className="text-sm font-semibold text-cyan-900">
                   {texts.referralTitle}
                 </p>
                 <ul className="mt-3 space-y-1 text-sm">
