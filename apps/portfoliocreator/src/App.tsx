@@ -168,7 +168,7 @@ const TEXTS = {
     finalTitle: "Tu cartera final",
     implementationTitle: "Cómo implementarla",
     implementationSubtitle:
-      "Calculamos cuánto invertir en cada tipo de activo, tanto en la aportación inicial como en las aportaciones mensuales. Te recomendamos configurar aportaciones automáticas para invertir de forma pasiva.",
+      "Calculamos cuánto invertir en cada tipo de activo, tanto en la aportación inicial como en las aportaciones mensuales. Te recomendamos configurar **aportaciones automáticas** para invertir de forma pasiva.",
     implementationNote:
       "Todos los fondos mostrados se pueden contratar en plataformas como **MyInvestor**, **Renta 4**, **TradeRepublic**, **IronIA** o **SelfBank**, donde puedes **buscar los ISIN proporcionados** para invertir directamente en los productos recomendados.",
     monthlyLabel: "Aportación mensual",
@@ -1600,28 +1600,28 @@ export default function App() {
                       key={asset.key}
                       className="rounded-2xl border border-slate-200 p-4"
                     >
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-slate-700">
                         {ASSET_LABELS[lang][asset.key]} ({asset.value}%)
                       </p>
-                      <div className="mt-3 space-y-1 text-sm text-slate-700">
-                        <p>
+                      <ul className="mt-3 space-y-1 text-sm text-slate-700 list-disc pl-4">
+                        <li>
                           <span className="font-semibold text-slate-900">
                             {texts.initialLabel}:
                           </span>{" "}
                           <span className="font-semibold text-slate-900">
                             {formatCurrency(initialAllocation, lang)}
                           </span>
-                        </p>
-                        <p>
+                        </li>
+                        <li>
                           <span className="font-semibold text-slate-900">
                             {texts.monthlyLabel}:
                           </span>{" "}
                           <span className="font-semibold text-slate-900">
                             {formatCurrency(monthlyAllocation, lang)}
                           </span>
-                        </p>
-                      </div>
-                      <p className="mt-4 text-xs font-semibold text-slate-400">
+                        </li>
+                      </ul>
+                      <p className="mt-4 text-sm font-semibold text-slate-700">
                         {texts.fundsTitle}
                       </p>
                       <div className="mt-2 rounded-xl border border-slate-100 p-3">
@@ -1657,11 +1657,12 @@ export default function App() {
                 className="mt-2 text-sm text-slate-600"
                 dangerouslySetInnerHTML={renderMarkdown(texts.implementationNote)}
               />
-              <p className="mt-3 text-sm text-slate-600">
-                {texts.implementationSubtitle}
-              </p>
+              <div
+                className="mt-3 text-sm text-slate-600"
+                dangerouslySetInnerHTML={renderMarkdown(texts.implementationSubtitle)}
+              />
               <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
-                <p className="text-sm font-semibold text-cyan-900">
+                <p className="text-[15px] font-semibold text-cyan-900">
                   {texts.referralTitle}
                 </p>
                 <ul className="mt-3 space-y-1 text-sm">
