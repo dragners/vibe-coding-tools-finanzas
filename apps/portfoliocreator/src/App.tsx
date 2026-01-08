@@ -1648,8 +1648,8 @@ export default function App() {
                               <span>ISIN: {fund.isin}</span>
                               <button
                                 type="button"
-                                className={`rounded-full border border-slate-200 p-1 text-slate-600 hover:border-slate-400 ${
-                                  copiedIsin === fund.isin ? "bg-cyan-50 text-cyan-700" : ""
+                                className={`inline-flex items-center text-slate-600 hover:text-slate-800 ${
+                                  copiedIsin === fund.isin ? "text-cyan-700" : ""
                                 }`}
                                 onClick={() => handleCopyIsin(fund.isin)}
                                 aria-label={copiedIsin === fund.isin ? texts.copied : texts.copyIsin}
