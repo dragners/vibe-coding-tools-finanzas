@@ -697,7 +697,7 @@ const GrowthChart = ({
               x={padding.left - 8}
               y={tick.y + 3}
               textAnchor="end"
-              className="text-[9px] fill-slate-400"
+              className="text-[8px] fill-slate-400"
             >
               {formatAxisCurrency(tick.value, lang)}
             </text>
@@ -717,7 +717,7 @@ const GrowthChart = ({
               x={tick.x}
               y={height - padding.bottom + 16}
               textAnchor="middle"
-              className="text-[9px] fill-slate-400"
+              className="text-[8px] fill-slate-400"
             >
               {tick.yearLabel}
             </text>
@@ -727,7 +727,7 @@ const GrowthChart = ({
           x={padding.left - 24}
           y={padding.top - 4}
           textAnchor="start"
-          className="text-[9px] fill-slate-400"
+          className="text-[8px] fill-slate-400"
         >
           {labels.axisValue}
         </text>
@@ -735,7 +735,7 @@ const GrowthChart = ({
           x={width - padding.right}
           y={height - 8}
           textAnchor="end"
-          className="text-[9px] fill-slate-400"
+          className="text-[8px] fill-slate-400"
         >
           {labels.axisYears}
         </text>
