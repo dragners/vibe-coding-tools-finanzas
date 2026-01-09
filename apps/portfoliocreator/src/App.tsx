@@ -81,9 +81,9 @@ const ADDON_RECOMMENDED: Record<AddonKey, number> = {
 };
 
 const ADDON_LIMITS: Record<AddonKey, number> = {
-  gold: 10,
-  realEstate: 10,
-  bitcoin: 5,
+  gold: 15,
+  realEstate: 15,
+  bitcoin: 10,
 };
 
 const createDefaultAddons = (): AddonState => ({
@@ -189,6 +189,14 @@ const TEXTS = {
     gold: "Oro",
     realEstate: "Inmobiliario",
     bitcoin: "Bitcoin",
+    addonDescriptions: {
+      gold:
+        "El oro suele moverse con baja correlación frente a la renta variable y actúa como refugio en periodos de estrés, ayudando a suavizar la volatilidad.",
+      realEstate:
+        "El inmobiliario combina ingresos y apreciación con una correlación moderada con la renta variable, aportando estabilidad en fases del ciclo distintas.",
+      bitcoin:
+        "Bitcoin tiene una correlación inestable con la renta variable y puede ofrecer diversificación en escenarios de inflación o cambios de régimen, equilibrando la cartera.",
+    },
     addonsAllocationLabel: "Asignación",
     addonsRecommendedLabel: "Recomendado",
     addonsSelectedLabel: "Seleccionado",
@@ -310,6 +318,14 @@ const TEXTS = {
     gold: "Gold",
     realEstate: "Real estate",
     bitcoin: "Bitcoin",
+    addonDescriptions: {
+      gold:
+        "Gold tends to have low correlation with equities and acts as a safe haven in stress periods, helping smooth volatility.",
+      realEstate:
+        "Real estate blends income and appreciation with moderate equity correlation, adding stability across different cycle phases.",
+      bitcoin:
+        "Bitcoin’s correlation with equities is unstable and may diversify in inflation or regime-shift scenarios, balancing the portfolio.",
+    },
     addonsAllocationLabel: "Allocation",
     addonsRecommendedLabel: "Recommended",
     addonsSelectedLabel: "Selected",
@@ -1677,6 +1693,9 @@ export default function App() {
                           <span>
                             <span className="block text-sm font-semibold text-slate-800">
                               {addon.label}
+                            </span>
+                            <span className="mt-1 block text-xs text-slate-500">
+                              {texts.addonDescriptions[addon.key]}
                             </span>
                             <span className="text-xs text-slate-500">
                               {texts.addonsAllocationLabel}: {state.percent}%
