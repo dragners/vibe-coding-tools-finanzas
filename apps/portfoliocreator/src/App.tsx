@@ -671,8 +671,8 @@ const buildContributionSeries = (
 const getRiskLabel = (risk: number, lang: Lang) =>
   EXPLANATION_BY_RISK[risk]?.[lang] ?? "";
 
-const getPortfolioOptions = (risk: number) => {
-  const sorted = [...PORTFOLIOS].sort((a, b) => a.risk - b.risk);
+const getPortfolioOptions = (risk: number, portfolios: Portfolio[]) => {
+  const sorted = [...portfolios].sort((a, b) => a.risk - b.risk);
   const below = [...sorted].reverse().find((portfolio) => portfolio.risk < risk);
   const above = sorted.find((portfolio) => portfolio.risk > risk);
   const same = sorted.reduce((closest, portfolio) => {
@@ -962,10 +962,18 @@ export default function App() {
   const initial = parseNumber(answers.initial);
   const monthly = parseNumber(answers.monthly);
   const totalContributed = initial + monthly * horizonYears * 12;
-  const options = useMemo(
-    () => getPortfolioOptions(risk),
-    [risk],
-  );
+  const options = useMemo(() => {
+    const restrictRisky =
+      initial <= 30000 && (initial < 15000 || (monthly > 0 && monthly < 250));
+    const eligiblePortfolios = restrictRisky
+      ? PORTFOLIOS.filter(
+          (portfolio) =>
+            portfolio.allocation.emergingMarkets === 0 &&
+            portfolio.allocation.globalSmallCaps === 0,
+        )
+      : PORTFOLIOS;
+    return getPortfolioOptions(risk, eligiblePortfolios);
+  }, [risk, initial, monthly]);
 
   const riskExplanation = getRiskLabel(Math.round(risk), lang);
 
@@ -999,7 +1007,11 @@ export default function App() {
       currentQuestion.id === "horizon" ||
       currentQuestion.id === "initial" ||
       currentQuestion.id === "monthly";
-    const isValid = isNumber ? parseNumber(value) > 0 : value !== "";
+    const isValid = isNumber
+      ? currentQuestion.id === "monthly"
+        ? parseNumber(value) >= 0
+        : parseNumber(value) > 0
+      : value !== "";
     if (!isValid) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -1113,7 +1125,7 @@ export default function App() {
     },
     {
       label: texts.summaryMonthly,
-      value: answers.monthly ? formatCurrency(monthly, lang) : "",
+      value: monthly > 0 ? formatCurrency(monthly, lang) : "",
     },
   ].filter((item) => item.value);
 
@@ -1474,12 +1486,14 @@ export default function App() {
                     {formatCurrency(initial, lang)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs uppercase text-slate-400">{texts.summaryMonthly}</p>
-                  <p className="font-semibold text-slate-900">
-                    {formatCurrency(monthly, lang)}
-                  </p>
-                </div>
+                {monthly > 0 && (
+                  <div>
+                    <p className="text-xs uppercase text-slate-400">{texts.summaryMonthly}</p>
+                    <p className="font-semibold text-slate-900">
+                      {formatCurrency(monthly, lang)}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p className="text-xs uppercase text-slate-400">{texts.summaryExperience}</p>
                   <p className="font-semibold text-slate-900">
@@ -1838,14 +1852,16 @@ export default function App() {
                             {formatCurrency(initialAllocation, lang)}
                           </span>
                         </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            {texts.monthlyLabel}:
-                          </span>{" "}
-                          <span className="font-semibold text-slate-900">
-                            {formatCurrency(monthlyAllocation, lang)}
-                          </span>
-                        </li>
+                        {monthly > 0 && (
+                          <li>
+                            <span className="font-semibold text-slate-900">
+                              {texts.monthlyLabel}:
+                            </span>{" "}
+                            <span className="font-semibold text-slate-900">
+                              {formatCurrency(monthlyAllocation, lang)}
+                            </span>
+                          </li>
+                        )}
                       </ul>
                       <p className="mt-1 text-sm font-semibold text-slate-700">
                         {getFundsTitle(asset.key)}
