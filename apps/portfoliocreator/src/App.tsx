@@ -774,10 +774,53 @@ const StarRating = ({ rating, className = "" }: { rating: number; className?: st
   return <span className={`inline-flex items-center gap-0.5 ${className}`}>{stars}</span>;
 };
 
+// Escape HTML to prevent XSS attacks
+const escapeHtml = (text: string): string => {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+};
+
+// Sanitize HTML by allowing only safe tags: br, strong, em, a
+const sanitizeHtml = (html: string): string => {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+
+  const allowedTags = ['BR', 'STRONG', 'EM', 'A', 'B', 'I'];
+  const walkNode = (node: Node): void => {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      if (!allowedTags.includes(element.tagName)) {
+        // Replace disallowed element with its text content
+        const textNode = document.createTextNode(element.textContent || '');
+        element.replaceWith(textNode);
+        return;
+      }
+      // For anchor tags, ensure href doesn't contain javascript:
+      if (element.tagName === 'A') {
+        const href = element.getAttribute('href') || '';
+        if (href.toLowerCase().startsWith('javascript:') || href.toLowerCase().startsWith('data:')) {
+          element.removeAttribute('href');
+        }
+      }
+      // Recursively check children
+      Array.from(element.childNodes).forEach(walkNode);
+    }
+  };
+
+  Array.from(div.childNodes).forEach(walkNode);
+  return div.innerHTML;
+};
+
 const renderMarkdown = (text: string) => {
-  const withLineBreaks = text.replace(/\n/g, "<br />");
+  // First escape all HTML to prevent XSS
+  const escaped = escapeHtml(text);
+
+  // Then apply markdown transformations on the escaped text
+  const withLineBreaks = escaped.replace(/\n/g, "<br />");
   const withBold = withLineBreaks.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   const withItalic = withBold.replace(/_(.+?)_/g, "<em>$1</em>");
+
   return { __html: withItalic };
 };
 
@@ -1934,7 +1977,7 @@ export default function App() {
                           {product.description?.[lang] && (
                             <p
                               className="mt-1 text-xs text-slate-500"
-                              dangerouslySetInnerHTML={{ __html: product.description[lang] }}
+                              dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description[lang]) }}
                             />
                           )}
                           <p className="text-xs text-slate-500">
