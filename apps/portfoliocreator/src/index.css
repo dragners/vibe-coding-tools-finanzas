@@ -1,3 +1,34 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+
+  .print-card {
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
