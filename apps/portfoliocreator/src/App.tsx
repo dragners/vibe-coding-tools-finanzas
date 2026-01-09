@@ -1499,7 +1499,7 @@ export default function App() {
                           {texts.risk}: {portfolio.risk}
                         </div>
                       </div>
-                      <div className="mt-3 rounded-2xl bg-white/70 p-3 text-xs text-slate-600">
+                      <div className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
                         <div className="flex flex-wrap gap-2">
                           {assets.map((asset) => (
                             <span
