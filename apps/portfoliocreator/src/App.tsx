@@ -165,7 +165,7 @@ const TEXTS = {
     totalContributed: "Capital total aportado",
     portfolioGuideTitle: "Carteras personalizadas a tu riesgo",
     portfolioGuideText:
-      "Aquí tienes opciones personalizadas con distintas combinaciones de activos. Cada una incluye su riesgo, rentabilidad teórica y valor estimado. Recuerda que el rendimiento pasado no garantiza resultados futuros.",
+      "Compara estas opciones según tu horizonte y tolerancia al riesgo. Cada cartera combina activos con distinta volatilidad para suavizar la experiencia en distintos ciclos del mercado. La rentabilidad y volatilidad son estimaciones, no garantías.",
     selectPortfolioError: "Selecciona una de las opciones para continuar.",
     portfolioOptions: "Opciones de cartera",
     option: "Opción",
@@ -200,7 +200,7 @@ const TEXTS = {
     addonsAllocationLabel: "Asignación",
     addonsRecommendedLabel: "Recomendado",
     addonsSelectedLabel: "Seleccionado",
-    addonsConfirm: "Confirmar extras",
+    addonsConfirm: "Confirmar",
     finalTitle: "Tu cartera final",
     implementationTitle: "Cómo implementarla",
     implementationSubtitle:
@@ -294,7 +294,7 @@ const TEXTS = {
     totalContributed: "Total contributed capital",
     portfolioGuideTitle: "How to interpret these portfolios",
     portfolioGuideText:
-      "Here are personalized options with different asset mixes. Each includes risk, theoretical annual return and estimated value. Remember that past performance does not guarantee future results.",
+      "Compare these options based on your horizon and risk tolerance. Each portfolio blends assets with different volatility to smooth the ride across market cycles. Returns and volatility are estimates, not guarantees.",
     selectPortfolioError: "Select one of the options to continue.",
     portfolioOptions: "Portfolio options",
     option: "Option",
@@ -329,7 +329,7 @@ const TEXTS = {
     addonsAllocationLabel: "Allocation",
     addonsRecommendedLabel: "Recommended",
     addonsSelectedLabel: "Selected",
-    addonsConfirm: "Confirm add-ons",
+    addonsConfirm: "Confirm",
     finalTitle: "Your final portfolio",
     implementationTitle: "How to implement it",
     implementationSubtitle:
@@ -1511,7 +1511,12 @@ export default function App() {
 
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
               <h2 className="text-xl font-semibold text-slate-900">{texts.portfolioGuideTitle}</h2>
-              <p className="mt-3 text-sm text-slate-600">{texts.portfolioGuideText}</p>
+              <div className="relative mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-slate-600">
+                <span className="absolute right-3 top-3 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] font-semibold text-slate-500">
+                  i
+                </span>
+                {texts.portfolioGuideText}
+              </div>
               <div className="mt-4 grid gap-4 lg:grid-cols-3">
                 {options.map((portfolio, index) => {
                   const totalValue = computePortfolioValue(
