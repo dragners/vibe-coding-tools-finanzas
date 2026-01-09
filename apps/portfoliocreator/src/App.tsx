@@ -539,28 +539,28 @@ const ASSET_LABELS: Record<Lang, Record<keyof Portfolio["allocation"], string>> 
 
 const EXPLANATION_BY_RISK: Record<number, { es: string; en: string }> = {
   0: {
-    es: "Riesgo mínimo, prioriza estabilidad y liquidez.",
-    en: "Minimal risk, prioritizes stability and liquidity.",
+    es: "Riesgo mínimo, centrado en liquidez y estabilidad con peso en monetario.",
+    en: "Minimal risk, focused on liquidity and stability with money market exposure.",
   },
   1: {
-    es: "Riesgo bajo, adecuado para preservar capital.",
-    en: "Low risk, suitable for preserving capital.",
+    es: "Riesgo bajo, con mayor peso en renta fija descorrelacionada para amortiguar caídas.",
+    en: "Low risk, heavier in fixed income that can be less correlated and dampen drawdowns.",
   },
   2: {
-    es: "Riesgo moderado-bajo, combina prudencia y algo de crecimiento.",
-    en: "Moderate-low risk, combines prudence and some growth.",
+    es: "Riesgo moderado-bajo, mezcla bonos con renta variable para sumar crecimiento controlado.",
+    en: "Moderate-low risk, mixes bonds with equities for controlled growth.",
   },
   3: {
-    es: "Riesgo medio, equilibra crecimiento y seguridad.",
-    en: "Medium risk, balances growth and security.",
+    es: "Riesgo medio, equilibrio entre renta fija y renta variable global para suavizar ciclos.",
+    en: "Medium risk, balances fixed income and global equities to smooth market cycles.",
   },
   4: {
-    es: "Riesgo medio-alto, busca crecimiento aceptando volatilidad.",
-    en: "Medium-high risk, aims for growth with volatility.",
+    es: "Riesgo medio-alto, más peso en renta variable con emergentes/small caps para crecimiento.",
+    en: "Medium-high risk, higher equity weight with emerging/small caps for growth.",
   },
   5: {
-    es: "Riesgo alto, prioriza crecimiento a largo plazo.",
-    en: "High risk, prioritizes long-term growth.",
+    es: "Riesgo alto, muy expuesto a renta variable, emergentes y small caps con alta volatilidad.",
+    en: "High risk, heavily exposed to equities, emerging markets, and small caps with high volatility.",
   },
 };
 
@@ -1631,147 +1631,150 @@ export default function App() {
         )}
 
         {phase === "addons" && (
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-            <h2 className="text-2xl font-semibold text-slate-900">{texts.addonsTitle}</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              {showAddons ? texts.addonsPrompt : texts.addonsPromptLow}
-            </p>
-            {showAddons && (
-              <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                {([
-                  {
-                    key: "gold",
-                    label: texts.gold,
-                  },
-                  {
-                    key: "realEstate",
-                    label: texts.realEstate,
-                  },
-                  ...(showBitcoin
-                    ? [
-                        {
-                          key: "bitcoin",
-                          label: texts.bitcoin,
-                        },
-                      ]
-                    : []),
-                ] as Array<{
-                  key: AddonKey;
-                  label: string;
-                }>).map((addon) => {
-                  const state = addons[addon.key];
-                  const recommended = ADDON_RECOMMENDED[addon.key];
-                  const max = ADDON_LIMITS[addon.key];
-                  const badgeText = state.enabled
-                    ? `${texts.addonsSelectedLabel} ${state.percent}%`
-                    : `${texts.addonsRecommendedLabel} ${recommended}%`;
+          <>
+            <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+              <h2 className="text-2xl font-semibold text-slate-900">{texts.addonsTitle}</h2>
+              <p className="mt-2 text-sm text-slate-500">
+                {showAddons ? texts.addonsPrompt : texts.addonsPromptLow}
+              </p>
+              {showAddons && (
+                <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                  {([
+                    {
+                      key: "gold",
+                      label: texts.gold,
+                    },
+                    {
+                      key: "realEstate",
+                      label: texts.realEstate,
+                    },
+                    ...(showBitcoin
+                      ? [
+                          {
+                            key: "bitcoin",
+                            label: texts.bitcoin,
+                          },
+                        ]
+                      : []),
+                  ] as Array<{
+                    key: AddonKey;
+                    label: string;
+                  }>).map((addon) => {
+                    const state = addons[addon.key];
+                    const recommended = ADDON_RECOMMENDED[addon.key];
+                    const max = ADDON_LIMITS[addon.key];
+                    const badgeText = state.enabled
+                      ? `${texts.addonsSelectedLabel} ${state.percent}%`
+                      : `${texts.addonsRecommendedLabel} ${recommended}%`;
 
-                  return (
-                    <div
-                      key={addon.key}
-                      className={`rounded-2xl border p-4 shadow-sm transition ${
-                        state.enabled
-                          ? "border-cyan-200 bg-cyan-50/50"
-                          : "border-slate-200 bg-white"
-                      }`}
-                    >
-                      <label className="flex items-start justify-between gap-3">
-                        <span className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            className="mt-1 h-4 w-4 accent-cyan-600"
-                            checked={state.enabled}
-                            onChange={() =>
-                              setAddons((prev) => ({
-                                ...prev,
-                                [addon.key]: {
-                                  enabled: !prev[addon.key].enabled,
-                                  percent: !prev[addon.key].enabled
-                                    ? recommended
-                                    : prev[addon.key].percent,
-                                },
-                              }))
-                            }
-                          />
-                          <span>
-                            <span className="block text-sm font-semibold text-slate-800">
-                              {addon.label}
-                            </span>
-                            <span className="text-xs text-slate-500">
-                              {texts.addonsAllocationLabel}: {state.percent}%
+                    return (
+                      <div
+                        key={addon.key}
+                        className={`rounded-2xl border p-4 shadow-sm transition ${
+                          state.enabled
+                            ? "border-cyan-200 bg-cyan-50/50"
+                            : "border-slate-200 bg-white"
+                        }`}
+                      >
+                        <label className="flex items-start justify-between gap-3">
+                          <span className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              className="mt-1 h-4 w-4 accent-cyan-600"
+                              checked={state.enabled}
+                              onChange={() =>
+                                setAddons((prev) => ({
+                                  ...prev,
+                                  [addon.key]: {
+                                    enabled: !prev[addon.key].enabled,
+                                    percent: !prev[addon.key].enabled
+                                      ? recommended
+                                      : prev[addon.key].percent,
+                                  },
+                                }))
+                              }
+                            />
+                            <span>
+                              <span className="block text-sm font-semibold text-slate-800">
+                                {addon.label}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                {texts.addonsAllocationLabel}: {state.percent}%
+                              </span>
                             </span>
                           </span>
-                        </span>
-                        <span className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
-                          {badgeText}
-                        </span>
-                      </label>
-
-                      <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                        <div className="flex items-center justify-between text-[11px] text-slate-500">
-                          <span>{texts.addonsAllocationLabel}</span>
-                          <span>
-                            {texts.addonsRecommendedLabel}: {recommended}% · Max {max}%
+                          <span className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
+                            {badgeText}
                           </span>
+                        </label>
+
+                        <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                          <div className="flex items-center justify-between text-[11px] text-slate-500">
+                            <span>{texts.addonsAllocationLabel}</span>
+                            <span>
+                              {texts.addonsRecommendedLabel}: {recommended}% · Max {max}%
+                            </span>
+                          </div>
+                          <div className="mt-3 flex items-center gap-3">
+                            <input
+                              type="range"
+                              min={0}
+                              max={max}
+                              step={1}
+                              value={state.percent}
+                              style={{
+                                background: `linear-gradient(to right, #0891b2 ${
+                                  (state.percent / max) * 100
+                                }%, #e2e8f0 0%)`,
+                              }}
+                              onChange={(e) => {
+                                const value = parseNumber(e.target.value);
+                                setAddons((prev) => ({
+                                  ...prev,
+                                  [addon.key]: {
+                                    ...prev[addon.key],
+                                    percent: clamp(value, 0, max),
+                                  },
+                                }));
+                              }}
+                              disabled={!state.enabled}
+                              className="h-2 w-full cursor-pointer appearance-none rounded-full disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow"
+                            />
+                            <span className="min-w-[2.5rem] text-right text-sm font-semibold text-slate-700">
+                              {state.percent}%
+                            </span>
+                          </div>
                         </div>
-                        <div className="mt-3 flex items-center gap-3">
-                          <input
-                            type="range"
-                            min={0}
-                            max={max}
-                            step={1}
-                            value={state.percent}
-                            style={{
-                              background: `linear-gradient(to right, #0891b2 ${
-                                (state.percent / max) * 100
-                              }%, #e2e8f0 0%)`,
-                            }}
-                            onChange={(e) => {
-                              const value = parseNumber(e.target.value);
-                              setAddons((prev) => ({
-                                ...prev,
-                                [addon.key]: {
-                                  ...prev[addon.key],
-                                  percent: clamp(value, 0, max),
-                                },
-                              }));
-                            }}
-                            disabled={!state.enabled}
-                            className="h-2 w-full cursor-pointer appearance-none rounded-full disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow"
-                          />
-                          <span className="min-w-[2.5rem] text-right text-sm font-semibold text-slate-700">
-                            {state.percent}%
+                        <div className="relative mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-xs text-slate-600">
+                          <span className="absolute right-3 top-3 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] font-semibold text-slate-500">
+                            i
                           </span>
+                          {texts.addonDescriptions[addon.key]}
                         </div>
                       </div>
-                      <div className="relative mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-xs text-slate-600">
-                        <span className="absolute right-3 top-3 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] font-semibold text-slate-500">
-                          i
-                        </span>
-                        {texts.addonDescriptions[addon.key]}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              )}
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
+                  onClick={() => setPhase("options")}
+                >
+                  {texts.adjustPortfolio}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white"
+                  onClick={confirmAddons}
+                >
+                  {texts.addonsConfirm}
+                </button>
               </div>
-            )}
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={() => setPhase("options")}
-              >
-                {texts.adjustPortfolio}
-              </button>
-              <button
-                type="button"
-                className="rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white"
-                onClick={confirmAddons}
-              >
-                {texts.addonsConfirm}
-              </button>
-            </div>
-            <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+            </section>
+
+            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
               <h3 className="text-sm font-semibold text-amber-700">
                 {texts.disclaimerTitle}
               </h3>
@@ -1780,7 +1783,7 @@ export default function App() {
                 dangerouslySetInnerHTML={renderMarkdown(disclaimer)}
               />
             </section>
-          </section>
+          </>
         )}
 
         {phase === "final" && selectedPortfolio && (
