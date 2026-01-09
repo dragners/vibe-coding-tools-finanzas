@@ -80,6 +80,16 @@ type Product = {
   enabled: boolean;
 };
 
+const LANG_STORAGE_KEY = "finanzas.lang";
+
+const getStoredLang = (): Lang => {
+  if (typeof window === "undefined") {
+    return "es";
+  }
+  const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
+  return stored === "en" ? "en" : "es";
+};
+
 type MortgageLine = {
   id: string;
   bank: string;
@@ -387,9 +397,16 @@ function MoneyInput({ value, onChange, t }: { value: number; onChange: (v: numbe
 }
 
 export default function App() {
-  const [lang, setLang] = useState<Lang>("es");
+  const [lang, setLang] = useState<Lang>(getStoredLang);
   const t: I18n = TEXTS[lang];
   const locale = lang === "es" ? "es-ES" : "en-GB";
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(LANG_STORAGE_KEY, lang);
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
 
   const [amount, setAmount] = useState<number>(250000);
   const [years, setYears] = useState<number>(30);

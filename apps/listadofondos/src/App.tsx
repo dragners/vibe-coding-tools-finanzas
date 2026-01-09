@@ -13,6 +13,16 @@ import { MOCK_PAYLOAD } from "./mockData";
 
 type Lang = "es" | "en";
 
+const LANG_STORAGE_KEY = "finanzas.lang";
+
+const getStoredLang = (): Lang => {
+  if (typeof window === "undefined") {
+    return "es";
+  }
+  const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
+  return stored === "en" ? "en" : "es";
+};
+
 type RatioPeriod = "1Y" | "3Y" | "5Y";
 
 type PerformanceKey =
@@ -1458,7 +1468,7 @@ function CombinedTable({
 }
 
 export default function App() {
-  const [lang, setLang] = useState<Lang>("es");
+  const [lang, setLang] = useState<Lang>(getStoredLang);
   const texts = useTexts(lang);
   const [status, setStatus] = useState<ApiStatus>("idle");
   const [data, setData] = useState<ApiPayload | null>(null);
@@ -1482,6 +1492,13 @@ export default function App() {
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(LANG_STORAGE_KEY, lang);
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
 
   useEffect(() => {
     return () => {

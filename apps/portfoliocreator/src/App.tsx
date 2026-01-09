@@ -1,9 +1,19 @@
-import React, { useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import "./index.css";
 import portfoliosData from "./data/Carteras.json";
 import fundsData from "./data/Fondos.json";
 
 type Lang = "es" | "en";
+
+const LANG_STORAGE_KEY = "finanzas.lang";
+
+const getStoredLang = (): Lang => {
+  if (typeof window === "undefined") {
+    return "es";
+  }
+  const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
+  return stored === "en" ? "en" : "es";
+};
 
 type RiskPreference = "high" | "moderate" | "low" | "safest";
 
@@ -986,7 +996,7 @@ const GrowthChart = ({
 };
 
 export default function App() {
-  const [lang, setLang] = useState<Lang>("es");
+  const [lang, setLang] = useState<Lang>(getStoredLang);
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<
     "intro" | "form" | "risk" | "options" | "addons" | "final"
@@ -1037,6 +1047,13 @@ export default function App() {
   }, [risk, initial, monthly]);
 
   const riskExplanation = getRiskLabel(Math.round(risk), lang);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(LANG_STORAGE_KEY, lang);
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
 
   const handleAnswer = (key: keyof Answers, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
