@@ -964,7 +964,7 @@ export default function App() {
   const totalContributed = initial + monthly * horizonYears * 12;
   const options = useMemo(() => {
     const restrictRisky =
-      initial < 15000 || (monthly > 0 && monthly < 250);
+      initial <= 30000 && (initial < 15000 || (monthly > 0 && monthly < 250));
     const eligiblePortfolios = restrictRisky
       ? PORTFOLIOS.filter(
           (portfolio) =>
