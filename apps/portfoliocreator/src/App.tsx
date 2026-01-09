@@ -98,6 +98,15 @@ const TEXTS = {
     title: "Portfolio Creator",
     subtitle:
       "Crea una cartera indexada personalizada basada en tus preferencias con preguntas guiadas y explicaciones claras.",
+    introTitle: "Crea tu propia cartera de inversión de forma sencilla",
+    introLead:
+      "Esta app te guía para construir una cartera pasiva basada principalmente en fondos indexados, aprovechando la fiscalidad de los fondos en España y evitando la complejidad de la inversión activa.",
+    introBody:
+      "Con unas pocas preguntas definimos tu perfil de riesgo, el horizonte temporal y el nivel de aportaciones. A partir de ahí proponemos combinaciones diversificadas de activos y una distribución clara para que puedas invertir de forma consistente a largo plazo.",
+    introNoticeTitle: "Aviso importante",
+    introNoticeBody:
+      "La información es informativa, está orientada a residentes fiscales en España y a productos disponibles a través de entidades registradas en la CNMV. No sustituye el asesoramiento financiero profesional.",
+    introAccept: "Aceptar y continuar",
     language: "Idioma",
     langES: "ES",
     langEN: "EN",
@@ -227,6 +236,15 @@ const TEXTS = {
     title: "Portfolio Creator",
     subtitle:
       "Create a tailored portfolio with guided questions, clear explanations, and structured results.",
+    introTitle: "Start with a simple indexed portfolio",
+    introLead:
+      "This app helps you build a passive portfolio using mainly index funds, taking advantage of Spain’s fund tax treatment and avoiding the complexity of active investing.",
+    introBody:
+      "The goal is to simplify long-term investing with periodic contributions, global diversification, and an allocation aligned with your risk profile.",
+    introNoticeTitle: "Important notice",
+    introNoticeBody:
+      "The information is for informational purposes, aimed at Spanish tax residents and products available through CNMV-registered entities. It does not replace professional financial advice.",
+    introAccept: "Accept and continue",
     language: "Language",
     langES: "ES",
     langEN: "EN",
@@ -927,9 +945,9 @@ const GrowthChart = ({
 export default function App() {
   const [lang, setLang] = useState<Lang>("es");
   const [step, setStep] = useState(0);
-  const [phase, setPhase] = useState<"form" | "risk" | "options" | "addons" | "final">(
-    "form",
-  );
+  const [phase, setPhase] = useState<
+    "intro" | "form" | "risk" | "options" | "addons" | "final"
+  >("intro");
   const [fieldErrors, setFieldErrors] = useState<Record<QuestionId, string>>({
     horizon: "",
     initial: "",
@@ -1218,6 +1236,41 @@ export default function App() {
             </label>
           </div>
         </header>
+
+        {phase === "intro" && (
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  {texts.introTitle}
+                </h2>
+                <p className="mt-4 text-sm leading-relaxed text-slate-600">
+                  {texts.introLead}
+                </p>
+                <p className="mt-4 text-sm leading-relaxed text-slate-600">
+                  {texts.introBody}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+                <h3 className="text-sm font-semibold text-amber-700">
+                  {texts.introNoticeTitle}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed">
+                  {texts.introNoticeBody}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex">
+              <button
+                type="button"
+                className="rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
+                onClick={() => setPhase("form")}
+              >
+                {texts.introAccept}
+              </button>
+            </div>
+          </section>
+        )}
 
         {phase === "form" && (
           <>
