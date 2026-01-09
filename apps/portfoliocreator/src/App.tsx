@@ -106,6 +106,7 @@ const TEXTS = {
     previous: "Atrás",
     editAnswers: "Editar respuestas",
     restart: "Reiniciar formulario",
+    print: "Imprimir",
     progress: (current: number, total: number) =>
       `Pregunta ${current} de ${total}`,
     age: "¿Cuántos años tienes?",
@@ -165,6 +166,7 @@ const TEXTS = {
     portfolioGuideTitle: "Carteras personalizadas a tu riesgo",
     portfolioGuideText:
       "Aquí tienes opciones personalizadas con distintas combinaciones de activos. Cada una incluye su riesgo, rentabilidad teórica y valor estimado. Recuerda que el rendimiento pasado no garantiza resultados futuros.",
+    selectPortfolioError: "Selecciona una de las opciones para continuar.",
     portfolioOptions: "Opciones de cartera",
     option: "Opción",
     assets: "Composición de activos",
@@ -225,6 +227,7 @@ const TEXTS = {
     previous: "Back",
     editAnswers: "Edit answers",
     restart: "Restart form",
+    print: "Print",
     progress: (current: number, total: number) =>
       `Question ${current} of ${total}`,
     age: "How old are you?",
@@ -284,6 +287,7 @@ const TEXTS = {
     portfolioGuideTitle: "How to interpret these portfolios",
     portfolioGuideText:
       "Here are personalized options with different asset mixes. Each includes risk, theoretical annual return and estimated value. Remember that past performance does not guarantee future results.",
+    selectPortfolioError: "Select one of the options to continue.",
     portfolioOptions: "Portfolio options",
     option: "Option",
     assets: "Asset breakdown",
@@ -931,6 +935,7 @@ export default function App() {
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
     null,
   );
+  const [portfolioError, setPortfolioError] = useState("");
   const [addons, setAddons] = useState<AddonState>(() => createDefaultAddons());
 
   const texts = TEXTS[lang];
@@ -952,6 +957,15 @@ export default function App() {
     setAnswers((prev) => ({ ...prev, [key]: value }));
     if (fieldErrors[key]) {
       setFieldErrors((prev) => ({ ...prev, [key]: "" }));
+    }
+  };
+
+  const handleInputKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleNext();
     }
   };
 
@@ -1007,7 +1021,10 @@ export default function App() {
   };
 
   const confirmPortfolio = () => {
-    if (!selectedPortfolio) return;
+    if (!selectedPortfolio) {
+      setPortfolioError(texts.selectPortfolioError);
+      return;
+    }
     if (!showAddons) {
       setAddons(createDefaultAddons());
       setPhase("final");
@@ -1020,11 +1037,16 @@ export default function App() {
     setPhase("final");
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const restartForm = () => {
     setPhase("form");
     setStep(0);
     setRisk(0);
     setSelectedPortfolio(null);
+    setPortfolioError("");
     setAddons(createDefaultAddons());
     setFieldErrors({
       horizon: "",
@@ -1191,6 +1213,7 @@ export default function App() {
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
                       value={answers.horizon}
                       onChange={(e) => handleAnswer("horizon", e.target.value)}
+                      onKeyDown={handleInputKeyDown}
                     />
                     <span className="text-sm text-slate-500">{texts.horizonYears}</span>
                   </div>
@@ -1211,6 +1234,7 @@ export default function App() {
                     step={100}
                     value={answers.initial}
                     onChange={(e) => handleAnswer("initial", e.target.value)}
+                    onKeyDown={handleInputKeyDown}
                   />
                   {fieldErrors.initial && (
                     <p className="mt-2 text-sm text-rose-600">{fieldErrors.initial}</p>
@@ -1229,6 +1253,7 @@ export default function App() {
                     step={10}
                     value={answers.monthly}
                     onChange={(e) => handleAnswer("monthly", e.target.value)}
+                    onKeyDown={handleInputKeyDown}
                   />
                   {fieldErrors.monthly && (
                     <p className="mt-2 text-sm text-rose-600">{fieldErrors.monthly}</p>
@@ -1489,7 +1514,10 @@ export default function App() {
                           ? "border-cyan-500 bg-cyan-50"
                           : "border-slate-200 hover:border-slate-400"
                       }`}
-                      onClick={() => setSelectedPortfolio(portfolio)}
+                      onClick={() => {
+                        setSelectedPortfolio(portfolio);
+                        if (portfolioError) setPortfolioError("");
+                      }}
                     >
                       <div className="flex items-center justify-between">
                         <h4 className="text-base font-semibold text-slate-900">
@@ -1503,7 +1531,10 @@ export default function App() {
                         <div className="flex flex-wrap gap-2">
                           {assets.map((asset) => (
                             <span key={asset.key} className="text-slate-700">
-                              {ASSET_LABELS[lang][asset.key]} · {asset.value}%
+                              <strong className="font-semibold text-slate-800">
+                                {ASSET_LABELS[lang][asset.key]}
+                              </strong>{" "}
+                              · {asset.value}%
                             </span>
                           ))}
                         </div>
@@ -1567,11 +1598,13 @@ export default function App() {
                   type="button"
                   className="rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white"
                   onClick={confirmPortfolio}
-                  disabled={!selectedPortfolio}
                 >
                   {texts.confirmPortfolio}
                 </button>
               </div>
+              {portfolioError && (
+                <p className="mt-3 text-sm text-rose-600">{portfolioError}</p>
+              )}
             </div>
           </section>
         )}
@@ -1715,8 +1748,8 @@ export default function App() {
         )}
 
         {phase === "final" && selectedPortfolio && (
-          <section className="grid gap-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+          <section className="grid gap-6 print-area">
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl print-card">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-2xl font-semibold text-slate-900">{texts.finalTitle}</h2>
@@ -1727,13 +1760,22 @@ export default function App() {
                     <StarRating rating={selectedPortfolio.risk} />
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="rounded-full bg-cyan-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
-                  onClick={restartForm}
-                >
-                  {texts.editAnswers}
-                </button>
+                <div className="flex flex-wrap gap-3 no-print">
+                  <button
+                    type="button"
+                    className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:border-slate-400"
+                    onClick={handlePrint}
+                  >
+                    {texts.print}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-cyan-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
+                    onClick={restartForm}
+                  >
+                    {texts.editAnswers}
+                  </button>
+                </div>
               </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 {finalAssets.map((asset) => {
@@ -1849,7 +1891,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl print-card">
               <h3 className="text-xl font-semibold text-slate-900">
                 {texts.implementationTitle}
               </h3>
@@ -1885,6 +1927,15 @@ export default function App() {
               </div>
             </div>
 
+            <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm print-card">
+              <h2 className="text-sm font-semibold text-amber-700">
+                {texts.disclaimerTitle}
+              </h2>
+              <div
+                className="mt-2 leading-relaxed"
+                dangerouslySetInnerHTML={renderMarkdown(disclaimer)}
+              />
+            </div>
           </section>
         )}
 
