@@ -1938,10 +1938,6 @@ export default function App() {
                 className="mt-2 text-sm text-slate-600"
                 dangerouslySetInnerHTML={renderMarkdown(texts.implementationNote)}
               />
-              <div
-                className="mt-3 text-sm text-slate-600"
-                dangerouslySetInnerHTML={renderMarkdown(texts.implementationSubtitle)}
-              />
               <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
                 <p className="text-[15px] font-semibold text-cyan-900">
                   {texts.referralTitle}
@@ -1962,6 +1958,10 @@ export default function App() {
                 </ul>
               </div>
               <div className="mt-6 text-sm text-slate-700">
+                <div
+                  className="mb-3 text-sm text-slate-600"
+                  dangerouslySetInnerHTML={renderMarkdown(texts.implementationSubtitle)}
+                />
                 <div dangerouslySetInnerHTML={renderMarkdown(texts.farewell)} />
               </div>
             </div>
