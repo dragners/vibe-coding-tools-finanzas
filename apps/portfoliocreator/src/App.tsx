@@ -172,7 +172,7 @@ const TEXTS = {
     assets: "Composición de activos",
     risk: "Riesgo",
     theoreticalReturn: "Rentabilidad anual teórica",
-    estimatedValue: "Valor estimado al final del horizonte",
+    estimatedValue: (years: number) => `Valor estimado a ${years} años`,
     volatility: "Volatilidad estimada",
     confirmPortfolio: "Confirmar cartera",
     adjustPortfolio: "Atrás",
@@ -293,7 +293,7 @@ const TEXTS = {
     assets: "Asset breakdown",
     risk: "Risk",
     theoreticalReturn: "Theoretical annual return",
-    estimatedValue: "Estimated value at horizon",
+    estimatedValue: (years: number) => `Estimated value at ${years} years`,
     volatility: "Estimated volatility",
     confirmPortfolio: "Confirm portfolio",
     adjustPortfolio: "Back",
@@ -1541,7 +1541,9 @@ export default function App() {
                       </div>
                       <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50/60 p-3 text-xs text-cyan-900">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold">{texts.estimatedValue}</span>
+                          <span className="font-semibold">
+                            {texts.estimatedValue(horizonYears)}
+                          </span>
                           <span className="text-sm font-semibold text-cyan-900">
                             {formatCurrency(totalValue, lang)}
                           </span>
