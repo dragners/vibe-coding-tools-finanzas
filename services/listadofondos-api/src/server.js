@@ -575,8 +575,65 @@ function parseTer(html) {
   return parseTerLegacy(html);
 }
 
+// SSRF Protection: Whitelist of allowed domains
+const ALLOWED_DOMAINS = [
+  'morningstar.com',
+  'lt.morningstar.com',
+  'www.morningstar.com'
+];
+
+// SSRF Protection: Validate URL before fetching
+function validateUrl(urlString) {
+  let parsed;
+
+  try {
+    parsed = new URL(urlString);
+  } catch (err) {
+    throw new Error('Invalid URL format');
+  }
+
+  // Only allow HTTP and HTTPS protocols
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(`Protocol not allowed: ${parsed.protocol}`);
+  }
+
+  // Check if domain is in whitelist
+  const hostname = parsed.hostname.toLowerCase();
+  const isAllowed = ALLOWED_DOMAINS.some(domain =>
+    hostname === domain || hostname.endsWith(`.${domain}`)
+  );
+
+  if (!isAllowed) {
+    throw new Error(`Domain not allowed: ${hostname}`);
+  }
+
+  // Prevent access to private IP ranges
+  const privateIpPatterns = [
+    /^127\./,           // Loopback
+    /^10\./,            // Private class A
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./,  // Private class B
+    /^192\.168\./,      // Private class C
+    /^169\.254\./,      // Link-local
+    /^::1$/,            // IPv6 loopback
+    /^fc00:/,           // IPv6 private
+    /^fe80:/,           // IPv6 link-local
+    /^localhost$/i,     // localhost
+  ];
+
+  for (const pattern of privateIpPatterns) {
+    if (pattern.test(hostname)) {
+      throw new Error(`Access to private IP/hostname not allowed: ${hostname}`);
+    }
+  }
+
+  return parsed.href;
+}
+
 async function fetchHtml(url) {
-  const response = await fetch(url, {
+  // Validate URL for SSRF protection
+  const validatedUrl = validateUrl(url);
+
+  const response = await fetch(validatedUrl, {
     headers: { "User-Agent": USER_AGENT },
     signal: AbortSignal.timeout(20000),
   });
