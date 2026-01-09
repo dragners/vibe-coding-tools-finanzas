@@ -31,6 +31,16 @@ const sanitizeHtml = (html: string): string => {
   return div.innerHTML;
 };
 
+const LANG_STORAGE_KEY = "finanzas.lang";
+
+const getStoredLang = (): "es" | "en" => {
+  if (typeof window === "undefined") {
+    return "es";
+  }
+  const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
+  return stored === "en" ? "en" : "es";
+};
+
 const fmtEUR = (n: number, locale: string) => n.toLocaleString(locale, {
   style: "currency",
   currency: "EUR",
@@ -650,7 +660,7 @@ function runTests() {
 }
 if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") { runTests(); }
 export default function App() {
-  const [lang, setLang] = useState<'es' | 'en'>('es');
+  const [lang, setLang] = useState<'es' | 'en'>(getStoredLang);
   const [salaryInput, setSalaryInput] = useState("45000");
   const [yearsInput, setYearsInput] = useState("25");
   const [annualContributionInput, setAnnualContributionInput] = useState("1500");
@@ -662,6 +672,13 @@ export default function App() {
   const locale = lang === 'es' ? 'es-ES' : 'en-US';
   const fmt = (n: number) => fmtEUR(n, locale);
   const fmtDur = (months: number) => formatDuration(months, lang);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(LANG_STORAGE_KEY, lang);
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
   const salary = useMemo(() => Math.max(0, parseNum(salaryInput)), [salaryInput]);
   const years = useMemo(() => Math.max(0, Math.floor(parseNum(yearsInput))), [yearsInput]);
   const annualContributionRaw = useMemo(() => Math.max(0, parseNum(annualContributionInput)), [annualContributionInput]);

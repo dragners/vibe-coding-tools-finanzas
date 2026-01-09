@@ -178,6 +178,7 @@
     </main>
 
     <script>
+      const LANG_STORAGE_KEY = 'finanzas.lang';
       const I18N = {
         es:{
           title:'Herramientas financieras',
@@ -265,7 +266,7 @@
         if(els.fund_title) els.fund_title.textContent = stripHTML(t.fund_title);
         if(els.fund_desc) els.fund_desc.textContent = stripHTML(t.fund_desc);
         els.footer_text.textContent = stripHTML(t.footer_text);
-        localStorage.setItem('landing.lang', lang);
+        localStorage.setItem(LANG_STORAGE_KEY, lang);
         els.chipEs.setAttribute('aria-pressed', String(lang==='es'));
         els.chipEn.setAttribute('aria-pressed', String(lang==='en'));
       }
@@ -280,7 +281,7 @@
         el.innerHTML = html;
       }
 
-      const saved = localStorage.getItem('landing.lang') || 'es';
+      const saved = localStorage.getItem(LANG_STORAGE_KEY) || 'es';
       applyLang(saved);
       els.chipEs.addEventListener('click', ()=>applyLang('es'));
       els.chipEn.addEventListener('click', ()=>applyLang('en'));
