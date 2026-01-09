@@ -877,7 +877,8 @@ async function getData() {
 function sendJson(res, statusCode, body) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
+    // Cache for 1 hour (data refreshes every 4 hours)
+    "Cache-Control": "public, max-age=3600",
   });
   res.end(JSON.stringify(body));
 }
