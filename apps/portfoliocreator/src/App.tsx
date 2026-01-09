@@ -1007,7 +1007,11 @@ export default function App() {
       currentQuestion.id === "horizon" ||
       currentQuestion.id === "initial" ||
       currentQuestion.id === "monthly";
-    const isValid = isNumber ? parseNumber(value) > 0 : value !== "";
+    const isValid = isNumber
+      ? currentQuestion.id === "monthly"
+        ? parseNumber(value) >= 0
+        : parseNumber(value) > 0
+      : value !== "";
     if (!isValid) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -1121,7 +1125,7 @@ export default function App() {
     },
     {
       label: texts.summaryMonthly,
-      value: answers.monthly ? formatCurrency(monthly, lang) : "",
+      value: monthly > 0 ? formatCurrency(monthly, lang) : "",
     },
   ].filter((item) => item.value);
 
@@ -1482,12 +1486,14 @@ export default function App() {
                     {formatCurrency(initial, lang)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs uppercase text-slate-400">{texts.summaryMonthly}</p>
-                  <p className="font-semibold text-slate-900">
-                    {formatCurrency(monthly, lang)}
-                  </p>
-                </div>
+                {monthly > 0 && (
+                  <div>
+                    <p className="text-xs uppercase text-slate-400">{texts.summaryMonthly}</p>
+                    <p className="font-semibold text-slate-900">
+                      {formatCurrency(monthly, lang)}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p className="text-xs uppercase text-slate-400">{texts.summaryExperience}</p>
                   <p className="font-semibold text-slate-900">
@@ -1846,14 +1852,16 @@ export default function App() {
                             {formatCurrency(initialAllocation, lang)}
                           </span>
                         </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            {texts.monthlyLabel}:
-                          </span>{" "}
-                          <span className="font-semibold text-slate-900">
-                            {formatCurrency(monthlyAllocation, lang)}
-                          </span>
-                        </li>
+                        {monthly > 0 && (
+                          <li>
+                            <span className="font-semibold text-slate-900">
+                              {texts.monthlyLabel}:
+                            </span>{" "}
+                            <span className="font-semibold text-slate-900">
+                              {formatCurrency(monthlyAllocation, lang)}
+                            </span>
+                          </li>
+                        )}
                       </ul>
                       <p className="mt-1 text-sm font-semibold text-slate-700">
                         {getFundsTitle(asset.key)}
