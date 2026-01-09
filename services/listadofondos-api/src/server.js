@@ -752,14 +752,16 @@ async function fetchFund(entry) {
 
 async function buildPayload() {
   const config = await readConfig();
+
+  // Parallel loading with error handling
   const load = async (items) => {
-    const result = [];
-    for (const entry of items) {
+    // Fetch all funds in parallel instead of sequentially
+    const promises = items.map(async (entry) => {
       try {
-        result.push(await fetchFund(entry));
+        return await fetchFund(entry);
       } catch (err) {
         console.error(`Failed to fetch ${entry?.name} (${entry?.morningstarId}):`, err);
-        result.push({
+        return {
           name: entry.name,
           isin: entry.isin ?? "-",
           category: entry.category ?? "-",
@@ -773,10 +775,11 @@ async function buildPayload() {
           volatility: {},
           ter: "-",
           morningstarRating: null,
-        });
+        };
       }
-    }
-    return result;
+    });
+
+    return await Promise.all(promises);
   };
 
   const [funds, plans] = await Promise.all([
@@ -822,17 +825,105 @@ function sendJson(res, statusCode, body) {
   res.end(JSON.stringify(body));
 }
 
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 30; // Max requests per window
+const RATE_LIMIT_MAX_BODY_SIZE = 1024 * 10; // 10KB max body size
+
+// Rate limiting storage: Map of IP -> { count, windowStart }
+const rateLimitStore = new Map();
+
+function getClientIp(req) {
+  // Check X-Forwarded-For header (set by proxy)
+  const forwarded = req.headers["x-forwarded-for"];
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  // Check X-Real-IP header
+  const realIp = req.headers["x-real-ip"];
+  if (realIp) {
+    return realIp;
+  }
+  // Fallback to remote address
+  return req.socket.remoteAddress;
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const record = rateLimitStore.get(ip);
+
+  if (!record) {
+    rateLimitStore.set(ip, { count: 1, windowStart: now });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
+  }
+
+  const timeSinceWindowStart = now - record.windowStart;
+
+  if (timeSinceWindowStart > RATE_LIMIT_WINDOW_MS) {
+    // New window
+    rateLimitStore.set(ip, { count: 1, windowStart: now });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
+  }
+
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    const resetIn = RATE_LIMIT_WINDOW_MS - timeSinceWindowStart;
+    return { allowed: false, remaining: 0, resetIn };
+  }
+
+  record.count += 1;
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - record.count };
+}
+
+// Cleanup old rate limit records every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitStore.entries()) {
+    if (now - record.windowStart > RATE_LIMIT_WINDOW_MS * 2) {
+      rateLimitStore.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000);
+
 const server = http.createServer(async (req, res) => {
   try {
+    // Apply rate limiting
+    const clientIp = getClientIp(req);
+    const rateLimit = checkRateLimit(clientIp);
+
+    // Add rate limit headers
+    res.setHeader("X-RateLimit-Limit", RATE_LIMIT_MAX_REQUESTS);
+    res.setHeader("X-RateLimit-Remaining", rateLimit.remaining);
+
+    if (!rateLimit.allowed) {
+      res.setHeader("X-RateLimit-Reset", Math.ceil(rateLimit.resetIn / 1000));
+      res.writeHead(429, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Retry-After": Math.ceil(rateLimit.resetIn / 1000),
+      });
+      res.end(JSON.stringify({
+        message: "Too many requests, please try again later",
+        retryAfter: Math.ceil(rateLimit.resetIn / 1000),
+      }));
+      return;
+    }
+
     if (req.method === "GET" && req.url === "/listadofondos/api/data") {
       const data = await getData();
       sendJson(res, 200, data);
       return;
     }
     if (req.method === "POST" && req.url === "/listadofondos/api/refresh") {
-      await new Promise((resolve) => {
-        req.on("data", () => {});
+      // Validate request body size
+      let bodySize = 0;
+      await new Promise((resolve, reject) => {
+        req.on("data", (chunk) => {
+          bodySize += chunk.length;
+          if (bodySize > RATE_LIMIT_MAX_BODY_SIZE) {
+            reject(new Error("Request body too large"));
+          }
+        });
         req.on("end", resolve);
+        req.on("error", reject);
       });
       const data = await startRefresh();
       sendJson(res, 200, data);
@@ -845,6 +936,11 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, 404, { message: "Not found" });
   } catch (err) {
     console.error(err);
+    if (err.message === "Request body too large") {
+      res.writeHead(413, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ message: "Request body too large" }));
+      return;
+    }
     sendJson(res, 500, { message: "Internal server error" });
   }
 });

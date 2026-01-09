@@ -1,4 +1,36 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
+
+// Sanitize HTML by allowing only safe tags: br, strong, em, a
+const sanitizeHtml = (html: string): string => {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+
+  const allowedTags = ['BR', 'STRONG', 'EM', 'A', 'B', 'I'];
+  const walkNode = (node: Node): void => {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      if (!allowedTags.includes(element.tagName)) {
+        // Replace disallowed element with its text content
+        const textNode = document.createTextNode(element.textContent || '');
+        element.replaceWith(textNode);
+        return;
+      }
+      // For anchor tags, ensure href doesn't contain javascript:
+      if (element.tagName === 'A') {
+        const href = element.getAttribute('href') || '';
+        if (href.toLowerCase().startsWith('javascript:') || href.toLowerCase().startsWith('data:')) {
+          element.removeAttribute('href');
+        }
+      }
+      // Recursively check children
+      Array.from(element.childNodes).forEach(walkNode);
+    }
+  };
+
+  Array.from(div.childNodes).forEach(walkNode);
+  return div.innerHTML;
+};
+
 const fmtEUR = (n: number, locale: string) => n.toLocaleString(locale, {
   style: "currency",
   currency: "EUR",
@@ -772,7 +804,7 @@ export default function App() {
       </div>
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-3xl md:text-4xl font-extrabold mb-3">{t.title}</h1>
-        <p className="text-sm md:text-base text-gray-700 mb-6" dangerouslySetInnerHTML={{ __html: t.intro }} />
+        <p className="text-sm md:text-base text-gray-700 mb-6" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.intro) }} />
         <div className="grid grid-cols-1 gap-6">
           
           <div>
@@ -1020,12 +1052,12 @@ export default function App() {
               <div className="text-xs text-gray-600 leading-relaxed mt-4">
                 <p className="mb-2">{t.notesTitle}</p>
                 <ul className="list-disc ml-5 space-y-1">
-                  <li dangerouslySetInnerHTML={{ __html: t.notes1 }} />
-                  <li dangerouslySetInnerHTML={{ __html: t.notes2 }} />
-                  <li dangerouslySetInnerHTML={{ __html: t.notes3 }} />
-                  <li dangerouslySetInnerHTML={{ __html: t.notes4 }} />
-                  <li dangerouslySetInnerHTML={{ __html: t.notes5 }} />
-                  <li dangerouslySetInnerHTML={{ __html: t.notes6 }} />
+                  <li dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.notes1) }} />
+                  <li dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.notes2) }} />
+                  <li dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.notes3) }} />
+                  <li dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.notes4) }} />
+                  <li dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.notes5) }} />
+                  <li dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.notes6) }} />
                 </ul>
               </div>
               <div className="mt-6 text-sm text-gray-600">{t.footer} <a className="text-cyan-700 hover:underline" href="https://dragner.net/" target="_blank" rel="noopener"><strong>dragner.net</strong></a></div>
