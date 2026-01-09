@@ -1374,19 +1374,23 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-xl font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-white"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-gradient-to-b from-white to-slate-100 text-xl font-semibold text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_6px_12px_rgba(15,23,42,0.16)] transition hover:border-slate-300 hover:from-white hover:to-slate-50"
                   onClick={() => updateRisk(-0.5)}
                   aria-label={texts.lower}
                 >
-                  −
+                  <span aria-hidden className="leading-none">
+                    −
+                  </span>
                 </button>
                 <button
                   type="button"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-200 bg-cyan-50 text-xl font-semibold text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-100"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-200 bg-gradient-to-b from-white to-cyan-100 text-xl font-semibold text-cyan-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_6px_12px_rgba(8,145,178,0.25)] transition hover:border-cyan-300 hover:from-white hover:to-cyan-50"
                   onClick={() => updateRisk(0.5)}
                   aria-label={texts.raise}
                 >
-                  +
+                  <span aria-hidden className="leading-none">
+                    +
+                  </span>
                 </button>
               </div>
             </div>
