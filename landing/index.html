@@ -126,6 +126,14 @@
       <section class="apps">
         <div class="grid">
           <!-- Apps visibles -->
+          <a class="card" href="/portfoliocreator/">
+            <div>
+              <div class="pill" data-i18n="portfolio_badge">Planificador</div>
+              <h2 class="title" data-i18n="portfolio_title">Planificador de Cartera en Castellano</h2>
+              <p class="desc" data-i18n="portfolio_desc">Planifica tu cartera en castellano con carteras modelo y ajustes personalizados.</p>
+            </div>
+          </a>
+
           <a class="card" href="/planvsfondo/">
             <div>
               <div class="pill" data-i18n="calc_badge">Calculadora</div>
@@ -173,6 +181,9 @@
         es:{
           title:'Herramientas financieras',
           subtitle:'En esta colección reúno mis dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>Vibe Coding</em> y se apoyan en IA para construir <strong>mejor, más rápido e intuitivo</strong>.',
+          portfolio_badge:'Planificador',
+          portfolio_title:'Planificador de Cartera en Castellano',
+          portfolio_desc:'Planifica tu cartera en castellano con carteras modelo y ajustes personalizados.',
           calc_badge:'Calculadora',
           calc_title:'Plan de Pensiones vs Fondo de Inversión',
           calc_desc:'Compara el neto a recibir al invertir en plan de pensiones o fondo, con tramos IRPF estatales y autonómicos 2025, rescates parciales y rescate total.',
@@ -187,6 +198,9 @@
         en:{
           title:'Financial tools',
           subtitle:'This collection brings together my two passions: personal finance and technology. All tools are born with <em>Vibe Coding</em> and leverage AI to build <strong>better, faster, and more intuitive</strong>.',
+          portfolio_badge:'Planner',
+          portfolio_title:'Portfolio Creator',
+          portfolio_desc:'Plan your portfolio in Spanish with model portfolios and personalised adjustments.',
           calc_badge:'Calculator',
           calc_title:'Pension Plan vs Investment Fund',
           calc_desc:'Compare net outcomes for pension plans vs funds with 2025 state/regional tax brackets, partial withdrawals and lump sum.',
@@ -203,6 +217,9 @@
       const els = {
         title: document.querySelector('[data-i18n="title"]'),
         subtitle: document.querySelector('[data-i18n="subtitle"]'),
+        portfolio_badge: document.querySelector('[data-i18n="portfolio_badge"]'),
+        portfolio_title: document.querySelector('[data-i18n="portfolio_title"]'),
+        portfolio_desc: document.querySelector('[data-i18n="portfolio_desc"]'),
         calc_badge: document.querySelector('[data-i18n="calc_badge"]'),
         calc_title: document.querySelector('[data-i18n="calc_title"]'),
         calc_desc: document.querySelector('[data-i18n="calc_desc"]'),
@@ -234,6 +251,9 @@
         els.title.textContent = stripHTML(t.title);
         stylizeBrand(els.title);
         els.subtitle.innerHTML = t.subtitle;
+        if(els.portfolio_badge) els.portfolio_badge.textContent = stripHTML(t.portfolio_badge);
+        if(els.portfolio_title) els.portfolio_title.textContent = stripHTML(t.portfolio_title);
+        if(els.portfolio_desc) els.portfolio_desc.textContent = stripHTML(t.portfolio_desc);
         if(els.calc_badge) els.calc_badge.textContent = stripHTML(t.calc_badge);
         if(els.calc_title) els.calc_title.textContent = stripHTML(t.calc_title);
         if(els.calc_desc) els.calc_desc.textContent = stripHTML(t.calc_desc);
