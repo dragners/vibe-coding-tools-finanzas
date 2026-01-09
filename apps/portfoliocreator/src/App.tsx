@@ -1773,6 +1773,15 @@ export default function App() {
                 {texts.addonsConfirm}
               </button>
             </div>
+            <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+              <h3 className="text-sm font-semibold text-amber-700">
+                {texts.disclaimerTitle}
+              </h3>
+              <div
+                className="mt-2 leading-relaxed"
+                dangerouslySetInnerHTML={renderMarkdown(disclaimer)}
+              />
+            </section>
           </section>
         )}
 
