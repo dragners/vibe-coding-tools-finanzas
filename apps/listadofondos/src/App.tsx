@@ -120,6 +120,13 @@ const TEXTS = {
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
     mockNotice:
       "Mostrando datos de ejemplo por falta de conexión con la API. Las cifras pueden no coincidir con los últimos datos reales.",
+    page: "Página",
+    of: "de",
+    showing: "Mostrando",
+    to: "a",
+    results: "de",
+    previous: "Anterior",
+    next: "Siguiente",
   },
   en: {
     title: "Fund and Pension Plan Comparison",
@@ -159,6 +166,13 @@ const TEXTS = {
     footer: "© David Gonzalez, want to know more about me? Visit",
     mockNotice:
       "Displaying sample data because the live API is unavailable. Figures may differ from the latest real data.",
+    page: "Page",
+    of: "of",
+    showing: "Showing",
+    to: "to",
+    results: "of",
+    previous: "Previous",
+    next: "Next",
   },
 } as const;
 
@@ -1002,6 +1016,8 @@ function CombinedTable({
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const normalizedQuery = useMemo(
     () => searchQuery.trim().toLowerCase(),
@@ -1058,6 +1074,55 @@ function CombinedTable({
     () => sections.reduce((total, section) => total + section.rows.length, 0),
     [sections],
   );
+
+  // Reset page when search query or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [normalizedQuery, sortConfig]);
+
+  // Pagination calculation
+  const totalPages = Math.max(1, Math.ceil(visibleRowCount / itemsPerPage));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+
+  // Paginate sections: flatten all rows, slice by page, then rebuild sections
+  const paginatedSections = useMemo(() => {
+    if (sections.length === 0) return sections;
+
+    // Flatten all rows with their section info
+    const allRows: Array<{ sectionKey: TableSection; sectionTitle: string; row: FundRow }> = [];
+    sections.forEach(section => {
+      section.rows.forEach(row => {
+        allRows.push({
+          sectionKey: section.key,
+          sectionTitle: section.title,
+          row
+        });
+      });
+    });
+
+    // Slice for current page
+    const startIndex = (validCurrentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageRows = allRows.slice(startIndex, endIndex);
+
+    // Rebuild sections from page rows
+    const sectionMap = new Map<TableSection, { title: string; rows: FundRow[] }>();
+    pageRows.forEach(({ sectionKey, sectionTitle, row }) => {
+      if (!sectionMap.has(sectionKey)) {
+        sectionMap.set(sectionKey, { title: sectionTitle, rows: [] });
+      }
+      sectionMap.get(sectionKey)!.rows.push(row);
+    });
+
+    return Array.from(sectionMap.entries()).map(([key, { title, rows }]) => ({
+      key,
+      title,
+      rows
+    }));
+  }, [sections, validCurrentPage, itemsPerPage]);
+
+  const startItem = visibleRowCount === 0 ? 0 : (validCurrentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(validCurrentPage * itemsPerPage, visibleRowCount);
 
   const totalColumns =
     2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
@@ -1292,7 +1357,7 @@ function CombinedTable({
                 </td>
               </tr>
             ) : (
-              sections.map((section, sectionIndex) => (
+              paginatedSections.map((section, sectionIndex) => (
                 <React.Fragment key={section.key}>
                   <tr>
                     <td
@@ -1452,6 +1517,36 @@ function CombinedTable({
             )}
             </tbody>
           </table>
+
+          {/* Pagination Controls */}
+          {visibleRowCount > itemsPerPage && (
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white/90 backdrop-blur rounded-2xl border border-slate-200">
+              <div className="text-sm text-slate-600">
+                {texts.showing} {startItem}-{endItem} {texts.results} {visibleRowCount}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={validCurrentPage === 1}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label={texts.previous}
+                >
+                  {texts.previous}
+                </button>
+                <span className="text-sm text-slate-600 px-2">
+                  {texts.page} {validCurrentPage} {texts.of} {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={validCurrentPage === totalPages}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label={texts.next}
+                >
+                  {texts.next}
+                </button>
+              </div>
+            </div>
+          )}
       </div>
     </div>
   </section>
