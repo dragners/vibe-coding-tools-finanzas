@@ -1239,15 +1239,15 @@ export default function App() {
 
         {phase === "intro" && (
           <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-semibold text-slate-900">
                   {texts.introTitle}
                 </h2>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-4 text-sm leading-relaxed text-slate-600">
                   {texts.introLead}
                 </p>
-                <p className="mt-3 text-sm text-slate-600">
+                <p className="mt-4 text-sm leading-relaxed text-slate-600">
                   {texts.introBody}
                 </p>
               </div>
