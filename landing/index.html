@@ -30,14 +30,14 @@
 
     <style>
       :root{
-        --bg:#f5f4ff;           /* fondo suave tipo Typeform */
+        --bg:#eef6ff;           /* fondo suave azul */
         --panel:#ffffff;        /* paneles claros */
         --text:#0f172a;         /* texto principal */
-        --muted:#556079;        /* texto secundario */
-        --border:#e6e8f4;       /* bordes suaves */
-        --accent:#6d5efc;       /* acento violeta */
-        --accent-strong:#5a4ee0;/* hover */
-        --ring:rgba(109,94,252,.3);
+        --muted:#4b5b73;        /* texto secundario */
+        --border:#dbe7f5;       /* bordes suaves */
+        --accent:#0ea5e9;       /* acento azul */
+        --accent-strong:#0284c7;/* hover */
+        --ring:rgba(14,165,233,.3);
         --shadow:0 14px 40px rgba(15,23,42,.08);
       }
       *{box-sizing:border-box}
@@ -51,9 +51,9 @@
         inset: 0;
         z-index: -1;
         background:
-          radial-gradient(900px 600px at 8% 0%, rgba(109,94,252,.14), transparent 60%),
-          radial-gradient(900px 600px at 92% -10%, rgba(84,127,255,.12), transparent 60%),
-          linear-gradient(180deg, #f5f4ff 0%, #faf9ff 60%, #f5f4ff 100%),
+          radial-gradient(900px 600px at 8% 0%, rgba(14,165,233,.16), transparent 60%),
+          radial-gradient(900px 600px at 92% -10%, rgba(2,132,199,.12), transparent 60%),
+          linear-gradient(180deg, #eef6ff 0%, #f7fbff 60%, #eef6ff 100%),
           linear-gradient(to bottom, rgba(15,23,42,.035) 1px, transparent 1px),
           linear-gradient(to right, rgba(15,23,42,.035) 1px, transparent 1px);
         background-size: auto, auto, 100% 100%, 28px 28px, 28px 28px;
@@ -61,7 +61,7 @@
       }
 
       /* Topbar */
-      .topbar{position:sticky;top:0;background:rgba(245,244,255,.85);backdrop-filter:saturate(120%) blur(8px);border-bottom:1px solid var(--border)}
+      .topbar{position:sticky;top:0;background:rgba(238,246,255,.85);backdrop-filter:saturate(120%) blur(8px);border-bottom:1px solid var(--border)}
       .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
       .brand{font-weight:900;letter-spacing:.4px;font-size:clamp(20px,2.6vw,28px);text-transform:uppercase}
       .brand .capslead{font-size:1.22em;line-height:0.9;display:inline-block}
@@ -85,10 +85,10 @@
       .card{display:flex;align-items:center;gap:18px;text-decoration:none;background:var(--panel);border:1px solid transparent;border-radius:24px;padding:26px;min-height:140px;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;position:relative;box-shadow:var(--shadow)}
       .card{justify-content:center;text-align:center}
       .card > div{ text-align:center; margin: 0 auto; }
-      .card:hover{transform:translateY(-3px);border-color:rgba(109,94,252,.4);box-shadow:0 18px 44px rgba(15,23,42,.12)}
+      .card:hover{transform:translateY(-3px);border-color:rgba(14,165,233,.4);box-shadow:0 18px 44px rgba(15,23,42,.12)}
       .card .title{font-weight:800;margin:0 0 6px;font-size:20px;color:var(--text)}
       .card .desc{margin:0;color:var(--muted);font-size:15px}
-      .card .pill{display:inline-block;background:rgba(109,94,252,.12);color:var(--accent-strong);border:1px solid rgba(109,94,252,.25);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;position:absolute;top:12px;right:12px;letter-spacing:.02em}
+      .card .pill{display:inline-block;background:rgba(14,165,233,.12);color:var(--accent-strong);border:1px solid rgba(14,165,233,.25);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;position:absolute;top:12px;right:12px;letter-spacing:.02em}
 
       /* Footer */
       footer{margin:44px 0 8px;color:var(--muted);text-align:center}
