@@ -1502,10 +1502,7 @@ export default function App() {
                       <div className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
                         <div className="flex flex-wrap gap-2">
                           {assets.map((asset) => (
-                            <span
-                              key={asset.key}
-                              className="rounded-full bg-slate-100 px-3 py-1 text-slate-700"
-                            >
+                            <span key={asset.key} className="text-slate-700">
                               {ASSET_LABELS[lang][asset.key]} · {asset.value}%
                             </span>
                           ))}
