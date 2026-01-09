@@ -1511,7 +1511,15 @@ export default function App() {
                           ))}
                         </div>
                       </div>
-                      <div className="mt-4 grid gap-2 rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
+                      <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50/60 p-3 text-xs text-cyan-900">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">{texts.estimatedValue}</span>
+                          <span className="text-sm font-semibold text-cyan-900">
+                            {formatCurrency(totalValue, lang)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 grid gap-2 rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
                         <div className="flex items-center justify-between">
                           <span>{texts.theoreticalReturn}</span>
                           <span className="font-semibold text-slate-900">
@@ -1522,12 +1530,6 @@ export default function App() {
                           <span>{texts.volatility}</span>
                           <span className="font-semibold text-slate-900">
                             {formatPercent(portfolio.volatility)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>{texts.estimatedValue}</span>
-                          <span className="font-semibold text-slate-900">
-                            {formatCurrency(totalValue, lang)}
                           </span>
                         </div>
                       </div>
