@@ -8,7 +8,6 @@ type Lang = "es" | "en";
 type RiskPreference = "high" | "moderate" | "low" | "safest";
 
 type QuestionId =
-  | "age"
   | "horizon"
   | "initial"
   | "monthly"
@@ -17,7 +16,6 @@ type QuestionId =
   | "drawdown";
 
 type Answers = {
-  age: string;
   horizon: string;
   initial: string;
   monthly: string;
@@ -175,7 +173,7 @@ const TEXTS = {
     estimatedValue: "Valor estimado al final del horizonte",
     volatility: "Volatilidad estimada",
     confirmPortfolio: "Confirmar cartera",
-    adjustPortfolio: "Modificar opciones",
+    adjustPortfolio: "Atrás",
     growthTitle: "Evolución estimada",
     contributedLine: "Capital aportado",
     growthAxisYears: "Años",
@@ -294,7 +292,7 @@ const TEXTS = {
     estimatedValue: "Estimated value at horizon",
     volatility: "Estimated volatility",
     confirmPortfolio: "Confirm portfolio",
-    adjustPortfolio: "Modify options",
+    adjustPortfolio: "Back",
     growthTitle: "Projected growth",
     contributedLine: "Contributed capital",
     growthAxisYears: "Years",
@@ -489,13 +487,12 @@ const QUESTIONS: {
   id: QuestionId;
   type: "text" | "number" | "select" | "choice";
 }[] = [
-  { id: "age", type: "number" },
   { id: "horizon", type: "number" },
-  { id: "initial", type: "number" },
-  { id: "monthly", type: "number" },
   { id: "experience", type: "choice" },
   { id: "return", type: "select" },
   { id: "drawdown", type: "select" },
+  { id: "initial", type: "number" },
+  { id: "monthly", type: "number" },
 ];
 
 const ASSET_LABELS: Record<Lang, Record<keyof Portfolio["allocation"], string>> =
@@ -577,31 +574,25 @@ const getDisclaimerLang = (lang: Lang) => {
 
 const computeRiskScore = (answers: Answers) => {
   let score = 0;
-  const age = parseNumber(answers.age);
   const horizon = parseNumber(answers.horizon);
   const initial = parseNumber(answers.initial);
   const monthly = parseNumber(answers.monthly);
 
-  if (answers.return === "high") score += 2.4;
-  if (answers.return === "moderate") score += 1.6;
-  if (answers.return === "low") score += 0.8;
+  if (answers.return === "high") score += 3.0;
+  if (answers.return === "moderate") score += 2.0;
+  if (answers.return === "low") score += 1.0;
   if (answers.return === "safest") score += 0.2;
 
-  if (answers.drawdown === "buy") score += 2.0;
-  if (answers.drawdown === "hold") score += 1.0;
-  if (answers.drawdown === "sell") score -= 0.6;
+  if (answers.drawdown === "buy") score += 2.6;
+  if (answers.drawdown === "hold") score += 1.6;
+  if (answers.drawdown === "sell") score -= 1.0;
 
-  if (horizon >= 15) score += 1.0;
-  else if (horizon >= 10) score += 0.8;
-  else if (horizon >= 5) score += 0.4;
-  else score += 0.1;
+  if (horizon >= 15) score += 0.6;
+  else if (horizon >= 10) score += 0.4;
+  else if (horizon >= 5) score += 0.2;
+  else score += 0.05;
 
   if (answers.experience === "yes") score += 0.6;
-
-  if (age > 0 && age < 30) score += 0.8;
-  else if (age < 45) score += 0.4;
-  else if (age < 60) score += 0.1;
-  else if (age >= 60) score -= 0.4;
 
   const annualized = initial + monthly * 12;
   if (annualized > 250000) score += 0.4;
@@ -920,7 +911,6 @@ export default function App() {
     "form",
   );
   const [fieldErrors, setFieldErrors] = useState<Record<QuestionId, string>>({
-    age: "",
     horizon: "",
     initial: "",
     monthly: "",
@@ -929,7 +919,6 @@ export default function App() {
     drawdown: "",
   });
   const [answers, setAnswers] = useState<Answers>({
-    age: "",
     horizon: "",
     initial: "",
     monthly: "",
@@ -977,7 +966,6 @@ export default function App() {
   const handleNext = () => {
     const value = answers[currentQuestion.id];
     const isNumber =
-      currentQuestion.id === "age" ||
       currentQuestion.id === "horizon" ||
       currentQuestion.id === "initial" ||
       currentQuestion.id === "monthly";
@@ -1009,6 +997,11 @@ export default function App() {
     setRisk((prev) => clamp(Number((prev + delta).toFixed(1)), 0, 5));
   };
 
+  const handleBackFromRisk = () => {
+    setPhase("form");
+    setStep(totalQuestions - 1);
+  };
+
   const confirmRisk = () => {
     setPhase("options");
   };
@@ -1034,7 +1027,6 @@ export default function App() {
     setSelectedPortfolio(null);
     setAddons(createDefaultAddons());
     setFieldErrors({
-      age: "",
       horizon: "",
       initial: "",
       monthly: "",
@@ -1073,7 +1065,6 @@ export default function App() {
   const showBitcoin = risk >= 4;
 
   const summaryItems = [
-    { label: texts.summaryAge, value: answers.age },
     {
       label: texts.summaryHorizon,
       value: answers.horizon ? `${answers.horizon} ${texts.horizonYears}` : "",
@@ -1188,23 +1179,6 @@ export default function App() {
               </div>
 
               <div className="mt-6 grid gap-6">
-              {currentQuestion.id === "age" && (
-                <div>
-                  <h2 className="text-2xl font-semibold text-slate-900">
-                    {texts.age}
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-500">{texts.ageTip}</p>
-                  <input
-                    type="number"
-                    className="mt-6 w-full rounded-2xl border border-slate-200 px-4 py-3 text-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
-                    value={answers.age}
-                    onChange={(e) => handleAnswer("age", e.target.value)}
-                  />
-                  {fieldErrors.age && (
-                    <p className="mt-2 text-sm text-rose-600">{fieldErrors.age}</p>
-                  )}
-                </div>
-              )}
               {currentQuestion.id === "horizon" && (
                 <div>
                   <h2 className="text-2xl font-semibold text-slate-900">
@@ -1388,28 +1362,43 @@ export default function App() {
 
         {phase === "risk" && (
           <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-            <h2 className="text-2xl font-semibold text-slate-900">{texts.riskTitle}</h2>
-            <p className="mt-4 text-lg font-semibold text-cyan-700">
-              {texts.riskSummary(risk)}
-            </p>
-            <StarRating rating={risk} className="mt-2" />
-            <p className="mt-2 text-sm text-slate-500">{riskExplanation}</p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900">{texts.riskTitle}</h2>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-lg font-semibold text-cyan-700">
+                  <span>{texts.riskSummary(risk)}</span>
+                  <StarRating rating={risk} />
+                </div>
+                <p className="mt-2 text-sm text-slate-500">{riskExplanation}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-xl font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-white"
+                  onClick={() => updateRisk(-0.5)}
+                  aria-label={texts.lower}
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-200 bg-cyan-50 text-xl font-semibold text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-100"
+                  onClick={() => updateRisk(0.5)}
+                  aria-label={texts.raise}
+                >
+                  +
+                </button>
+              </div>
+            </div>
             <p className="mt-3 text-sm text-slate-600">{texts.riskPrompt}</p>
             <p className="mt-4 text-sm text-slate-600">{texts.riskHint}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 type="button"
                 className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={() => updateRisk(-0.5)}
+                onClick={handleBackFromRisk}
               >
-                {texts.lower}
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                onClick={() => updateRisk(0.5)}
-              >
-                {texts.raise}
+                {texts.previous}
               </button>
               <button
                 type="button"
@@ -1427,10 +1416,6 @@ export default function App() {
             <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
               <h2 className="text-xl font-semibold text-slate-900">{texts.summaryTitle}</h2>
               <div className="mt-4 grid gap-3 text-xs text-slate-600 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs uppercase text-slate-400">{texts.summaryAge}</p>
-                  <p className="font-semibold text-slate-900">{answers.age}</p>
-                </div>
                 <div>
                   <p className="text-xs uppercase text-slate-400">{texts.summaryHorizon}</p>
                   <p className="font-semibold text-slate-900">
@@ -1570,7 +1555,7 @@ export default function App() {
                 <button
                   type="button"
                   className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600"
-                  onClick={() => setSelectedPortfolio(null)}
+                  onClick={() => setPhase("risk")}
                 >
                   {texts.adjustPortfolio}
                 </button>
