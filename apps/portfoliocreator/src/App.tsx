@@ -1579,7 +1579,7 @@ export default function App() {
                           </span>
                         </div>
                       </div>
-                      <div className="relative mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-xs text-slate-600">
+                      <div className="relative mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 pr-10 text-xs text-slate-600">
                         <span className="absolute right-3 top-3 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] font-semibold text-slate-500">
                           i
                         </span>
@@ -1745,7 +1745,7 @@ export default function App() {
                             </span>
                           </div>
                         </div>
-                        <div className="relative mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-xs text-slate-600">
+                      <div className="relative mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 pr-10 text-xs text-slate-600">
                           <span className="absolute right-3 top-3 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] font-semibold text-slate-500">
                             i
                           </span>
