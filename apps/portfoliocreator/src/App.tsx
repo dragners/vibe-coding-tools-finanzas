@@ -98,11 +98,11 @@ const TEXTS = {
     title: "Portfolio Creator",
     subtitle:
       "Crea una cartera indexada personalizada basada en tus preferencias con preguntas guiadas y explicaciones claras.",
-    introTitle: "Empieza con una cartera indexada y sencilla",
+    introTitle: "Crea tu propia cartera de inversión de forma sencilla",
     introLead:
-      "Esta app está pensada para ayudarte a construir una cartera pasiva usando principalmente fondos indexados, aprovechando la fiscalidad de los fondos en España y evitando la complejidad de la inversión activa.",
+      "Esta app te guía para construir una cartera pasiva basada principalmente en fondos indexados, aprovechando la fiscalidad de los fondos en España y evitando la complejidad de la inversión activa.",
     introBody:
-      "El objetivo es simplificar la inversión a largo plazo con aportaciones periódicas, diversificación global y una asignación alineada con tu perfil de riesgo.",
+      "Con unas pocas preguntas definimos tu perfil de riesgo, el horizonte temporal y el nivel de aportaciones. A partir de ahí proponemos combinaciones diversificadas de activos y una distribución clara para que puedas invertir de forma consistente a largo plazo.",
     introNoticeTitle: "Aviso importante",
     introNoticeBody:
       "La información es informativa, está orientada a residentes fiscales en España y a productos disponibles a través de entidades registradas en la CNMV. No sustituye el asesoramiento financiero profesional.",
