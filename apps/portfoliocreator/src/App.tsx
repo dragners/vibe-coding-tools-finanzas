@@ -671,8 +671,8 @@ const buildContributionSeries = (
 const getRiskLabel = (risk: number, lang: Lang) =>
   EXPLANATION_BY_RISK[risk]?.[lang] ?? "";
 
-const getPortfolioOptions = (risk: number) => {
-  const sorted = [...PORTFOLIOS].sort((a, b) => a.risk - b.risk);
+const getPortfolioOptions = (risk: number, portfolios: Portfolio[]) => {
+  const sorted = [...portfolios].sort((a, b) => a.risk - b.risk);
   const below = [...sorted].reverse().find((portfolio) => portfolio.risk < risk);
   const above = sorted.find((portfolio) => portfolio.risk > risk);
   const same = sorted.reduce((closest, portfolio) => {
@@ -962,10 +962,18 @@ export default function App() {
   const initial = parseNumber(answers.initial);
   const monthly = parseNumber(answers.monthly);
   const totalContributed = initial + monthly * horizonYears * 12;
-  const options = useMemo(
-    () => getPortfolioOptions(risk),
-    [risk],
-  );
+  const options = useMemo(() => {
+    const restrictRisky =
+      initial < 15000 || (monthly > 0 && monthly < 250);
+    const eligiblePortfolios = restrictRisky
+      ? PORTFOLIOS.filter(
+          (portfolio) =>
+            portfolio.allocation.emergingMarkets === 0 &&
+            portfolio.allocation.globalSmallCaps === 0,
+        )
+      : PORTFOLIOS;
+    return getPortfolioOptions(risk, eligiblePortfolios);
+  }, [risk, initial, monthly]);
 
   const riskExplanation = getRiskLabel(Math.round(risk), lang);
 
