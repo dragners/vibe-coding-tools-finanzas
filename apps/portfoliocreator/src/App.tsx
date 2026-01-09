@@ -579,11 +579,11 @@ const computeRiskScore = (answers: Answers) => {
   const monthly = parseNumber(answers.monthly);
 
   if (answers.return === "high") score += 2.8;
-  if (answers.return === "moderate") score += 1.3;
+  if (answers.return === "moderate") score += 1.1;
   if (answers.return === "low") score += 1.2;
   if (answers.return === "safest") score += 0.2;
 
-  if (answers.drawdown === "buy") score += 2.2;
+  if (answers.drawdown === "buy") score += 1.9;
   if (answers.drawdown === "hold") score += 0.9;
   if (answers.drawdown === "sell") score -= 0.2;
 
