@@ -169,7 +169,7 @@ const TEXTS = {
     riskPrompt:
       "¿Quieres confirmar este perfil, bajarlo o subirlo?",
     riskHint:
-      "Bajar el riesgo aumenta la exposición a activos de baja volatilidad (bonos, monetario). Subirlo aumenta la exposición a activos con más volatilidad (renta variable).",
+      "Bajar el riesgo aumenta la exposición a activos de baja volatilidad (renta fija, bonos gubernamentales, fondos monetarios) pero el crecimiento de la cartera a largo plazo suele ser menor. Subirlo aumenta la exposición a activos con más volatilidad (renta variable o acciones) por lo que el crecimiento de la cartera a largo plazo suele ser mayor.",
     confirm: "Confirmar",
     lower: "Bajar riesgo",
     raise: "Subir riesgo",
@@ -239,6 +239,8 @@ const TEXTS = {
     referralCode: "El código de referido es: RQU46",
     copyIsin: "Copiar ISIN",
     copied: "ISIN copiado",
+    fixedIncomeInfo:
+      "Fondo de Renta Fija Global cubierta a EUR, contiene un 33% de bonos corporativos lo que diversifica mas los activos pero tambien incrementa volatilidad.",
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
   },
   en: {
@@ -377,6 +379,8 @@ const TEXTS = {
     referralCode: "Referral code is: RQU46",
     copyIsin: "Copy ISIN",
     copied: "ISIN copied",
+    fixedIncomeInfo:
+      "Global fixed income fund hedged to EUR with 33% corporate bonds, which increases diversification but also volatility.",
     footer: "© David Gonzalez, want to know more about me? Visit",
   },
 } as const;
@@ -550,7 +554,7 @@ const ASSET_LABELS: Record<Lang, Record<keyof Portfolio["allocation"], string>> 
       globalShortBonds: "Bonos globales corto plazo",
       globalCorporateShortBonds: "Bonos corporativos corto plazo",
       globalEquities: "Renta variable global",
-      mediumTermBondsEUR: "Bonos EUR medio plazo",
+      mediumTermBondsEUR: "Renta Fija a medio plazo",
       emergingMarkets: "Mercados emergentes",
       globalSmallCaps: "Small caps globales",
     },
@@ -752,6 +756,8 @@ const mapFundToProduct = (fund: Fund): AddonProduct => ({
   url: fund.url,
   type: "fund",
 });
+
+const INFO_FUND_ISIN = "IE00B18GC888";
 
 const StarRating = ({ rating, className = "" }: { rating: number; className?: string }) => {
   const id = useId();
@@ -1983,14 +1989,31 @@ export default function App() {
                         <ul className="space-y-2 text-sm text-slate-600">
                           {asset.products.map((product) => (
                             <li key={`${asset.key}-${product.name}`}>
-                              <a
-                                href={product.url}
-                                className="font-semibold text-blue-600 hover:text-blue-700 underline"
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                            {product.name}
-                          </a>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <a
+                                  href={product.url}
+                                  className="font-semibold text-blue-600 hover:text-blue-700 underline"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {product.name}
+                                </a>
+                                {product.isin === INFO_FUND_ISIN && (
+                                  <span className="relative inline-flex items-center group">
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] font-semibold text-slate-500"
+                                      aria-label={texts.fixedIncomeInfo}
+                                      title={texts.fixedIncomeInfo}
+                                    >
+                                      i
+                                    </button>
+                                    <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-64 -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                                      {texts.fixedIncomeInfo}
+                                    </span>
+                                  </span>
+                                )}
+                              </div>
                           {product.description?.[lang] && (
                             <p
                               className="mt-1 text-xs text-slate-500"
