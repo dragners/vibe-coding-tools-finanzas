@@ -78,6 +78,8 @@
       .hero{padding:42px 0 8px;text-align:center}
       h1{font-size:clamp(28px,4vw,44px);margin:0 0 12px;line-height:1.06}
       .sub{color:var(--muted);font-size:clamp(16px,2.2vw,20px);margin:0;max-width:80ch}
+      .sub p{margin:0 0 12px}
+      .sub p:last-child{margin-bottom:0}
 
       /* Cards grid */
       .apps{width:100%}
@@ -119,9 +121,11 @@
     <main class="wrap">
       <section class="hero">
         
-        <p class="sub" data-i18n="subtitle">
-          En esta colección reúno mis dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>Vibe Coding</em> y se apoyan en IA para construir <strong>mejor, más rápido e intuitivo</strong>.
-        </p>
+        <div class="sub" data-i18n="subtitle">
+          <p>En esta colección reúno mis dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>Vibe Coding</em> y se apoyan en IA para construir <strong>mejor, más rápido e intuitivo</strong>.</p>
+          <p>Encontrarás recursos <strong>claros y prácticos</strong> para tu día a día, pensados para aprender, planificar y avanzar con <em>confianza</em> en las finanzas personales.</p>
+          <p>Todos los recursos son <strong>100% gratuitos</strong> y totalmente privados. <em>No almacenamos</em> ningún tipo de dato personal; el único objetivo es acercar las herramientas necesarias al usuario mediante tecnología.</p>
+        </div>
       </section>
 
       <section class="apps">
@@ -182,7 +186,7 @@
       const I18N = {
         es:{
           title:'Herramientas financieras',
-          subtitle:'En esta colección reúno mis dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>Vibe Coding</em> y se apoyan en IA para construir <strong>mejor, más rápido e intuitivo</strong>.',
+          subtitle:'<p>En esta colección reúno mis dos pasiones: las finanzas personales y la tecnología. Todas las herramientas nacen con <em>Vibe Coding</em> y se apoyan en IA para construir <strong>mejor, más rápido e intuitivo</strong>.</p><p>Encontrarás recursos <strong>claros y prácticos</strong> para tu día a día, pensados para aprender, planificar y avanzar con <em>confianza</em> en las finanzas personales.</p><p>Todos los recursos son <strong>100% gratuitos</strong> y totalmente privados. <em>No almacenamos</em> ningún tipo de dato personal; el único objetivo es acercar las herramientas necesarias al usuario mediante tecnología.</p>',
           portfolio_badge:'Planificador',
           portfolio_title:'Planificador de Cartera de Inversion',
           portfolio_desc:'Planifica una cartera de inversion pasiva basada principalmente en fondos indexados, aprovechando la fiscalidad de los fondos en España.',
@@ -199,7 +203,7 @@
         },
         en:{
           title:'Financial tools',
-          subtitle:'This collection brings together my two passions: personal finance and technology. All tools are born with <em>Vibe Coding</em> and leverage AI to build <strong>better, faster, and more intuitive</strong>.',
+          subtitle:'<p>This collection brings together my two passions: personal finance and technology. All tools are born with <em>Vibe Coding</em> and leverage AI to build <strong>better, faster, and more intuitive</strong>.</p><p>You will find <strong>clear and practical</strong> resources for everyday use, designed to help you learn, plan, and move forward with <em>confidence</em> in personal finance.</p><p>All resources are <strong>100% free</strong> and fully private. <em>We do not store</em> any personal data; the only goal is to bring the right tools to the user through technology.</p>',
           portfolio_badge:'Planner',
           portfolio_title:'Investment Portfolio Planner',
           portfolio_desc:'Plan a passive investment portfolio mainly with index funds, taking advantage of Spanish fund tax benefits.',
