@@ -240,7 +240,7 @@ const TEXTS = {
     copyIsin: "Copiar ISIN",
     copied: "ISIN copiado",
     fixedIncomeInfo:
-      "Fondo de Renta Fija Global cubierta a EUR, contiene un 33% de bonos corporativos lo que diversifica mas los activos pero tambien incrementa volatilidad.",
+      "Fondo de renta fija global, Euro cubierto (elimina el riesgo divisa), contiene un 33% de bonos corporativos lo que diversifica mas los activos pero puede incrementar volatilidad.",
     footer: "© David Gonzalez, si quieres saber más sobre mí, visita",
   },
   en: {
@@ -554,7 +554,7 @@ const ASSET_LABELS: Record<Lang, Record<keyof Portfolio["allocation"], string>> 
       globalShortBonds: "Bonos globales corto plazo",
       globalCorporateShortBonds: "Bonos corporativos corto plazo",
       globalEquities: "Renta variable global",
-      mediumTermBondsEUR: "Renta Fija a medio plazo",
+      mediumTermBondsEUR: "Renta fija a medio plazo",
       emergingMarkets: "Mercados emergentes",
       globalSmallCaps: "Small caps globales",
     },
@@ -744,10 +744,14 @@ const getAssetSummary = (allocation: Portfolio["allocation"]) =>
       value,
     }));
 
+const INFO_FUND_ISIN = "IE00B18GC888";
+
 const getSelectedFunds = (assetType: keyof Portfolio["allocation"]) =>
-  FUNDS.filter((fund) => fund.assetType === assetType).sort(
-    (a, b) => parseTerValue(a.ter) - parseTerValue(b.ter),
-  );
+  FUNDS.filter((fund) => fund.assetType === assetType).sort((a, b) => {
+    if (a.isin === INFO_FUND_ISIN && b.isin !== INFO_FUND_ISIN) return -1;
+    if (b.isin === INFO_FUND_ISIN && a.isin !== INFO_FUND_ISIN) return 1;
+    return parseTerValue(a.ter) - parseTerValue(b.ter);
+  });
 
 const mapFundToProduct = (fund: Fund): AddonProduct => ({
   name: fund.name,
@@ -756,8 +760,6 @@ const mapFundToProduct = (fund: Fund): AddonProduct => ({
   url: fund.url,
   type: "fund",
 });
-
-const INFO_FUND_ISIN = "IE00B18GC888";
 
 const StarRating = ({ rating, className = "" }: { rating: number; className?: string }) => {
   const id = useId();
@@ -1982,7 +1984,7 @@ export default function App() {
                           </li>
                         )}
                       </ul>
-                      <p className="mt-1 text-sm font-semibold text-slate-700">
+                      <p className="mt-3 text-sm font-semibold text-slate-700">
                         {getFundsTitle(asset.key)}
                       </p>
                       <div className="mt-1 rounded-xl border border-slate-100 p-3">
