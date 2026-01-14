@@ -192,7 +192,7 @@ const TEXTS = {
     term: "Plazo",
     lines: "Ofertas a comparar",
     addLine: "Añadir hipoteca",
-    shareLink: "Link permanente",
+    shareLink: "Crear link",
     shareCopy: "Copiar link",
     shareCopied: "Copiado",
     shareReady: "Listo para compartir",
@@ -242,7 +242,7 @@ const TEXTS = {
     term: "Term",
     lines: "Offers to compare",
     addLine: "Add mortgage",
-    shareLink: "Permanent link",
+    shareLink: "Create link",
     shareCopy: "Copy link",
     shareCopied: "Copied",
     shareReady: "Ready to share",
@@ -628,10 +628,10 @@ export default function App() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold">{t.lines}</h2>
                 <div className="flex items-center gap-2">
-                  <button onClick={addLine} disabled={!canAdd} className="px-3 py-1.5 text-sm rounded-lg bg-cyan-600 text-white disabled:opacity-50">+ {t.addLine}</button>
                   <button onClick={onShare} className="px-3 py-1.5 text-sm rounded-lg border border-cyan-600 text-cyan-700 hover:bg-cyan-50">
                     {t.shareLink}
                   </button>
+                  <button onClick={addLine} disabled={!canAdd} className="px-3 py-1.5 text-sm rounded-lg bg-cyan-600 text-white disabled:opacity-50">+ {t.addLine}</button>
                   <span className="text-xs text-gray-500">{t.max10}</span>
                 </div>
               </div>
