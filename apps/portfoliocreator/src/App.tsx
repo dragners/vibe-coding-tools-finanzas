@@ -1122,27 +1122,25 @@ export default function App() {
     if (hasAddonParams) {
       const nextAddons = addonKeys.reduce<AddonState>((acc, key) => {
         const enabled = parseBoolean(params.get(`${key}Enabled`));
-        const percentValue = parseNumber(params.get(`${key}Percent`));
+        const percentParam = params.get(`${key}Percent`);
+        const percentValue =
+          percentParam === null ? ADDON_RECOMMENDED[key] : parseNumber(percentParam);
         return {
           ...acc,
           [key]: {
             enabled,
-            percent: clamp(
-              percentValue || ADDON_RECOMMENDED[key],
-              0,
-              ADDON_LIMITS[key],
-            ),
+            percent: clamp(percentValue, 0, ADDON_LIMITS[key]),
           },
         };
       }, createDefaultAddons());
       setAddons(nextAddons);
     }
 
-    if (hasCompleteAnswers(parsedAnswers)) {
-      const parsedRisk = parseNumber(params.get("risk"));
-      const nextRisk =
-        parsedRisk > 0 ? clamp(parsedRisk, 0, 5) : computeRiskScore(parsedAnswers);
-      setRisk(nextRisk);
+    const riskParam = params.get("risk");
+    if (riskParam !== null) {
+      setRisk(clamp(parseNumber(riskParam), 0, 5));
+    } else if (hasCompleteAnswers(parsedAnswers)) {
+      setRisk(computeRiskScore(parsedAnswers));
     }
 
     const viewParam = params.get("view");
