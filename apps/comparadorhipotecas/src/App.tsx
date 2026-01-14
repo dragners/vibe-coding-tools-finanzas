@@ -109,6 +109,77 @@ const newLine = (i: number): MortgageLine => ({
   }
 });
 
+const defaultProducts = (): Record<ProductKey, Product> => ({
+  nom:   { bonifPct: 0.0, annualCost: 0, enabled: true },
+  sh:    { bonifPct: 0.0, annualCost: 0, enabled: true },
+  sv:    { bonifPct: 0.0, annualCost: 0, enabled: true },
+  otros: { bonifPct: 0.0, annualCost: 0, enabled: true },
+});
+
+type MortgageShareState = {
+  amount: number;
+  years: number;
+  lines: Array<{
+    bank: string;
+    tinPct: number;
+    products: Record<ProductKey, Product>;
+  }>;
+};
+
+const clampNum = (value: number, min: number, max: number) => clamp(Number.isFinite(value) ? value : min, min, max);
+
+const normalizeProducts = (products?: Partial<Record<ProductKey, Partial<Product>>>): Record<ProductKey, Product> => {
+  const base = defaultProducts();
+  if (!products) return base;
+  (Object.keys(base) as ProductKey[]).forEach((key) => {
+    const incoming = products[key];
+    if (incoming) {
+      base[key] = {
+        bonifPct: clampNum(Number(incoming.bonifPct ?? base[key].bonifPct), 0, 5),
+        annualCost: clampNum(Number(incoming.annualCost ?? base[key].annualCost), 0, 1_000_000),
+        enabled: typeof incoming.enabled === "boolean" ? incoming.enabled : base[key].enabled,
+      };
+    }
+  });
+  return base;
+};
+
+const parseShareState = (raw: string): MortgageShareState | null => {
+  try {
+    const decoded = JSON.parse(atob(raw));
+    if (!decoded || typeof decoded !== "object") return null;
+    const amount = clampNum(Number(decoded.amount), 0, 50_000_000);
+    const years = clampNum(Number(decoded.years), 0, 40);
+    const linesRaw = Array.isArray(decoded.lines) ? decoded.lines : [];
+    const lines = linesRaw.slice(0, 10).map((line: any, index: number) => ({
+      bank: typeof line?.bank === "string" ? line.bank.slice(0, 20) : `Banco ${index + 1}`,
+      tinPct: clampNum(Number(line?.tinPct), 0, 30),
+      products: normalizeProducts(line?.products),
+    }));
+    return { amount, years, lines };
+  } catch (error) {
+    return null;
+  }
+};
+
+const buildShareState = (amount: number, years: number, lines: MortgageLine[]): MortgageShareState => ({
+  amount: clampNum(amount, 0, 50_000_000),
+  years: clampNum(years, 0, 40),
+  lines: lines.map((line) => ({
+    bank: line.bank.slice(0, 20),
+    tinPct: clampNum(line.tinPct, 0, 30),
+    products: normalizeProducts(line.products),
+  })),
+});
+
+const buildShareUrl = (state: MortgageShareState) => {
+  if (typeof window === "undefined") return "";
+  const payload = btoa(JSON.stringify(state));
+  const url = new URL(window.location.href);
+  url.searchParams.set("share", payload);
+  return url.toString();
+};
+
 const PRODUCT_LABEL: Record<ProductKey, string> = { nom: "Nom", sh: "SH", sv: "SV", otros: "Otros" };
 
 const TEXTS = {
@@ -121,6 +192,10 @@ const TEXTS = {
     term: "Plazo",
     lines: "Ofertas a comparar",
     addLine: "Añadir hipoteca",
+    shareLink: "Link permanente",
+    shareCopy: "Copiar link",
+    shareCopied: "Copiado",
+    shareReady: "Listo para compartir",
     max10: "Máx. 10",
     bank: "Banco",
     tinBase: "TIN",
@@ -167,6 +242,10 @@ const TEXTS = {
     term: "Term",
     lines: "Offers to compare",
     addLine: "Add mortgage",
+    shareLink: "Permanent link",
+    shareCopy: "Copy link",
+    shareCopied: "Copied",
+    shareReady: "Ready to share",
     max10: "Max 10",
     bank: "Bank",
     tinBase: "TIN",
@@ -413,6 +492,25 @@ export default function App() {
   const nMonths = useMemo(() => clamp(Math.round(years * 12), 1, 80 * 12), [years]);
 
   const [lines, setLines] = useState<MortgageLine[]>([newLine(1), newLine(2)]);
+  const [shareUrl, setShareUrl] = useState<string>("");
+  const [shareCopied, setShareCopied] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const shareParam = params.get("share");
+    if (!shareParam) return;
+    const parsed = parseShareState(shareParam);
+    if (!parsed) return;
+    setAmount(parsed.amount);
+    setYears(parsed.years);
+    setLines(parsed.lines.map((line, index) => ({
+      id: Math.random().toString(36).slice(2),
+      bank: line.bank,
+      tinPct: line.tinPct,
+      products: normalizeProducts(line.products),
+    })));
+  }, []);
 
   const canAdd = lines.length < 10;
 
@@ -424,6 +522,20 @@ export default function App() {
   };
   const updateProduct = (id: string, key: ProductKey, patch: Partial<Product>) => {
     setLines(prev => prev.map(l => l.id === id ? { ...l, products: { ...l.products, [key]: { ...l.products[key], ...patch } } } : l));
+  };
+
+  const onShare = async () => {
+    const nextUrl = buildShareUrl(buildShareState(amount, years, lines));
+    if (!nextUrl) return;
+    setShareUrl(nextUrl);
+    setShareCopied(false);
+    try {
+      await navigator.clipboard.writeText(nextUrl);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (error) {
+      setShareCopied(false);
+    }
   };
 
   type LineComputed = {
@@ -517,9 +629,32 @@ export default function App() {
                 <h2 className="font-semibold">{t.lines}</h2>
                 <div className="flex items-center gap-2">
                   <button onClick={addLine} disabled={!canAdd} className="px-3 py-1.5 text-sm rounded-lg bg-cyan-600 text-white disabled:opacity-50">+ {t.addLine}</button>
+                  <button onClick={onShare} className="px-3 py-1.5 text-sm rounded-lg border border-cyan-600 text-cyan-700 hover:bg-cyan-50">
+                    {t.shareLink}
+                  </button>
                   <span className="text-xs text-gray-500">{t.max10}</span>
                 </div>
               </div>
+              {shareUrl && (
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="text-xs text-gray-500">{shareCopied ? t.shareCopied : t.shareReady}</div>
+                  <div className="flex flex-1 items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      className="w-full border rounded-xl p-2 text-xs text-gray-700 bg-gray-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={onShare}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      {t.shareCopy}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-10 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
                 <div className="col-span-2">{t.bank}</div>
