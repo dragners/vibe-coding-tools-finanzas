@@ -1008,7 +1008,7 @@ export default function App() {
                         {shareUrl ? (
                           <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                              {shareStatus || t.linkReady}
+                              {t.linkReady}
                             </p>
                             <div className="mt-3 flex flex-1 flex-wrap items-center gap-3">
                               <input
