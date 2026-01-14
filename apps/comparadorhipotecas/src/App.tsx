@@ -192,9 +192,8 @@ const TEXTS = {
     term: "Plazo",
     lines: "Ofertas a comparar",
     addLine: "Añadir hipoteca",
-    shareLink: "Crear link",
-    shareCopy: "Copiar link",
-    shareCopied: "Copiado",
+    shareLink: "Link permanente",
+    shareCopied: "Link copiado",
     shareReady: "Listo para compartir",
     max10: "Máx. 10",
     bank: "Banco",
@@ -242,9 +241,8 @@ const TEXTS = {
     term: "Term",
     lines: "Offers to compare",
     addLine: "Add mortgage",
-    shareLink: "Create link",
-    shareCopy: "Copy link",
-    shareCopied: "Copied",
+    shareLink: "Permanent link",
+    shareCopied: "Link copied",
     shareReady: "Ready to share",
     max10: "Max 10",
     bank: "Bank",
@@ -636,22 +634,22 @@ export default function App() {
                 </div>
               </div>
               {shareUrl && (
-                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <div className="text-xs text-gray-500">{shareCopied ? t.shareCopied : t.shareReady}</div>
-                  <div className="flex flex-1 items-center gap-2">
+                <div className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                    {t.shareReady}
+                  </p>
+                  <div className="mt-3 flex flex-1 flex-wrap items-center gap-3">
                     <input
                       type="text"
                       readOnly
                       value={shareUrl}
-                      className="w-full border rounded-xl p-2 text-xs text-gray-700 bg-gray-50"
+                      className="min-w-[260px] flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-700 shadow-sm"
                     />
-                    <button
-                      type="button"
-                      onClick={onShare}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    >
-                      {t.shareCopy}
-                    </button>
+                    {shareCopied && (
+                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                        {t.shareCopied}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
