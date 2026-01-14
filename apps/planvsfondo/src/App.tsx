@@ -1001,30 +1001,46 @@ export default function App() {
                         <button
                           type="button"
                           onClick={handleShareLink}
-                          className="px-3 py-1.5 text-sm rounded-lg border border-cyan-600 text-cyan-700 hover:bg-cyan-50"
+                          className="px-3 py-1.5 text-sm rounded-lg bg-cyan-600 text-white hover:bg-cyan-700"
                         >
                           {t.shareLink}
                         </button>
-                        {shareStatus ? (
-                          <div className="mt-2 text-[11px] text-gray-500">{shareStatus}</div>
-                        ) : null}
                         {shareUrl ? (
-                          <a
-                            href={shareUrl}
-                            className="mt-2 block text-[11px] text-cyan-700 underline break-all"
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {shareUrl}
-                          </a>
+                          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                              {shareStatus || t.linkReady}
+                            </p>
+                            <div className="mt-3 flex flex-1 flex-wrap items-center gap-3">
+                              <input
+                                type="text"
+                                readOnly
+                                value={shareUrl}
+                                className="min-w-[260px] flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-700 shadow-sm"
+                              />
+                              {shareStatus === t.linkCopied ? (
+                                <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                                  {t.linkCopied}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
                         ) : null}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 md:text-right mt-3 md:mt-0">
-                      <div className="space-y-1 md:text-right">
-                        <div>{t.pensionNetPrev} <b>{fmt(pensionNet)}</b></div>
-                        <div>{t.marginalType} <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
-                        <div>{t.annualIRPFSaving} <b>{fmt(annualIRPFSaving)}</b></div>
+                    <div className="text-sm text-gray-600 md:text-right mt-3 md:mt-0">
+                      <div className="space-y-2 md:text-right">
+                        <div>
+                          {t.pensionNetPrev}{" "}
+                          <span className="font-semibold text-gray-900 text-base md:text-lg">{fmt(pensionNet)}</span>
+                        </div>
+                        <div>
+                          {t.marginalType}{" "}
+                          <span className="font-semibold text-gray-900 text-base md:text-lg">{(marginalGeneral * 100).toFixed(1)}%</span>
+                        </div>
+                        <div>
+                          {t.annualIRPFSaving}{" "}
+                          <span className="font-semibold text-gray-900 text-base md:text-lg">{fmt(annualIRPFSaving)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
