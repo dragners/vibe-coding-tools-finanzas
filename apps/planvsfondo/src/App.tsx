@@ -112,7 +112,7 @@ const TEXTS = {
     pensionNetPrev: "Pensión pública neta prevista:",
     marginalType: "Tipo marginal estimado (trabajo):",
     annualIRPFSaving: "Ahorro IRPF anual por aportar al plan:",
-    shareLink: "Compartir enlace",
+    shareLink: "Link permanente",
     linkReady: "Enlace listo para compartir",
     linkCopied: "Enlace copiado",
     retirementValue: "Valor a la jubilación",
@@ -169,7 +169,7 @@ const TEXTS = {
     pensionNetPrev: "Expected net public pension:",
     marginalType: "Estimated marginal rate (work):",
     annualIRPFSaving: "Annual income tax saving from plan contribution:",
-    shareLink: "Share link",
+    shareLink: "Permanent link",
     linkReady: "Link ready to share",
     linkCopied: "Link copied",
     retirementValue: "Value at retirement",
@@ -997,36 +997,34 @@ export default function App() {
                           <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">{t.yes}</span>
                         </label>
                       </div>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={handleShareLink}
+                          className="px-3 py-1.5 text-sm rounded-lg border border-cyan-600 text-cyan-700 hover:bg-cyan-50"
+                        >
+                          {t.shareLink}
+                        </button>
+                        {shareStatus ? (
+                          <div className="mt-2 text-[11px] text-gray-500">{shareStatus}</div>
+                        ) : null}
+                        {shareUrl ? (
+                          <a
+                            href={shareUrl}
+                            className="mt-2 block text-[11px] text-cyan-700 underline break-all"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {shareUrl}
+                          </a>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="text-xs text-gray-500 md:text-right mt-3 md:mt-0">
-                      <div className="flex flex-col md:flex-row md:items-start md:justify-end md:gap-3">
-                        <div className="space-y-1 md:text-right">
-                          <div>{t.pensionNetPrev} <b>{fmt(pensionNet)}</b></div>
-                          <div>{t.marginalType} <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
-                          <div>{t.annualIRPFSaving} <b>{fmt(annualIRPFSaving)}</b></div>
-                        </div>
-                        <div className="mt-2 md:mt-0 md:ml-2 flex flex-col items-start md:items-end gap-1">
-                          <button
-                            type="button"
-                            onClick={handleShareLink}
-                            className="inline-flex items-center gap-2 rounded-full border border-cyan-600 px-3 py-1 text-xs font-semibold text-cyan-700 hover:bg-cyan-50"
-                          >
-                            {t.shareLink}
-                          </button>
-                          {shareStatus ? (
-                            <span className="text-[11px] text-gray-500">{shareStatus}</span>
-                          ) : null}
-                          {shareUrl ? (
-                            <a
-                              href={shareUrl}
-                              className="text-[11px] text-cyan-700 underline break-all"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {shareUrl}
-                            </a>
-                          ) : null}
-                        </div>
+                      <div className="space-y-1 md:text-right">
+                        <div>{t.pensionNetPrev} <b>{fmt(pensionNet)}</b></div>
+                        <div>{t.marginalType} <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
+                        <div>{t.annualIRPFSaving} <b>{fmt(annualIRPFSaving)}</b></div>
                       </div>
                     </div>
                   </div>
