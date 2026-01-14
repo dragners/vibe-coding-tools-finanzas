@@ -126,6 +126,9 @@ const TEXTS = {
     editAnswers: "Editar respuestas",
     restart: "Reiniciar formulario",
     print: "Imprimir",
+    shareLink: "Crear link",
+    shareReady: "Enlace permanente",
+    shareCopied: "Link copiado",
     progress: (current: number, total: number) =>
       `Pregunta ${current} de ${total}`,
     age: "¿Cuántos años tienes?",
@@ -266,6 +269,9 @@ const TEXTS = {
     editAnswers: "Edit answers",
     restart: "Restart form",
     print: "Print",
+    shareLink: "Create link",
+    shareReady: "Shareable link",
+    shareCopied: "Link copied",
     progress: (current: number, total: number) =>
       `Question ${current} of ${total}`,
     age: "How old are you?",
@@ -392,6 +398,17 @@ const parseNumber = (value: string | number | null | undefined) => {
   const parsed = parseFloat(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+
+const parseBoolean = (value: string | null) =>
+  value === "1" || value === "true";
+
+const hasCompleteAnswers = (candidate: Answers) =>
+  candidate.horizon !== "" &&
+  candidate.initial !== "" &&
+  candidate.monthly !== "" &&
+  candidate.experience !== "" &&
+  candidate.return !== "" &&
+  candidate.drawdown !== "";
 
 const parseTerValue = (value: string) => {
   if (!value) return Number.POSITIVE_INFINITY;
@@ -1027,6 +1044,8 @@ export default function App() {
   });
   const [risk, setRisk] = useState(0);
   const [copiedIsin, setCopiedIsin] = useState<string | null>(null);
+  const [shareLink, setShareLink] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
     null,
   );
@@ -1055,6 +1074,84 @@ export default function App() {
   }, [risk, initial, monthly]);
 
   const riskExplanation = getRiskLabel(Math.round(risk), lang);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.toString()) return;
+
+    const urlLang = params.get("lang");
+    if (urlLang === "es" || urlLang === "en") {
+      setLang(urlLang);
+    }
+
+    const parsedAnswers: Answers = {
+      horizon: params.get("horizon") ?? "",
+      initial: params.get("initial") ?? "",
+      monthly: params.get("monthly") ?? "",
+      experience: params.get("experience") ?? "",
+      return: (params.get("return") as Answers["return"]) ?? "",
+      drawdown: (params.get("drawdown") as Answers["drawdown"]) ?? "",
+    };
+    const hasAnswers = Object.values(parsedAnswers).some((value) => value !== "");
+    if (hasAnswers) {
+      setAnswers(parsedAnswers);
+      setFieldErrors({
+        horizon: "",
+        initial: "",
+        monthly: "",
+        experience: "",
+        return: "",
+        drawdown: "",
+      });
+      setStep(0);
+    }
+
+    const portfolioName = params.get("portfolio");
+    const matchedPortfolio =
+      portfolioName &&
+      PORTFOLIOS.find((portfolio) => portfolio.name === portfolioName);
+    if (matchedPortfolio) {
+      setSelectedPortfolio(matchedPortfolio);
+    }
+
+    const addonKeys: AddonKey[] = ["gold", "realEstate", "bitcoin"];
+    const hasAddonParams = addonKeys.some(
+      (key) => params.has(`${key}Enabled`) || params.has(`${key}Percent`),
+    );
+    if (hasAddonParams) {
+      const nextAddons = addonKeys.reduce<AddonState>((acc, key) => {
+        const enabled = parseBoolean(params.get(`${key}Enabled`));
+        const percentValue = parseNumber(params.get(`${key}Percent`));
+        return {
+          ...acc,
+          [key]: {
+            enabled,
+            percent: clamp(
+              percentValue || ADDON_RECOMMENDED[key],
+              0,
+              ADDON_LIMITS[key],
+            ),
+          },
+        };
+      }, createDefaultAddons());
+      setAddons(nextAddons);
+    }
+
+    if (hasCompleteAnswers(parsedAnswers)) {
+      const parsedRisk = parseNumber(params.get("risk"));
+      const nextRisk =
+        parsedRisk > 0 ? clamp(parsedRisk, 0, 5) : computeRiskScore(parsedAnswers);
+      setRisk(nextRisk);
+    }
+
+    const viewParam = params.get("view");
+    if (viewParam === "final" && matchedPortfolio && hasCompleteAnswers(parsedAnswers)) {
+      setPhase("final");
+    } else if (hasAnswers) {
+      setPhase("form");
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1155,13 +1252,46 @@ export default function App() {
     window.print();
   };
 
-  const restartForm = () => {
+  const buildShareUrl = () => {
+    if (typeof window === "undefined" || !selectedPortfolio) return "";
+    const params = new URLSearchParams();
+    params.set("view", "final");
+    params.set("lang", lang);
+    (Object.entries(answers) as Array<[keyof Answers, string]>).forEach(
+      ([key, value]) => {
+        params.set(key, value);
+      },
+    );
+    params.set("portfolio", selectedPortfolio.name);
+    params.set("risk", risk.toString());
+    (Object.keys(addons) as AddonKey[]).forEach((key) => {
+      params.set(`${key}Enabled`, addons[key].enabled ? "1" : "0");
+      params.set(`${key}Percent`, addons[key].percent.toString());
+    });
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  };
+
+  const handleShareLink = () => {
+    const url = buildShareUrl();
+    if (!url) return;
+    setShareLink(url);
+    setShareCopied(false);
+    if (!navigator?.clipboard) return;
+    void navigator.clipboard.writeText(url).then(() => {
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2000);
+    });
+  };
+
+  const handleEditAnswers = () => {
     setPhase("form");
     setStep(0);
     setRisk(0);
     setSelectedPortfolio(null);
     setPortfolioError("");
     setAddons(createDefaultAddons());
+    setShareLink("");
+    setShareCopied(false);
     setFieldErrors({
       horizon: "",
       initial: "",
@@ -1944,13 +2074,40 @@ export default function App() {
                   </button>
                   <button
                     type="button"
+                    className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:border-slate-400"
+                    onClick={handleShareLink}
+                  >
+                    {texts.shareLink}
+                  </button>
+                  <button
+                    type="button"
                     className="rounded-full bg-cyan-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-500"
-                    onClick={restartForm}
+                    onClick={handleEditAnswers}
                   >
                     {texts.editAnswers}
                   </button>
                 </div>
               </div>
+              {shareLink && (
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 no-print">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                    {texts.shareReady}
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <input
+                      type="text"
+                      value={shareLink}
+                      readOnly
+                      className="min-w-[260px] flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-700 shadow-sm"
+                    />
+                    {shareCopied && (
+                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                        {texts.shareCopied}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 {finalAssets.map((asset) => {
                   const allocation = asset.percent / 100;
