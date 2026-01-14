@@ -1001,7 +1001,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={handleShareLink}
-                          className="px-3 py-1.5 text-sm rounded-lg bg-cyan-600 text-white hover:bg-cyan-700"
+                          className="px-3 py-1.5 text-sm rounded-lg border border-cyan-600 text-cyan-700 hover:bg-cyan-50"
                         >
                           {t.shareLink}
                         </button>
