@@ -112,6 +112,9 @@ const TEXTS = {
     pensionNetPrev: "Pensión pública neta prevista:",
     marginalType: "Tipo marginal estimado (trabajo):",
     annualIRPFSaving: "Ahorro IRPF anual por aportar al plan:",
+    shareLink: "Link permanente",
+    linkReady: "Enlace listo para compartir",
+    linkCopied: "Enlace copiado",
     retirementValue: "Valor a la jubilación",
     planPlusFund: "Plan de pensiones + Fondo (ahorro IRPF)",
     planOnly: "Plan de pensiones",
@@ -166,6 +169,9 @@ const TEXTS = {
     pensionNetPrev: "Expected net public pension:",
     marginalType: "Estimated marginal rate (work):",
     annualIRPFSaving: "Annual income tax saving from plan contribution:",
+    shareLink: "Permanent link",
+    linkReady: "Link ready to share",
+    linkCopied: "Link copied",
     retirementValue: "Value at retirement",
     planPlusFund: "Pension plan + Fund (tax saving)",
     planOnly: "Pension plan",
@@ -668,10 +674,13 @@ export default function App() {
   const [pensionInput, setPensionInput] = useState("22000");
   const [reinvestSavings, setReinvestSavings] = useState(false);
   const [region, setRegion] = useState<RegionKey>("Cataluña");
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareStatus, setShareStatus] = useState("");
   const t = TEXTS[lang];
   const locale = lang === 'es' ? 'es-ES' : 'en-US';
   const fmt = (n: number) => fmtEUR(n, locale);
   const fmtDur = (months: number) => formatDuration(months, lang);
+  const hasLoadedParams = useRef(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -679,6 +688,75 @@ export default function App() {
       document.documentElement.lang = lang;
     }
   }, [lang]);
+  useEffect(() => {
+    if (typeof window === "undefined" || hasLoadedParams.current) return;
+    hasLoadedParams.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const urlLang = params.get("lang");
+    if (urlLang === "es" || urlLang === "en") {
+      setLang(urlLang);
+    }
+    const regionParam = params.get("region");
+    if (regionParam && REGIONS.includes(regionParam as RegionKey)) {
+      setRegion(regionParam as RegionKey);
+    }
+    const salaryParam = params.get("salary");
+    if (salaryParam !== null && salaryParam !== "") {
+      setSalaryInput(salaryParam);
+    }
+    const yearsParam = params.get("years");
+    if (yearsParam !== null && yearsParam !== "") {
+      setYearsInput(yearsParam);
+    }
+    const contribParam = params.get("contrib");
+    if (contribParam !== null && contribParam !== "") {
+      setAnnualContributionInput(contribParam);
+    }
+    const tirParam = params.get("tir");
+    if (tirParam !== null && tirParam !== "") {
+      const parsed = Number(tirParam);
+      if (Number.isFinite(parsed)) {
+        setTir(Math.min(25, Math.max(0, parsed)));
+      }
+    }
+    const pensionParam = params.get("pension");
+    if (pensionParam !== null && pensionParam !== "") {
+      setPensionInput(pensionParam);
+    }
+    const reinvestParam = params.get("reinvest");
+    if (reinvestParam !== null && reinvestParam !== "") {
+      setReinvestSavings(reinvestParam === "1" || reinvestParam === "true");
+    }
+  }, []);
+  const buildShareUrl = () => {
+    if (typeof window === "undefined") return "";
+    const url = new URL(window.location.href);
+    url.searchParams.set("lang", lang);
+    url.searchParams.set("region", region);
+    url.searchParams.set("salary", salaryInput);
+    url.searchParams.set("years", yearsInput);
+    url.searchParams.set("contrib", annualContributionInput);
+    url.searchParams.set("tir", String(tir));
+    url.searchParams.set("pension", pensionInput);
+    url.searchParams.set("reinvest", reinvestSavings ? "1" : "0");
+    return url.toString();
+  };
+  const handleShareLink = async () => {
+    const url = buildShareUrl();
+    setShareUrl(url);
+    if (!url) return;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareStatus(t.linkCopied);
+        return;
+      } catch {
+        setShareStatus(t.linkReady);
+        return;
+      }
+    }
+    setShareStatus(t.linkReady);
+  };
   const salary = useMemo(() => Math.max(0, parseNum(salaryInput)), [salaryInput]);
   const years = useMemo(() => Math.max(0, Math.floor(parseNum(yearsInput))), [yearsInput]);
   const annualContributionRaw = useMemo(() => Math.max(0, parseNum(annualContributionInput)), [annualContributionInput]);
@@ -919,11 +997,35 @@ export default function App() {
                           <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">{t.yes}</span>
                         </label>
                       </div>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={handleShareLink}
+                          className="px-3 py-1.5 text-sm rounded-lg border border-cyan-600 text-cyan-700 hover:bg-cyan-50"
+                        >
+                          {t.shareLink}
+                        </button>
+                        {shareStatus ? (
+                          <div className="mt-2 text-[11px] text-gray-500">{shareStatus}</div>
+                        ) : null}
+                        {shareUrl ? (
+                          <a
+                            href={shareUrl}
+                            className="mt-2 block text-[11px] text-cyan-700 underline break-all"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {shareUrl}
+                          </a>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="text-xs text-gray-500 md:text-right mt-3 md:mt-0">
-                      <div>{t.pensionNetPrev} <b>{fmt(pensionNet)}</b></div>
-                      <div>{t.marginalType} <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
-                      <div>{t.annualIRPFSaving} <b>{fmt(annualIRPFSaving)}</b></div>
+                      <div className="space-y-1 md:text-right">
+                        <div>{t.pensionNetPrev} <b>{fmt(pensionNet)}</b></div>
+                        <div>{t.marginalType} <b>{(marginalGeneral * 100).toFixed(1)}%</b></div>
+                        <div>{t.annualIRPFSaving} <b>{fmt(annualIRPFSaving)}</b></div>
+                      </div>
                     </div>
                   </div>
                 </div>
