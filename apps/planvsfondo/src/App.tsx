@@ -57,6 +57,12 @@ const parseNum = (s: string | number): number => {
   const n = parseFloat(s.replace(',', '.'));
   return isNaN(n) ? 0 : n;
 };
+const clampYearsInput = (value: string) => {
+  if (value.trim() === "") return "";
+  const n = Math.floor(parseNum(value));
+  if (!Number.isFinite(n)) return "";
+  return String(Math.min(67, Math.max(0, n)));
+};
 function InfoTip({ text, className = "", lang }: { text: string; className?: string; lang: 'es' | 'en' }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
@@ -706,7 +712,7 @@ export default function App() {
     }
     const yearsParam = params.get("years");
     if (yearsParam !== null && yearsParam !== "") {
-      setYearsInput(yearsParam);
+      setYearsInput(clampYearsInput(yearsParam));
     }
     const contribParam = params.get("contrib");
     if (contribParam !== null && contribParam !== "") {
@@ -758,7 +764,7 @@ export default function App() {
     setShareStatus(t.linkReady);
   };
   const salary = useMemo(() => Math.max(0, parseNum(salaryInput)), [salaryInput]);
-  const years = useMemo(() => Math.max(0, Math.floor(parseNum(yearsInput))), [yearsInput]);
+  const years = useMemo(() => Math.min(67, Math.max(0, Math.floor(parseNum(yearsInput)))), [yearsInput]);
   const annualContributionRaw = useMemo(() => Math.max(0, parseNum(annualContributionInput)), [annualContributionInput]);
   const pension = useMemo(() => Math.max(0, parseNum(pensionInput)), [pensionInput]);
   const pensionNet = useMemo(() => pension - generalTax(pension, region), [pension, region]);
@@ -937,9 +943,9 @@ export default function App() {
                     type="number"
                     className="w-full border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-visible:outline-none"
                     value={yearsInput}
-                    onChange={(e) => setYearsInput(e.target.value)}
+                    onChange={(e) => setYearsInput(clampYearsInput(e.target.value))}
                     min={0}
-                    max={60}
+                    max={67}
                   />
                 </div>
                 <div className="md:col-span-1">
