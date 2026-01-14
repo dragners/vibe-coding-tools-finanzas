@@ -1284,20 +1284,9 @@ export default function App() {
   const handleEditAnswers = () => {
     setPhase("form");
     setStep(0);
-    setRisk(0);
-    setSelectedPortfolio(null);
     setPortfolioError("");
-    setAddons(createDefaultAddons());
     setShareLink("");
     setShareCopied(false);
-    setFieldErrors({
-      horizon: "",
-      initial: "",
-      monthly: "",
-      experience: "",
-      return: "",
-      drawdown: "",
-    });
   };
 
   const currentQuestion = QUESTIONS[step];
