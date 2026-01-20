@@ -14,6 +14,7 @@ funds:
   category: Global Small/Mid-Cap Equity
   morningstarId: F00001T5CX
   comment: John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, El fondo antiguo era ES0141116030 que se movio a la SICAV en Luxemburgo (1/12/25)
+  inPortfolio: true
 - name: Hamco Quality Fund
   isin: LU3035951048
   category: Global Small/Mid-Cap Equity
@@ -29,6 +30,7 @@ funds:
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000YXEW
   comment: Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional. Parames suele invetir en este fondo
+  inPortfolio: true
 - name: Horos Value Internacional
   isin: ES0146309002
   category: Global Small/Mid-Cap Equity
@@ -110,6 +112,7 @@ funds:
   category: India Equity
   morningstarId: F00000MHIV
   comment: Avinash Vazirani, desde 2008
+  inPortfolio: true
 - name: Robeco Indian Equities D 
   isin: LU0491217419
   category: India Equity
@@ -142,34 +145,40 @@ funds:
   morningstarId: F0GBR052TN
   comment: MSCI World - Acumulación
   indexed: true
+  inPortfolio: true
 - name: Vanguard Glb Small-Cp Idx (Acc)
   isin: IE00B42W4L06
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000PA9N
   comment: MSCI Small Cap - Acumulación 
   indexed: true
+  inPortfolio: true
 - name: Vanguard Em Mkts Stk Idx (Acc) 
   isin: IE0031786696
   category: Global Emerging Markets Equity
   morningstarId: F00000T1HU
   comment: MSCI Emerging Markets - Acumulación 
   indexed: true
+  inPortfolio: true
 - name: Vanguard Global Bd Idx H (Acc)
   isin: IE00B18GC888
   category: Global Diversified Bond (Hedged)
   morningstarId: F00000T1HT
   comment: Cubierto a Euro lleva un porcentage en deuda corporativa 
   indexed: true
+  inPortfolio: true
 - name: AXAWF Euro Credit Total Ret A
   isin: LU1164219682
   category: EUR Flexible Bond
   morningstarId: F00000VPP7
   comment: ''
+  inPortfolio: true
 - name: DNCA Invest Alpha Bonds B 
   isin: LU1694789535
   category: Global Flexible Bond
   morningstarId: F00000ZY7M
   comment: ''
+  inPortfolio: true
 - name: Horos Patrimonio 
   isin: ES0146296001
   category: Global Flexible Bond
@@ -209,3 +218,4 @@ plans:
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000ZER6
   comment: Francisco García Paramés 
+  inPortfolio: true
