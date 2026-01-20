@@ -208,6 +208,7 @@ plans:
   category: Global Small/Mid-Cap Equity
   morningstarId: F000010KY6
   comment: Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional pero en PP
+  inPortfolio: true
 - name: Azvalor Global Value PP
   isin: N5116
   category: Global Small-Cap Equity
@@ -218,4 +219,3 @@ plans:
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000ZER6
   comment: Francisco García Paramés 
-  inPortfolio: true
