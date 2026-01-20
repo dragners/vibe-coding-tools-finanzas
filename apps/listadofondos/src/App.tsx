@@ -1325,6 +1325,8 @@ function CombinedTable({
                     );
                     const tooltipId = `${section.key}-${rowKey}`;
                     const tooltipOpen = openTooltipId === tooltipId;
+                    const heartTooltipId = `${tooltipId}-heart`;
+                    const heartTooltipOpen = openTooltipId === heartTooltipId;
                     const categoryDisplay =
                       categoryValue !== "-" ? categoryValue : texts.noData;
                     const link =
@@ -1354,9 +1356,32 @@ function CombinedTable({
                                 {row.name}
                               </a>
                               {row.inPortfolio ? (
-                                <span className="inline-flex items-center text-[12px] text-red-500">
-                                  <span aria-hidden="true">❤️</span>
-                                  <span className="sr-only">En cartera</span>
+                                <span
+                                  className="relative inline-flex items-center"
+                                  onMouseEnter={() => handleOpenTooltip(heartTooltipId)}
+                                  onMouseLeave={() => handleCloseTooltip(heartTooltipId)}
+                                >
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center text-[12px] text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 rounded-full"
+                                    onClick={() => handleToggleTooltip(heartTooltipId)}
+                                    onBlur={() => handleCloseTooltip(heartTooltipId)}
+                                    onFocus={() => handleOpenTooltip(heartTooltipId)}
+                                    aria-haspopup="true"
+                                    aria-expanded={heartTooltipOpen}
+                                    aria-label="Fondo en mi cartera personal"
+                                  >
+                                    <span aria-hidden="true">❤️</span>
+                                  </button>
+                                  <span className="sr-only">Fondo en mi cartera personal</span>
+                                  <span
+                                    className={`pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-max -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-[11px] font-semibold text-white shadow-lg transition-opacity duration-150 ${
+                                      heartTooltipOpen ? "opacity-100" : "opacity-0"
+                                    }`}
+                                    role="tooltip"
+                                  >
+                                    Fondo en mi cartera personal
+                                  </span>
                                 </span>
                               ) : null}
                             </div>
