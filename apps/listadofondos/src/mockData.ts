@@ -14,6 +14,7 @@ export const MOCK_PAYLOAD: ApiPayload = {
       comment: "Datos de ejemplo utilizados cuando no se puede contactar con la API.",
       url: "https://www.morningstar.es/es/funds/f0gb000000?tab=1",
       indexed: false,
+      inPortfolio: true,
       performance: {
         "1M": "1.8",
         "3M": "4.5",

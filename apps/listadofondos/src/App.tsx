@@ -56,6 +56,7 @@ export type FundRow = {
   comment: string;
   url: string;
   indexed?: boolean;
+  inPortfolio?: boolean;
   performance: MetricRecord<PerformanceKey>;
   sharpe: MetricRecord<RatioPeriod>;
   volatility: MetricRecord<RatioPeriod>;
@@ -1324,6 +1325,8 @@ function CombinedTable({
                     );
                     const tooltipId = `${section.key}-${rowKey}`;
                     const tooltipOpen = openTooltipId === tooltipId;
+                    const heartTooltipId = `${tooltipId}-heart`;
+                    const heartTooltipOpen = openTooltipId === heartTooltipId;
                     const categoryDisplay =
                       categoryValue !== "-" ? categoryValue : texts.noData;
                     const link =
@@ -1342,15 +1345,46 @@ function CombinedTable({
                           }`}
                         >
                           <div className="flex flex-col items-start gap-1">
-                            <a
-                              href={link}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
-                              title={row.name}
-                            >
-                              {row.name}
-                            </a>
+                            <div className="flex items-center gap-1">
+                              <a
+                                href={link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
+                                title={row.name}
+                              >
+                                {row.name}
+                              </a>
+                              {row.inPortfolio ? (
+                                <span
+                                  className="relative inline-flex items-center"
+                                  onMouseEnter={() => handleOpenTooltip(heartTooltipId)}
+                                  onMouseLeave={() => handleCloseTooltip(heartTooltipId)}
+                                >
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center text-[12px] text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 rounded-full"
+                                    onClick={() => handleToggleTooltip(heartTooltipId)}
+                                    onBlur={() => handleCloseTooltip(heartTooltipId)}
+                                    onFocus={() => handleOpenTooltip(heartTooltipId)}
+                                    aria-haspopup="true"
+                                    aria-expanded={heartTooltipOpen}
+                                    aria-label="Fondo en mi cartera personal"
+                                  >
+                                    <span aria-hidden="true">❤️</span>
+                                  </button>
+                                  <span className="sr-only">Fondo en mi cartera personal</span>
+                                  <span
+                                    className={`pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-max -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-[11px] font-semibold text-white shadow-lg transition-opacity duration-150 ${
+                                      heartTooltipOpen ? "opacity-100" : "opacity-0"
+                                    }`}
+                                    role="tooltip"
+                                  >
+                                    Fondo en mi cartera personal
+                                  </span>
+                                </span>
+                              ) : null}
+                            </div>
                             {(badges.length > 0 || stars) && (
                               <div className="flex w-full items-center gap-1">
                                 {stars ? (
