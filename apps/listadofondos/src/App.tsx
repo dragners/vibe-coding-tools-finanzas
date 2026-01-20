@@ -56,6 +56,7 @@ export type FundRow = {
   comment: string;
   url: string;
   indexed?: boolean;
+  inPortfolio?: boolean;
   performance: MetricRecord<PerformanceKey>;
   sharpe: MetricRecord<RatioPeriod>;
   volatility: MetricRecord<RatioPeriod>;
@@ -1342,15 +1343,23 @@ function CombinedTable({
                           }`}
                         >
                           <div className="flex flex-col items-start gap-1">
-                            <a
-                              href={link}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
-                              title={row.name}
-                            >
-                              {row.name}
-                            </a>
+                            <div className="flex items-center gap-1">
+                              <a
+                                href={link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-semibold text-cyan-600 hover:text-cyan-700 leading-tight"
+                                title={row.name}
+                              >
+                                {row.name}
+                              </a>
+                              {row.inPortfolio ? (
+                                <span className="inline-flex items-center text-[12px] text-red-500">
+                                  <span aria-hidden="true">❤️</span>
+                                  <span className="sr-only">En cartera</span>
+                                </span>
+                              ) : null}
+                            </div>
                             {(badges.length > 0 || stars) && (
                               <div className="flex w-full items-center gap-1">
                                 {stars ? (
