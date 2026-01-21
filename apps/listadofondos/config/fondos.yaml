@@ -43,9 +43,14 @@ funds:
   comment: Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record
 - name: Gestión Boutique VI Opportunity
   isin: ES0110407063
-  category: Global Small/Mid-Cap Equity
+  category: Global Small/Mid-Cap Equity & Flexible Allocation
   morningstarId: F0000107JH
   comment: Andbank, lleva tambien BTC y otros activos alternativos
+- name: Renta 4 Numantia Patrimonio Global
+  isin: ES0173311103
+  category: Global Flexible Allocation
+  morningstarId: F00000VYOL
+  comment: Emerito Quintana, escuela austriaca y value investing. Gestora Renta4
 - name: Avantage Fund A
   isin: ES0112231016
   category: Global Flexible Allocation
