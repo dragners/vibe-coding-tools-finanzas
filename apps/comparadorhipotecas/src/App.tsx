@@ -205,15 +205,18 @@ const TEXTS = {
     results: "Comparativa",
     monthlyNo: "Cuota mensual",
     taeNo: "TAE",
-    costAnnualProducts: "Coste Anual con Productos",
+    costAnnualProducts: "Coste Anual",
     costAnnualInfo: "Incluye cuota mensual × 12 + coste de productos.",
     costTotalHip: "Coste Total Hipoteca",
     costTotalInfoNoProd: "No incluye el coste de productos.",
+    costTotalInfoWithProd: "El coste total con productos incluye lo que pagar en total durante toda la hipoteca.",
     productsCol: "Productos",
     productsInfo: "Para cada banco, selecciona los productos que quieras incluir para calcular el coste con bonificaciones.",
     monthlyYes: "Cuota mensual",
     taeYes: "TAE",
     products: "Productos",
+    totalWithProductsLabel: "Con productos",
+    totalWithoutProductsLabel: "Sin productos",
     interests: "Intereses",
     payroll: "Nómina",
     payrollInfo: "Nómina y otros productos vinculados que no tengan coste pero sí obliguen su uso, como tarjetas de crédito.",
@@ -254,15 +257,18 @@ const TEXTS = {
     results: "Comparison",
     monthlyNo: "Monthly payment",
     taeNo: "APR / TAE",
-    costAnnualProducts: "Annual Cost with Products",
+    costAnnualProducts: "Annual Cost",
     costAnnualInfo: "Includes monthly payment × 12 + product costs.",
     costTotalHip: "Mortgage Total Cost",
     costTotalInfoNoProd: "Does not include product costs.",
+    costTotalInfoWithProd: "The total cost with products includes everything paid over the full mortgage term.",
     productsCol: "Products",
     productsInfo: "For each bank, select the products you want to include to compute the discounted cost.",
     monthlyYes: "Monthly payment",
     taeYes: "APR",
     products: "Products",
+    totalWithProductsLabel: "With products",
+    totalWithoutProductsLabel: "Without products",
     interests: "Interest",
     payroll: "Payroll",
     payrollInfo: "Payroll and other linked products without direct cost but required usage, like credit cards.",
@@ -539,7 +545,7 @@ export default function App() {
   type LineComputed = {
     id: string; bank: string;
     tinBasePct: number; monthlyNo: number; taeNo: number; totalNo: number; interestNo: number;
-    tinBonifPct: number; monthlyYes: number; annualProducts: number; annualTotal: number; taeYes: number; totalYesNoProd: number; interestYes: number;
+    tinBonifPct: number; monthlyYes: number; annualProducts: number; annualTotal: number; taeYes: number; totalYesNoProd: number; totalYesWithProd: number; interestYes: number;
   };
 
   const computed: LineComputed[] = useMemo(() => {
@@ -556,10 +562,11 @@ export default function App() {
       const annualTotal = monthlyYes * 12 + annualCost;
       const taeYes = taeFromFlows(amount, monthlyYes, nMonths, annualCost / 12);
       const totalYesNoProd = monthlyYes * nMonths;
+      const totalYesWithProd = totalYesNoProd + annualCost * years;
       const interestYes = Math.max(0, totalYesNoProd - amount);
-      return { id: l.id, bank: l.bank || "—", tinBasePct: baseTin, monthlyNo, taeNo, totalNo, interestNo, tinBonifPct: tinBonif, monthlyYes, annualProducts: annualCost, annualTotal, taeYes, totalYesNoProd, interestYes };
+      return { id: l.id, bank: l.bank || "—", tinBasePct: baseTin, monthlyNo, taeNo, totalNo, interestNo, tinBonifPct: tinBonif, monthlyYes, annualProducts: annualCost, annualTotal, taeYes, totalYesNoProd, totalYesWithProd, interestYes };
     });
-  }, [lines, amount, nMonths]);
+  }, [lines, amount, nMonths, years]);
 
   return (
     <>
@@ -723,12 +730,12 @@ export default function App() {
                         <InfoTip className="ml-1" content={t.productsInfo} label="Información: Productos" />
                       </th>
                       <th className="py-2 pr-3 text-center">{t.monthlyYes}</th>
-                      <th className="py-2 pr-3 text-center">{t.costAnnualProducts}
+                      <th className="py-2 px-2 text-center w-24">{t.costAnnualProducts}
                         <InfoTip className="ml-1" content={t.costAnnualInfo} label="Información: Coste anual con productos" />
                       </th>
                       <th className="py-2 pr-3 text-center">{t.taeYes}</th>
                       <th className="py-2 pr-3 text-center">{t.costTotalHip}
-                        <InfoTip className="ml-1" content={t.costTotalInfoNoProd} label="Información: Coste Total Hipoteca" />
+                        <InfoTip className="ml-1" content={t.costTotalInfoWithProd} label="Información: Coste Total Hipoteca con productos" />
                       </th>
                     </tr>
                   </thead>
@@ -760,13 +767,15 @@ export default function App() {
                             </div>
                           </td>
                           <td className="py-2 pr-3 text-center">{formatEUR(c.monthlyYes, locale)}</td>
-                          <td className="py-2 pr-3 text-center">{formatEUR(c.annualTotal, locale)}
+                          <td className="py-2 px-2 text-center w-24">{formatEUR(c.annualTotal, locale)}
                             {c.annualProducts > 0 && (
                               <div className="text-xs text-gray-500">{t.products}: {formatEUR(c.annualProducts, locale)}</div>
                             )}
                           </td>
                           <td className="py-2 pr-3 text-center">{formatPct(c.taeYes, locale)}</td>
-                          <td className="py-2 pr-3 text-center">{formatEUR(c.totalYesNoProd, locale)}
+                          <td className="py-2 pr-3 text-center">
+                            <div>{t.totalWithProductsLabel}: {formatEUR(c.totalYesWithProd, locale)}</div>
+                            <div>{t.totalWithoutProductsLabel}: {formatEUR(c.totalYesNoProd, locale)}</div>
                             <div className="text-xs text-gray-500">{t.interests}: {formatEUR(c.interestYes, locale)}</div>
                           </td>
                         </tr>
