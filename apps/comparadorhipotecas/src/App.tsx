@@ -774,8 +774,8 @@ export default function App() {
                           </td>
                           <td className="py-2 pr-3 text-center">{formatPct(c.taeYes, locale)}</td>
                           <td className="py-2 pr-3 text-center">
-                            <div className="text-xs text-gray-500">{t.totalWithProductsLabel}: {formatEUR(c.totalYesWithProd, locale)}</div>
-                            <div className="text-xs text-gray-500">{t.totalWithoutProductsLabel}: {formatEUR(c.totalYesNoProd, locale)}</div>
+                            <div>{t.totalWithProductsLabel}: {formatEUR(c.totalYesWithProd, locale)}</div>
+                            <div>{t.totalWithoutProductsLabel}: {formatEUR(c.totalYesNoProd, locale)}</div>
                             <div className="text-xs text-gray-500">{t.interests}: {formatEUR(c.interestYes, locale)}</div>
                           </td>
                         </tr>
