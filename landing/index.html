@@ -163,6 +163,14 @@
             </div>
           </a>
 
+          <a class="card" href="/comprarvsalquilar/">
+            <div>
+              <div class="pill" data-i18n="buyrent_badge">Calculadora</div>
+              <h2 class="title" data-i18n="buyrent_title">¿Comprar o Alquilar?</h2>
+              <p class="desc" data-i18n="buyrent_desc">Calcula en qué año comprar supera a alquilar e invertir la diferencia, con impuestos por Comunidad Autónoma y MSCI World.</p>
+            </div>
+          </a>
+
           <!-- App de ejemplo oculta: no se muestra -->
           <!--
           <a class="card" href="/ejemplo/">
@@ -199,6 +207,9 @@
           fund_badge:'Listado',
           fund_title:'Listado de Fondos y Planes de Pensiones',
           fund_desc:'Consulta rentabilidades, ratio Sharpe, volatilidad y TER de mis fondos y planes favoritos.',
+          buyrent_badge:'Calculadora',
+          buyrent_title:'¿Comprar o Alquilar?',
+          buyrent_desc:'Calcula en qué año comprar supera a alquilar e invertir la diferencia, con impuestos por Comunidad Autónoma y MSCI World.',
           footer_text:'© David Gonzalez, si quieres saber más sobre mí, visita'
         },
         en:{
@@ -216,6 +227,9 @@
           fund_badge:'Screener',
           fund_title:'Fund & Pension Plan Screener',
           fund_desc:'Track returns, Sharpe ratio, volatility and TER for my favourite funds and pension plans.',
+          buyrent_badge:'Calculator',
+          buyrent_title:'Buy or Rent?',
+          buyrent_desc:'Calculate the year when buying beats renting and investing the difference, with region-specific Spanish taxes and MSCI World.',
           footer_text:'© David Gonzalez, want to know more about me? Visit'
         }
       };
@@ -235,6 +249,9 @@
         fund_badge: document.querySelector('[data-i18n="fund_badge"]'),
         fund_title: document.querySelector('[data-i18n="fund_title"]'),
         fund_desc: document.querySelector('[data-i18n="fund_desc"]'),
+        buyrent_badge: document.querySelector('[data-i18n="buyrent_badge"]'),
+        buyrent_title: document.querySelector('[data-i18n="buyrent_title"]'),
+        buyrent_desc: document.querySelector('[data-i18n="buyrent_desc"]'),
         footer_text: document.querySelector('[data-i18n="footer_text"]'),
         chipEs: document.getElementById('chip-es'),
         chipEn: document.getElementById('chip-en')
@@ -269,6 +286,9 @@
         if(els.fund_badge) els.fund_badge.textContent = stripHTML(t.fund_badge);
         if(els.fund_title) els.fund_title.textContent = stripHTML(t.fund_title);
         if(els.fund_desc) els.fund_desc.textContent = stripHTML(t.fund_desc);
+        if(els.buyrent_badge) els.buyrent_badge.textContent = stripHTML(t.buyrent_badge);
+        if(els.buyrent_title) els.buyrent_title.textContent = stripHTML(t.buyrent_title);
+        if(els.buyrent_desc) els.buyrent_desc.textContent = stripHTML(t.buyrent_desc);
         els.footer_text.textContent = stripHTML(t.footer_text);
         localStorage.setItem(LANG_STORAGE_KEY, lang);
         els.chipEs.setAttribute('aria-pressed', String(lang==='es'));
