@@ -83,7 +83,7 @@
 
       /* Cards grid */
       .apps{width:100%}
-      .grid{display:grid;grid-template-columns:1fr;gap:22px;margin:32px auto 0;max-width:680px}
+      .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin:32px auto 0;max-width:900px}
       .card{display:flex;align-items:center;gap:18px;text-decoration:none;background:var(--panel);border:1px solid transparent;border-radius:24px;padding:26px;min-height:140px;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;position:relative;box-shadow:var(--shadow)}
       .card{justify-content:center;text-align:center}
       .card > div{ text-align:center; margin: 0 auto; }
@@ -100,7 +100,7 @@
 
       /* Responsive tweaks */
       @media (max-width:520px){
-        .grid{grid-template-columns:1fr;max-width:560px}
+        .grid{grid-template-columns:1fr;max-width:520px}
         .card{min-height:124px;padding:20px}
         .card .pill{position:static;margin:0 auto 8px;display:inline-block}
       }

@@ -1001,8 +1001,8 @@ export default function App() {
               </div>
 
               {/* Head-to-head */}
-              <div className={`rounded-2xl shadow p-6 text-center ${exitData.buyAdvantage >= 0 ? 'bg-cyan-50 border-2 border-cyan-300' : 'bg-emerald-50 border-2 border-emerald-300'}`}>
-                <h3 className="font-semibold text-gray-700 mb-2">{t.comparison} &mdash; {t.atYear} {clampedExitYear}</h3>
+              <div className={`rounded-2xl shadow px-6 pt-3 pb-5 text-center ${exitData.buyAdvantage >= 0 ? 'bg-cyan-50 border-2 border-cyan-300' : 'bg-emerald-50 border-2 border-emerald-300'}`}>
+                <h3 className="font-semibold text-gray-700 mb-1">{t.comparison} &mdash; {t.atYear} {clampedExitYear}</h3>
                 <p className={`text-2xl font-extrabold mb-3 ${exitData.buyAdvantage >= 0 ? 'text-cyan-700' : 'text-emerald-600'}`}>
                   {exitData.buyAdvantage >= 0 ? t.buyAdvantage : t.rentAdvantage}
                 </p>
