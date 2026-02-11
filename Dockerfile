@@ -7,22 +7,26 @@ COPY apps/planvsfondo/package.json apps/planvsfondo/package-lock.json* ./apps/pl
 COPY apps/comparadorhipotecas/package.json apps/comparadorhipotecas/package-lock.json* ./apps/comparadorhipotecas/
 COPY apps/listadofondos/package.json apps/listadofondos/package-lock.json* ./apps/listadofondos/
 COPY apps/portfoliocreator/package.json apps/portfoliocreator/package-lock.json* ./apps/portfoliocreator/
+COPY apps/comprarvsalquilar/package.json apps/comprarvsalquilar/package-lock.json* ./apps/comprarvsalquilar/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm ci) && \
     (cd apps/comparadorhipotecas && npm ci) && \
     (cd apps/listadofondos && npm ci) && \
-    (cd apps/portfoliocreator && npm ci)
+    (cd apps/portfoliocreator && npm ci) && \
+    (cd apps/comprarvsalquilar && npm ci)
 
 # Copia fuentes y build
 COPY apps/planvsfondo/ ./apps/planvsfondo/
 COPY apps/comparadorhipotecas/ ./apps/comparadorhipotecas/
 COPY apps/listadofondos/ ./apps/listadofondos/
 COPY apps/portfoliocreator/ ./apps/portfoliocreator/
+COPY apps/comprarvsalquilar/ ./apps/comprarvsalquilar/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm run build) && \
     (cd apps/comparadorhipotecas && npm run build) && \
     (cd apps/listadofondos && npm run build) && \
-    (cd apps/portfoliocreator && npm run build)
+    (cd apps/portfoliocreator && npm run build) && \
+    (cd apps/comprarvsalquilar && npm run build)
 
 # --- Runtime: Nginx sirviendo landing + apps ---
 FROM nginx:alpine AS runtime
@@ -36,6 +40,7 @@ COPY --from=builder /build/apps/planvsfondo/dist/ /usr/share/nginx/html/planvsfo
 COPY --from=builder /build/apps/comparadorhipotecas/dist/ /usr/share/nginx/html/comparadorhipotecas/
 COPY --from=builder /build/apps/listadofondos/dist/ /usr/share/nginx/html/listadofondos/
 COPY --from=builder /build/apps/portfoliocreator/dist/ /usr/share/nginx/html/portfoliocreator/
+COPY --from=builder /build/apps/comprarvsalquilar/dist/ /usr/share/nginx/html/comprarvsalquilar/
 
 RUN chmod -R 755 /usr/share/nginx/html
 EXPOSE 80
