@@ -23,28 +23,33 @@ type CcaaData = {
   ajdPct: number;       // AJD for new homes (% of home price, on deed)
   newHomeTaxPct: number; // IVA (10%) / IGIC (7%) / IPSI (0.5%)
   newHomeTaxLabel: string;
+  avgIbiPct: number;    // Average effective IBI as % of market value (tipo × cadastral/market ratio)
 };
 
+// avgIbiPct: approximate effective IBI on market value per CCAA.
+// Actual IBI = tipo impositivo × valor catastral. Cadastral values are typically
+// 40-60% of market value and vary by municipality and last cadastral revision.
+// These averages are estimates to give a reasonable CCAA-specific default.
 const CCAA_LIST: CcaaData[] = [
-  { id: 'andalucia',     name: { es: 'Andalucía', en: 'Andalusia' },              itpPct: 7,    ajdPct: 1.2,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'aragon',        name: { es: 'Aragón', en: 'Aragon' },                    itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'asturias',      name: { es: 'Principado de Asturias', en: 'Asturias' },  itpPct: 8,    ajdPct: 1.2,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'baleares',      name: { es: 'Illes Balears', en: 'Balearic Islands' },   itpPct: 8,    ajdPct: 1.2,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'canarias',      name: { es: 'Canarias', en: 'Canary Islands' },          itpPct: 6.5,  ajdPct: 0.75, newHomeTaxPct: 7,   newHomeTaxLabel: 'IGIC' },
-  { id: 'cantabria',     name: { es: 'Cantabria', en: 'Cantabria' },              itpPct: 10,   ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'castillaleon',  name: { es: 'Castilla y León', en: 'Castile and León' }, itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'castillamancha',name: { es: 'Castilla-La Mancha', en: 'Castilla-La Mancha' }, itpPct: 9, ajdPct: 1.5, newHomeTaxPct: 10, newHomeTaxLabel: 'IVA' },
-  { id: 'cataluna',      name: { es: 'Cataluña', en: 'Catalonia' },               itpPct: 10,   ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'valencia',      name: { es: 'Comunitat Valenciana', en: 'Valencian Community' }, itpPct: 10, ajdPct: 1.5, newHomeTaxPct: 10, newHomeTaxLabel: 'IVA' },
-  { id: 'extremadura',   name: { es: 'Extremadura', en: 'Extremadura' },          itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'galicia',       name: { es: 'Galicia', en: 'Galicia' },                  itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'madrid',        name: { es: 'Comunidad de Madrid', en: 'Community of Madrid' }, itpPct: 6, ajdPct: 0.75, newHomeTaxPct: 10, newHomeTaxLabel: 'IVA' },
-  { id: 'murcia',        name: { es: 'Región de Murcia', en: 'Region of Murcia' },itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'navarra',       name: { es: 'Comunidad Foral de Navarra', en: 'Navarre' },itpPct: 6,   ajdPct: 0.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'paisvasco',     name: { es: 'País Vasco', en: 'Basque Country' },        itpPct: 4,    ajdPct: 0.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'rioja',         name: { es: 'La Rioja', en: 'La Rioja' },                itpPct: 7,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA' },
-  { id: 'ceuta',         name: { es: 'Ceuta', en: 'Ceuta' },                      itpPct: 6,    ajdPct: 0.5,  newHomeTaxPct: 1,   newHomeTaxLabel: 'IPSI' },
-  { id: 'melilla',       name: { es: 'Melilla', en: 'Melilla' },                  itpPct: 6,    ajdPct: 0.5,  newHomeTaxPct: 1,   newHomeTaxLabel: 'IPSI' },
+  { id: 'andalucia',     name: { es: 'Andalucía', en: 'Andalusia' },              itpPct: 7,    ajdPct: 1.2,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.45 },
+  { id: 'aragon',        name: { es: 'Aragón', en: 'Aragon' },                    itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.40 },
+  { id: 'asturias',      name: { es: 'Principado de Asturias', en: 'Asturias' },  itpPct: 8,    ajdPct: 1.2,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.45 },
+  { id: 'baleares',      name: { es: 'Illes Balears', en: 'Balearic Islands' },   itpPct: 8,    ajdPct: 1.2,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.50 },
+  { id: 'canarias',      name: { es: 'Canarias', en: 'Canary Islands' },          itpPct: 6.5,  ajdPct: 0.75, newHomeTaxPct: 7,   newHomeTaxLabel: 'IGIC', avgIbiPct: 0.35 },
+  { id: 'cantabria',     name: { es: 'Cantabria', en: 'Cantabria' },              itpPct: 10,   ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.45 },
+  { id: 'castillaleon',  name: { es: 'Castilla y León', en: 'Castile and León' }, itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.45 },
+  { id: 'castillamancha',name: { es: 'Castilla-La Mancha', en: 'Castilla-La Mancha' }, itpPct: 9, ajdPct: 1.5, newHomeTaxPct: 10, newHomeTaxLabel: 'IVA', avgIbiPct: 0.50 },
+  { id: 'cataluna',      name: { es: 'Cataluña', en: 'Catalonia' },               itpPct: 10,   ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.60 },
+  { id: 'valencia',      name: { es: 'Comunitat Valenciana', en: 'Valencian Community' }, itpPct: 10, ajdPct: 1.5, newHomeTaxPct: 10, newHomeTaxLabel: 'IVA', avgIbiPct: 0.55 },
+  { id: 'extremadura',   name: { es: 'Extremadura', en: 'Extremadura' },          itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.50 },
+  { id: 'galicia',       name: { es: 'Galicia', en: 'Galicia' },                  itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.40 },
+  { id: 'madrid',        name: { es: 'Comunidad de Madrid', en: 'Community of Madrid' }, itpPct: 6, ajdPct: 0.75, newHomeTaxPct: 10, newHomeTaxLabel: 'IVA', avgIbiPct: 0.40 },
+  { id: 'murcia',        name: { es: 'Región de Murcia', en: 'Region of Murcia' },itpPct: 8,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.50 },
+  { id: 'navarra',       name: { es: 'Comunidad Foral de Navarra', en: 'Navarre' },itpPct: 6,   ajdPct: 0.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.35 },
+  { id: 'paisvasco',     name: { es: 'País Vasco', en: 'Basque Country' },        itpPct: 4,    ajdPct: 0.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.30 },
+  { id: 'rioja',         name: { es: 'La Rioja', en: 'La Rioja' },                itpPct: 7,    ajdPct: 1.5,  newHomeTaxPct: 10,  newHomeTaxLabel: 'IVA', avgIbiPct: 0.45 },
+  { id: 'ceuta',         name: { es: 'Ceuta', en: 'Ceuta' },                      itpPct: 6,    ajdPct: 0.5,  newHomeTaxPct: 1,   newHomeTaxLabel: 'IPSI', avgIbiPct: 0.35 },
+  { id: 'melilla',       name: { es: 'Melilla', en: 'Melilla' },                  itpPct: 6,    ajdPct: 0.5,  newHomeTaxPct: 1,   newHomeTaxLabel: 'IPSI', avgIbiPct: 0.35 },
 ];
 
 // Spanish savings tax base (Base del Ahorro) brackets - 2024
@@ -562,7 +567,7 @@ export default function App() {
 
   const [tinPct, setTinPct] = useState(2.50);
   const [termYears, setTermYears] = useState(25);
-  const [ibiPct, setIbiPct] = useState(0.50);
+  const [ibiPct, setIbiPct] = useState(() => (CCAA_LIST.find(c => c.id === 'madrid')?.avgIbiPct ?? 0.40));
   const [maintenancePct, setMaintenancePct] = useState(1.0);
   const [communityMonthly, setCommunityMonthly] = useState(50);
   const [insuranceAnnual, setInsuranceAnnual] = useState(300);
@@ -576,6 +581,11 @@ export default function App() {
   const [exitYear, setExitYear] = useState(10);
 
   const ccaa = useMemo(() => CCAA_LIST.find(c => c.id === ccaaId) || CCAA_LIST[12], [ccaaId]);
+
+  // Update IBI default when CCAA changes
+  useEffect(() => {
+    setIbiPct(ccaa.avgIbiPct);
+  }, [ccaa]);
 
   // ─── Derived Values ─────────────────────────────────────────
   const downPayment = homePrice * downPaymentPct / 100;
