@@ -355,8 +355,8 @@ const TEXTS = {
     totalRentPaid: 'Alquiler total pagado',
     capGainsTaxRent: 'Plusvalía MSCI (impuesto)',
     netPortfolio: 'Patrimonio neto (alquiler)',
-    buyAdvantage: 'Ventaja comprar',
-    rentAdvantage: 'Ventaja alquilar',
+    buyAdvantage: 'Comprar Gana',
+    rentAdvantage: 'Alquilar Gana',
     // Notes
     notesTitle: 'Notas',
     notes: [
@@ -458,8 +458,8 @@ const TEXTS = {
     totalRentPaid: 'Total rent paid',
     capGainsTaxRent: 'MSCI capital gains tax',
     netPortfolio: 'Net wealth (rent)',
-    buyAdvantage: 'Buy advantage',
-    rentAdvantage: 'Rent advantage',
+    buyAdvantage: 'Buying Wins',
+    rentAdvantage: 'Renting Wins',
     notesTitle: 'Notes',
     notes: [
       'Capital gains taxes follow Spanish savings tax base: 19% (0-6K), 21% (6-50K), 23% (50-200K), 27% (200-300K), 28% (>300K).',
@@ -561,20 +561,20 @@ export default function App() {
   const [homePrice, setHomePrice] = useState(250000);
   const [downPaymentPct, setDownPaymentPct] = useState(20);
   const [homeType, setHomeType] = useState<HomeType>('used');
-  const [ccaaId, setCcaaId] = useState('madrid');
+  const [ccaaId, setCcaaId] = useState('cataluna');
   const [appreciationPct, setAppreciationPct] = useState(3.0);
   const [sellingCostPct, setSellingCostPct] = useState(3.0);
 
   const [tinPct, setTinPct] = useState(2.50);
-  const [termYears, setTermYears] = useState(25);
-  const [ibiPct, setIbiPct] = useState(() => (CCAA_LIST.find(c => c.id === 'madrid')?.avgIbiPct ?? 0.40));
+  const [termYears, setTermYears] = useState(30);
+  const [ibiPct, setIbiPct] = useState(() => (CCAA_LIST.find(c => c.id === 'cataluna')?.avgIbiPct ?? 0.60));
   const [maintenancePct, setMaintenancePct] = useState(1.0);
   const [communityMonthly, setCommunityMonthly] = useState(50);
   const [insuranceAnnual, setInsuranceAnnual] = useState(300);
   const [notaryCostPct, setNotaryCostPct] = useState(2.0);
 
   const [monthlyRent, setMonthlyRent] = useState(900);
-  const [rentIncreasePct, setRentIncreasePct] = useState(3.0);
+  const [rentIncreasePct, setRentIncreasePct] = useState(2.5);
   const [msciReturnPct, setMsciReturnPct] = useState(7.0);
 
   const [reinvestmentExemption, setReinvestmentExemption] = useState(true);
@@ -1001,19 +1001,20 @@ export default function App() {
               </div>
 
               {/* Head-to-head */}
-              <div className={`rounded-2xl shadow p-4 text-center ${exitData.buyAdvantage >= 0 ? 'bg-cyan-50 border border-cyan-200' : 'bg-emerald-50 border border-emerald-200'}`}>
-                <h3 className="font-semibold text-gray-700 mb-2">{t.comparison} &mdash; {t.atYear} {clampedExitYear}</h3>
+              <div className={`rounded-2xl shadow p-6 text-center ${exitData.buyAdvantage >= 0 ? 'bg-cyan-50 border-2 border-cyan-300' : 'bg-emerald-50 border-2 border-emerald-300'}`}>
+                <p className={`text-3xl md:text-4xl font-extrabold mb-1 ${exitData.buyAdvantage >= 0 ? 'text-cyan-700' : 'text-emerald-600'}`}>
+                  {exitData.buyAdvantage >= 0 ? t.buyAdvantage : t.rentAdvantage}
+                </p>
+                <p className="text-sm text-gray-500 mb-4">{t.comparison} &mdash; {t.atYear} {clampedExitYear}</p>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-xs text-gray-500">{t.grossProceeds}</p>
                     <p className="font-bold text-cyan-700">{formatEUR(exitData.grossProceedsBuy, locale)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">
-                      {exitData.buyAdvantage >= 0 ? t.buyAdvantage : t.rentAdvantage}
-                    </p>
+                    <p className="text-xs text-gray-500 mb-1">{lang === 'es' ? 'Diferencia' : 'Difference'}</p>
                     <p className={`text-2xl font-extrabold ${exitData.buyAdvantage >= 0 ? 'text-cyan-700' : 'text-emerald-600'}`}>
-                      {formatEUR(Math.abs(exitData.buyAdvantage), locale)}
+                      {exitData.buyAdvantage >= 0 ? '+' : '-'}{formatEUR(Math.abs(exitData.buyAdvantage), locale)}
                     </p>
                   </div>
                   <div>
