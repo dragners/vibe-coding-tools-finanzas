@@ -84,13 +84,14 @@
       /* Cards grid */
       .apps{width:100%}
       .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin:32px auto 0;max-width:900px}
-      .card{display:flex;align-items:center;gap:18px;text-decoration:none;background:var(--panel);border:1px solid transparent;border-radius:24px;padding:26px;min-height:140px;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;position:relative;box-shadow:var(--shadow)}
+      .card{display:flex;align-items:center;gap:18px;text-decoration:none;background:var(--panel);border:1px solid transparent;border-radius:24px;padding:32px 26px;min-height:200px;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;position:relative;box-shadow:var(--shadow)}
       .card{justify-content:center;text-align:center}
       .card > div{ text-align:center; margin: 0 auto; }
       .card:hover{transform:translateY(-3px);border-color:rgba(14,165,233,.4);box-shadow:0 18px 44px rgba(15,23,42,.12)}
       .card .title{font-weight:800;margin:0 0 6px;font-size:20px;color:var(--text)}
       .card .desc{margin:0;color:var(--muted);font-size:15px}
       .card .pill{display:inline-block;background:rgba(14,165,233,.12);color:var(--accent-strong);border:1px solid rgba(14,165,233,.25);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;position:absolute;top:12px;right:12px;letter-spacing:.02em}
+      .card:last-child:nth-child(odd){grid-column:1 / -1;max-width:calc(50% - 11px);justify-self:center}
 
       /* Footer */
       footer{margin:44px 0 8px;color:var(--muted);text-align:center}
@@ -102,6 +103,7 @@
       @media (max-width:520px){
         .grid{grid-template-columns:1fr;max-width:520px}
         .card{min-height:124px;padding:20px}
+        .card:last-child:nth-child(odd){max-width:100%;grid-column:auto}
         .card .pill{position:static;margin:0 auto 8px;display:inline-block}
       }
     </style>
