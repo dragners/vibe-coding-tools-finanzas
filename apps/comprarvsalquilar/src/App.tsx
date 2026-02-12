@@ -1212,23 +1212,23 @@ export default function App() {
 
               {/* Head-to-head */}
               <div className={`rounded-2xl shadow px-6 pt-3 pb-5 text-center ${exitData.buyAdvantage >= 0 ? 'bg-cyan-50 border-2 border-cyan-300' : 'bg-emerald-50 border-2 border-emerald-300'}`}>
-                <h3 className="font-semibold text-gray-700 mb-1">{t.comparison} &mdash; {t.atYear} {clampedExitYear}</h3>
+                <h3 className="comparison-dark-label font-semibold text-gray-700 mb-1">{t.comparison} &mdash; {t.atYear} {clampedExitYear}</h3>
                 <p className={`text-2xl font-extrabold mb-3 ${exitData.buyAdvantage >= 0 ? 'text-cyan-700' : 'text-emerald-600'}`}>
                   {exitData.buyAdvantage >= 0 ? t.buyAdvantage : t.rentAdvantage}
                 </p>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="text-xs text-gray-500">{t.grossProceeds}</p>
+                    <p className="comparison-dark-label text-xs text-gray-500">{t.grossProceeds}</p>
                     <p className="font-bold text-cyan-700">{formatEUR(exitData.grossProceedsBuy, locale)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">{lang === 'es' ? 'Diferencia' : 'Difference'}</p>
+                    <p className="comparison-dark-label text-xs text-gray-500 mb-1">{lang === 'es' ? 'Diferencia' : 'Difference'}</p>
                     <p className={`text-2xl font-extrabold ${exitData.buyAdvantage >= 0 ? 'text-cyan-700' : 'text-emerald-600'}`}>
                       {exitData.buyAdvantage >= 0 ? '+' : '-'}{formatEUR(Math.abs(exitData.buyAdvantage), locale)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">{t.netPortfolio}</p>
+                    <p className="comparison-dark-label text-xs text-gray-500">{t.netPortfolio}</p>
                     <p className="font-bold text-emerald-600">{formatEUR(exitData.netPortfolioAfterTax, locale)}</p>
                   </div>
                 </div>
