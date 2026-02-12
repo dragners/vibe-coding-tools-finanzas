@@ -970,6 +970,17 @@ const GrowthChart = ({
       return point;
     });
   }, [series, contribution, months]);
+  const yearTicks = useMemo(() => {
+    const ticks: number[] = [];
+    const totalYears = Math.max(1, Math.ceil(months / 12));
+    for (let year = 0; year <= totalYears; year += 1) {
+      const monthTick = Math.min(months, year * 12);
+      if (ticks[ticks.length - 1] !== monthTick) {
+        ticks.push(monthTick);
+      }
+    }
+    return ticks;
+  }, [months]);
 
   return (
     <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -982,7 +993,11 @@ const GrowthChart = ({
           >
             <CartesianGrid stroke={gridColor} strokeDasharray="4 4" />
             <XAxis
+              type="number"
               dataKey="month"
+              domain={[0, months]}
+              ticks={yearTicks}
+              allowDecimals={false}
               tick={{ fontSize: 11, fill: axisColor }}
               tickFormatter={(month: number) => `${Math.round(month / 12)}`}
               label={{
