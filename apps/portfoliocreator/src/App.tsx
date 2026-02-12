@@ -1,4 +1,15 @@
 import React, { useEffect, useId, useMemo, useState } from "react";
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from "recharts";
 import "./index.css";
 import portfoliosData from "./data/Carteras.json";
 import fundsData from "./data/Fondos.json";
@@ -879,162 +890,149 @@ const renderMarkdown = (text: string) => {
   return { __html: withItalic };
 };
 
+const GrowthChartTooltipContent = ({
+  active,
+  payload,
+  label,
+  lang,
+}: {
+  active?: boolean;
+  payload?: Array<{ color?: string; name?: string; value?: number }>;
+  label?: number;
+  lang: Lang;
+}) => {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
+      <p className="mb-1 text-xs font-semibold text-slate-700">
+        {(lang === "es" ? "Año" : "Year")} {Math.round((label ?? 0) / 12)}
+      </p>
+      <div className="space-y-1">
+        {payload.map((entry, index) => (
+          <p
+            key={`${entry.name ?? "series"}-${index}`}
+            className="flex items-center justify-between gap-4 text-xs"
+            style={{ color: entry.color ?? "#334155" }}
+          >
+            <span>{entry.name}</span>
+            <span className="font-medium">
+              {formatCurrency(Number(entry.value ?? 0), lang)}
+            </span>
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const GrowthChart = ({
   series,
   contribution,
   labels,
   lang,
+  isDark,
 }: {
   series: { name: string; values: number[]; color: string }[];
   contribution: number[];
   labels: { title: string; contributionLabel: string; axisYears: string; axisValue: string };
   lang: Lang;
+  isDark: boolean;
 }) => {
-  const allValues = [...series.flatMap((item) => item.values), ...contribution];
-  const maxValue = Math.max(...allValues, 1);
   const months = Math.max(contribution.length - 1, 1);
-  const totalYears = Math.max(1, Math.round(months / 12));
-  const width = 560;
-  const height = 240;
-  const padding = {
-    top: 16,
-    right: 16,
-    bottom: 36,
-    left: 58,
-  };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
-  const xTickCount = Math.min(8, Math.max(5, totalYears + 1));
-  const yTickCount = 6;
-  const xTicks = Array.from({ length: xTickCount }, (_, index) => {
-    const ratio = index / (xTickCount - 1);
-    const monthIndex = Math.round(months * ratio);
-    return {
-      yearLabel: Math.round(monthIndex / 12),
-      x: padding.left + ratio * chartWidth,
-    };
-  });
-  const yTicks = Array.from({ length: yTickCount }, (_, index) => {
-    const value = maxValue * (1 - index / (yTickCount - 1));
-    return {
-      value,
-      y: padding.top + (index / (yTickCount - 1)) * chartHeight,
-    };
-  });
-  const points = (values: number[]) =>
-    values
-      .map((value, index) => {
-        const x =
-          padding.left + (index / (values.length - 1)) * chartWidth;
-        const y =
-          height -
-          padding.bottom -
-          (value / maxValue) * chartHeight;
-        return `${x},${y}`;
-      })
-      .join(" ");
+  const axisColor = isDark ? "#94A3B8" : "#64748B";
+  const gridColor = isDark ? "#334155" : "#E2E8F0";
+  const chartData = useMemo(() => {
+    const maxPoints = Math.max(
+      contribution.length,
+      ...series.map((item) => item.values.length),
+      2,
+    );
+    return Array.from({ length: maxPoints }, (_, index) => {
+      const month = Math.round((months * index) / (maxPoints - 1));
+      const point: Record<string, number> = {
+        month,
+        contribution:
+          contribution[Math.min(index, contribution.length - 1)] ??
+          contribution[contribution.length - 1] ??
+          0,
+      };
+
+      series.forEach((item, itemIndex) => {
+        point[`series-${itemIndex}`] =
+          item.values[Math.min(index, item.values.length - 1)] ??
+          item.values[item.values.length - 1] ??
+          0;
+      });
+
+      return point;
+    });
+  }, [series, contribution, months]);
 
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-sm font-semibold text-slate-700 mb-3">{labels.title}</p>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full"
-        role="img"
-        aria-label={labels.title}
-      >
-        <rect
-          x={padding.left}
-          y={padding.top}
-          width={chartWidth}
-          height={chartHeight}
-          fill="#F8FAFC"
-          stroke="#E2E8F0"
-        />
-        {yTicks.map((tick) => (
-          <g key={`y-${tick.value}`}>
-            <line
-              x1={padding.left}
-              x2={width - padding.right}
-              y1={tick.y}
-              y2={tick.y}
-              stroke="#E2E8F0"
-              strokeDasharray="4 4"
+    <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="mb-3 text-sm font-semibold text-slate-700">{labels.title}</p>
+      <div className="h-[260px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 8, right: 16, left: 8, bottom: 16 }}
+          >
+            <CartesianGrid stroke={gridColor} strokeDasharray="4 4" />
+            <XAxis
+              dataKey="month"
+              tick={{ fontSize: 11, fill: axisColor }}
+              tickFormatter={(month: number) => `${Math.round(month / 12)}`}
+              label={{
+                value: labels.axisYears,
+                position: "insideBottomRight",
+                offset: -8,
+                fill: axisColor,
+                fontSize: 11,
+              }}
             />
-            <text
-              x={padding.left - 8}
-              y={tick.y + 3}
-              textAnchor="end"
-              className="text-[8px] fill-slate-400"
-            >
-              {formatAxisCurrency(tick.value, lang)}
-            </text>
-          </g>
-        ))}
-        {xTicks.map((tick, index) => (
-          <g key={`x-${index}`}>
-            <line
-              x1={tick.x}
-              x2={tick.x}
-              y1={padding.top}
-              y2={height - padding.bottom}
-              stroke="#E2E8F0"
-              strokeDasharray="4 4"
+            <YAxis
+              tick={{ fontSize: 11, fill: axisColor }}
+              tickFormatter={(value: number) => formatAxisCurrency(value, lang)}
+              label={{
+                value: labels.axisValue,
+                angle: -90,
+                position: "insideLeft",
+                fill: axisColor,
+                fontSize: 11,
+              }}
             />
-            <text
-              x={tick.x}
-              y={height - padding.bottom + 16}
-              textAnchor="middle"
-              className="text-[8px] fill-slate-400"
-            >
-              {tick.yearLabel}
-            </text>
-          </g>
-        ))}
-        <text
-          x={padding.left - 24}
-          y={padding.top - 4}
-          textAnchor="start"
-          className="text-[8px] fill-slate-400"
-        >
-          {labels.axisValue}
-        </text>
-        <text
-          x={width - padding.right}
-          y={height - 8}
-          textAnchor="end"
-          className="text-[8px] fill-slate-400"
-        >
-          {labels.axisYears}
-        </text>
-        <polyline
-          points={points(contribution)}
-          fill="none"
-          stroke="#94A3B8"
-          strokeWidth={2}
-          strokeDasharray="4 4"
-        />
-        {series.map((item) => (
-          <polyline
-            key={item.name}
-            points={points(item.values)}
-            fill="none"
-            stroke={item.color}
-            strokeWidth={3}
-          />
-        ))}
-      </svg>
-      <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-600">
-        <span className="inline-flex items-center gap-2">
-          <span className="h-2 w-6 rounded-full bg-slate-400" />
-          {labels.contributionLabel}
-        </span>
-        {series.map((item) => (
-          <span key={item.name} className="inline-flex items-center gap-2">
-            <span className="h-2 w-6 rounded-full" style={{ background: item.color }} />
-            {item.name}
-          </span>
-        ))}
+            <Tooltip
+              content={(props: any) => (
+                <GrowthChartTooltipContent {...props} lang={lang} />
+              )}
+            />
+            <Legend wrapperStyle={{ fontSize: 12, color: axisColor }} />
+            <Line
+              type="monotone"
+              dataKey="contribution"
+              name={labels.contributionLabel}
+              stroke="#94A3B8"
+              strokeWidth={2}
+              strokeDasharray="6 4"
+              dot={false}
+            />
+            {series.map((item, index) => (
+              <Area
+                key={item.name}
+                type="monotone"
+                dataKey={`series-${index}`}
+                name={item.name}
+                fill={`${item.color}22`}
+                stroke={item.color}
+                strokeWidth={2.5}
+                dot={false}
+              />
+            ))}
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
@@ -1973,6 +1971,7 @@ export default function App() {
                   axisValue: texts.growthAxisValue,
                 }}
                 lang={lang}
+                isDark={activeTheme === "dark"}
               />
             )}
 
