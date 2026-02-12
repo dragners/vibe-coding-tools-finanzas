@@ -43,10 +43,10 @@
         color-scheme: light;
       }
       html[data-theme="dark"]{
-        --bg:#020617;
+        --bg:#01040d;
         --panel:#0f172a;
         --text:#e2e8f0;
-        --muted:#94a3b8;
+        --muted:#c2cfdf;
         --border:#334155;
         --accent:#22d3ee;
         --accent-strong:#67e8f9;
@@ -73,6 +73,15 @@
           linear-gradient(to right, rgba(15,23,42,.035) 1px, transparent 1px);
         background-size: auto, auto, 100% 100%, 28px 28px, 28px 28px;
         background-position: center;
+      }
+      html[data-theme="dark"] .bg{
+        background:
+          radial-gradient(920px 640px at 8% -4%, rgba(34,211,238,.18), transparent 64%),
+          radial-gradient(980px 660px at 92% -16%, rgba(14,116,144,.24), transparent 62%),
+          linear-gradient(180deg, #01040d 0%, #030b1a 52%, #01040d 100%),
+          linear-gradient(to bottom, rgba(148,163,184,.16) 1px, transparent 1px),
+          linear-gradient(to right, rgba(148,163,184,.16) 1px, transparent 1px);
+        background-size: auto, auto, 100% 100%, 28px 28px, 28px 28px;
       }
 
       /* Topbar */

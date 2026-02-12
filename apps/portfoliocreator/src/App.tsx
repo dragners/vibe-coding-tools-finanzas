@@ -2074,7 +2074,7 @@ export default function App() {
                               </span>
                             </span>
                           </span>
-                          <span className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
+                          <span className="addon-badge rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold text-cyan-800 shadow-sm">
                             {badgeText}
                           </span>
                         </label>
@@ -2355,7 +2355,7 @@ export default function App() {
                 className="mt-2 text-sm text-slate-600"
                 dangerouslySetInnerHTML={renderMarkdown(texts.implementationNote)}
               />
-              <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
+              <div className="keep-light-panel mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
                 <p className="text-[15px] font-semibold text-cyan-900">
                   {texts.referralTitle}
                 </p>

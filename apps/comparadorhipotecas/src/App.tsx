@@ -854,10 +854,10 @@ export default function App() {
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="text-gray-600">
-                      <th className="py-1 px-2 text-center bg-gray-50/80 rounded-tl-md border-2 border-gray-200 border-r-4" colSpan={1}>{t.results}</th>
-                      <th className="py-1 px-2 text-center bg-gray-50/80 border-2 border-gray-200" colSpan={3}>Sin Bonificaciones</th>
-                      <th className="py-1 px-2 text-center bg-gray-50/80 rounded-tr-md border-2 border-gray-200" colSpan={5}>Con Productos Bonificadores</th>
+                    <tr className="comparison-head text-gray-600">
+                      <th className="comparison-head-cell py-1 px-2 text-center bg-gray-50/80 rounded-tl-md border-2 border-gray-200 border-r-4" colSpan={1}>{t.results}</th>
+                      <th className="comparison-head-cell py-1 px-2 text-center bg-gray-50/80 border-2 border-gray-200" colSpan={3}>Sin Bonificaciones</th>
+                      <th className="comparison-head-cell py-1 px-2 text-center bg-gray-50/80 rounded-tr-md border-2 border-gray-200" colSpan={5}>Con Productos Bonificadores</th>
                     </tr>
                     <tr className="text-gray-600">
                       <th className="py-2 pr-3 text-left border-r-2 border-gray-200">{t.bank}</th>

@@ -80,3 +80,7 @@ html[data-theme="dark"] .shadow-lg,
 html[data-theme="dark"] .shadow-xl {
   box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55) !important;
 }
+
+html[data-theme="dark"] .comparison-head-cell {
+  color: #1e293b !important;
+}

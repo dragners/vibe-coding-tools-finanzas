@@ -81,6 +81,26 @@ html[data-theme="dark"] .shadow-xl {
   box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55) !important;
 }
 
+html[data-theme="dark"] .addon-badge {
+  background-color: #ecfeff !important;
+  border-color: #a5f3fc !important;
+  color: #0e7490 !important;
+}
+
+html[data-theme="dark"] .keep-light-panel {
+  background-color: #ecfeff !important;
+  border-color: #a5f3fc !important;
+  color: #083344 !important;
+}
+
+html[data-theme="dark"] .keep-light-panel p {
+  color: #083344 !important;
+}
+
+html[data-theme="dark"] .keep-light-panel a {
+  color: #0e7490 !important;
+}
+
 @media print {
   body {
     background: #ffffff;

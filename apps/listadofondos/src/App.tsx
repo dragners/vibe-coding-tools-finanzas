@@ -966,7 +966,7 @@ const BADGE_STYLES = {
   china: "bg-orange-100/80 text-orange-700 border border-orange-200",
   tech: "bg-sky-100/80 text-sky-700 border border-sky-200",
   indexed: "bg-cyan-100/80 text-cyan-700 border border-cyan-200",
-  active: "bg-slate-100/80 text-slate-700 border border-slate-200",
+  active: "bg-slate-100/80 text-[#334155] border border-slate-200",
   default: "bg-zinc-100/80 text-zinc-700 border border-zinc-200",
 } as const;
 

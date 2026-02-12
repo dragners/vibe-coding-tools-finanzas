@@ -1248,7 +1248,7 @@ export default function App() {
                   <tbody>
 
                     <tr>
-                      <td colSpan={5} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded">
+                      <td colSpan={5} className="plan-table-title bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded">
                         {reinvestSavings ? t.planPlusFund : t.planOnly}
                       </td>
                     </tr>
@@ -1304,7 +1304,7 @@ export default function App() {
                     </tr>
 
                     <tr>
-                      <td colSpan={5} className="bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded mt-2">
+                      <td colSpan={5} className="plan-table-title bg-slate-200 text-slate-800 font-semibold uppercase tracking-wide py-2 px-3 rounded mt-2">
                         {t.fundInvestment}
                       </td>
                     </tr>
