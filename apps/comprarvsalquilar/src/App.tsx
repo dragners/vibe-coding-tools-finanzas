@@ -737,7 +737,7 @@ export default function App() {
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl md:text-4xl font-extrabold">{t.title}</h1>
               <button type="button" onClick={onShare}
-                className="rounded-full border border-gray-200 px-4 py-1.5 text-sm font-semibold text-gray-600 hover:border-gray-400 hover:text-gray-800 transition-colors no-print">
+                className="rounded-full border border-cyan-600 bg-cyan-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-cyan-700 hover:border-cyan-700 transition-colors no-print">
                 {t.shareLink}
               </button>
             </div>
