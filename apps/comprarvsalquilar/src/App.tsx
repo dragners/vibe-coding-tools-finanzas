@@ -279,6 +279,9 @@ const TEXTS = {
     subtitle: 'Calcula en qué año comprar una vivienda supera financieramente a alquilar e invertir la diferencia. Adaptado a la fiscalidad española con impuestos por Comunidad Autónoma.',
     langES: 'ES',
     langEN: 'EN',
+    shareLink: 'Link permanente',
+    shareCopied: 'Link copiado',
+    shareReady: 'Listo para compartir',
     // Property
     propertyTitle: 'Propiedad',
     homePrice: 'Precio de la vivienda',
@@ -389,6 +392,9 @@ const TEXTS = {
     subtitle: 'Calculate the year when buying a home beats renting and investing the difference. Adapted to Spanish tax system with region-specific taxes.',
     langES: 'ES',
     langEN: 'EN',
+    shareLink: 'Permanent link',
+    shareCopied: 'Link copied',
+    shareReady: 'Ready to share',
     propertyTitle: 'Property',
     homePrice: 'Home price',
     downPayment: 'Down payment',
@@ -579,13 +585,69 @@ export default function App() {
 
   const [reinvestmentExemption, setReinvestmentExemption] = useState(true);
   const [exitYear, setExitYear] = useState(10);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
+  const skipIbiSync = useRef(false);
 
   const ccaa = useMemo(() => CCAA_LIST.find(c => c.id === ccaaId) || CCAA_LIST[12], [ccaaId]);
 
-  // Update IBI default when CCAA changes
+  // Update IBI default when CCAA changes (skip when restoring from share URL)
   useEffect(() => {
+    if (skipIbiSync.current) { skipIbiSync.current = false; return; }
     setIbiPct(ccaa.avgIbiPct);
   }, [ccaa]);
+
+  // ─── Share URL: encode/decode state in URL ────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('s');
+    if (!raw) return;
+    try {
+      const d = JSON.parse(atob(raw));
+      if (!d || typeof d !== 'object') return;
+      skipIbiSync.current = true;
+      if (typeof d.hp === 'number') setHomePrice(clamp(d.hp, 0, 10_000_000));
+      if (typeof d.dp === 'number') setDownPaymentPct(clamp(d.dp, 5, 100));
+      if (d.ht === 'new' || d.ht === 'used') setHomeType(d.ht);
+      if (typeof d.cc === 'string' && CCAA_LIST.some(c => c.id === d.cc)) setCcaaId(d.cc);
+      if (typeof d.ap === 'number') setAppreciationPct(clamp(d.ap, 0, 10));
+      if (typeof d.sc === 'number') setSellingCostPct(clamp(d.sc, 0, 10));
+      if (typeof d.tin === 'number') setTinPct(clamp(d.tin, 0.5, 8));
+      if (typeof d.ty === 'number') setTermYears(clamp(d.ty, 5, 40));
+      if (typeof d.ibi === 'number') setIbiPct(clamp(d.ibi, 0, 2));
+      if (typeof d.mp === 'number') setMaintenancePct(clamp(d.mp, 0, 3));
+      if (typeof d.cm === 'number') setCommunityMonthly(clamp(d.cm, 0, 2000));
+      if (typeof d.ia === 'number') setInsuranceAnnual(clamp(d.ia, 0, 10000));
+      if (typeof d.nc === 'number') setNotaryCostPct(clamp(d.nc, 0, 10));
+      if (typeof d.mr === 'number') setMonthlyRent(clamp(d.mr, 0, 20000));
+      if (typeof d.ri === 'number') setRentIncreasePct(clamp(d.ri, 0, 10));
+      if (typeof d.ms === 'number') setMsciReturnPct(clamp(d.ms, 0, 15));
+      if (typeof d.re === 'boolean') setReinvestmentExemption(d.re);
+      if (typeof d.ey === 'number') setExitYear(clamp(d.ey, 1, 40));
+    } catch { /* ignore invalid share data */ }
+  }, []);
+
+  const onShare = async () => {
+    const payload = btoa(JSON.stringify({
+      hp: homePrice, dp: downPaymentPct, ht: homeType, cc: ccaaId,
+      ap: appreciationPct, sc: sellingCostPct, tin: tinPct, ty: termYears,
+      ibi: ibiPct, mp: maintenancePct, cm: communityMonthly, ia: insuranceAnnual,
+      nc: notaryCostPct, mr: monthlyRent, ri: rentIncreasePct, ms: msciReturnPct,
+      re: reinvestmentExemption, ey: exitYear,
+    }));
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.searchParams.set('s', payload);
+    const nextUrl = url.toString();
+    setShareUrl(nextUrl);
+    setShareCopied(false);
+    try {
+      await navigator.clipboard.writeText(nextUrl);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch { /* clipboard not available */ }
+  };
 
   // ─── Derived Values ─────────────────────────────────────────
   const downPayment = homePrice * downPaymentPct / 100;
@@ -672,8 +734,28 @@ export default function App() {
         <div className="max-w-6xl mx-auto p-6 space-y-6">
           {/* ── Title ── */}
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-2">{t.title}</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl md:text-4xl font-extrabold">{t.title}</h1>
+              <button type="button" onClick={onShare}
+                className="rounded-full border border-cyan-600 bg-cyan-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-cyan-700 hover:border-cyan-700 transition-colors no-print">
+                {t.shareLink}
+              </button>
+            </div>
             <p className="text-sm md:text-base text-gray-700">{t.subtitle}</p>
+            {shareUrl && (
+              <div className="mt-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600 no-print">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">{t.shareReady}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <input type="text" value={shareUrl} readOnly
+                    className="min-w-[260px] flex-1 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs text-gray-700 shadow-sm" />
+                  {shareCopied && (
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                      {t.shareCopied}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Input Cards ── */}
