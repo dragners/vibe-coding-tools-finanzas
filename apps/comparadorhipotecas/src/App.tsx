@@ -81,6 +81,8 @@ type Product = {
 };
 
 const LANG_STORAGE_KEY = "finanzas.lang";
+const THEME_STORAGE_KEY = "finanzas.theme";
+type ThemeMode = "light" | "dark";
 
 const getStoredLang = (): Lang => {
   if (typeof window === "undefined") {
@@ -88,6 +90,24 @@ const getStoredLang = (): Lang => {
   }
   const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
   return stored === "en" ? "en" : "es";
+};
+
+const getStoredThemeChoice = (): ThemeMode | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  return stored === "light" || stored === "dark" ? stored : null;
+};
+
+const resolveTheme = (themeChoice: ThemeMode | null): ThemeMode => {
+  if (themeChoice) {
+    return themeChoice;
+  }
+  if (typeof window === "undefined") {
+    return "light";
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
 type MortgageLine = {
@@ -479,10 +499,54 @@ function MoneyInput({ value, onChange, t }: { value: number; onChange: (v: numbe
   );
 }
 
+function SunIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5V5" />
+      <path d="M12 19v2.5" />
+      <path d="M4.9 4.9 6.7 6.7" />
+      <path d="M17.3 17.3 19.1 19.1" />
+      <path d="M2.5 12H5" />
+      <path d="M19 12h2.5" />
+      <path d="M4.9 19.1 6.7 17.3" />
+      <path d="M17.3 6.7 19.1 4.9" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 14.1A8.8 8.8 0 1 1 9.9 3a7 7 0 0 0 11.1 11.1Z" />
+    </svg>
+  );
+}
+
 export default function App() {
   const [lang, setLang] = useState<Lang>(getStoredLang);
+  const [themeChoice, setThemeChoice] = useState<ThemeMode | null>(getStoredThemeChoice);
   const t: I18n = TEXTS[lang];
   const locale = lang === "es" ? "es-ES" : "en-GB";
+  const activeTheme = resolveTheme(themeChoice);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -490,6 +554,35 @@ export default function App() {
       document.documentElement.lang = lang;
     }
   }, [lang]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const resolved = themeChoice ?? (media.matches ? "dark" : "light");
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.style.colorScheme = resolved;
+    };
+    applyTheme();
+    if (themeChoice !== null) {
+      return;
+    }
+    media.addEventListener("change", applyTheme);
+    return () => media.removeEventListener("change", applyTheme);
+  }, [themeChoice]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (themeChoice) {
+      window.localStorage.setItem(THEME_STORAGE_KEY, themeChoice);
+    } else {
+      window.localStorage.removeItem(THEME_STORAGE_KEY);
+    }
+  }, [themeChoice]);
 
   const [amount, setAmount] = useState<number>(250000);
   const [years, setYears] = useState<number>(30);
@@ -579,6 +672,12 @@ export default function App() {
             linear-gradient(to bottom, rgba(15,23,42,.04) 1px, transparent 1px),
             linear-gradient(to right, rgba(15,23,42,.04) 1px, transparent 1px);
             background-size:auto,auto,100% 100%,24px 24px,24px 24px;background-position:center}
+          html[data-theme="dark"] .landing-bg{background:
+            radial-gradient(900px 600px at 10% 0%, rgba(14,165,233,.20), transparent 62%),
+            radial-gradient(900px 600px at 90% -10%, rgba(8,47,73,.55), transparent 62%),
+            linear-gradient(180deg,#020617 0%,#0f172a 60%,#020617 100%),
+            linear-gradient(to bottom, rgba(148,163,184,.10) 1px, transparent 1px),
+            linear-gradient(to right, rgba(148,163,184,.10) 1px, transparent 1px)}
         `}</style>
         <div className="landing-bg" aria-hidden="true" />
 
@@ -587,15 +686,57 @@ export default function App() {
             <a href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline">
               <span aria-hidden="true">←</span>{TEXTS[lang].back}
             </a>
-            <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1" role="radiogroup" aria-label="Language">
-              <label className="cursor-pointer">
-                <input type="radio" name="lang" className="sr-only peer" checked={lang==='es'} onChange={()=>setLang('es')} />
-                <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">{TEXTS[lang].langES}</span>
-              </label>
-              <label className="cursor-pointer">
-                <input type="radio" name="lang" className="sr-only peer" checked={lang==='en'} onChange={()=>setLang('en')} />
-                <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">{TEXTS[lang].langEN}</span>
-              </label>
+            <div className="flex items-center gap-2">
+              <div
+                className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
+                role="group"
+                aria-label={lang === "es" ? "Selector de tema" : "Theme switcher"}
+              >
+                <button
+                  type="button"
+                  onClick={() => setThemeChoice("light")}
+                  aria-label={lang === "es" ? "Tema claro" : "Light theme"}
+                  aria-pressed={activeTheme === "light"}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                    activeTheme === "light" ? "bg-cyan-600 text-white" : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <SunIcon />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setThemeChoice("dark")}
+                  aria-label={lang === "es" ? "Tema oscuro" : "Dark theme"}
+                  aria-pressed={activeTheme === "dark"}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                    activeTheme === "dark" ? "bg-cyan-600 text-white" : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <MoonIcon />
+                </button>
+              </div>
+              <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm" role="group" aria-label="Language">
+                <button
+                  type="button"
+                  onClick={() => setLang("es")}
+                  aria-pressed={lang === "es"}
+                  className={`inline-flex h-9 min-w-[44px] items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                    lang === "es" ? "bg-cyan-600 text-white" : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {TEXTS[lang].langES}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLang("en")}
+                  aria-pressed={lang === "en"}
+                  className={`inline-flex h-9 min-w-[44px] items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                    lang === "en" ? "bg-cyan-600 text-white" : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {TEXTS[lang].langEN}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -713,10 +854,10 @@ export default function App() {
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="text-gray-600">
-                      <th className="py-1 px-2 text-center bg-gray-50/80 rounded-tl-md border-2 border-gray-200 border-r-4" colSpan={1}>{t.results}</th>
-                      <th className="py-1 px-2 text-center bg-gray-50/80 border-2 border-gray-200" colSpan={3}>Sin Bonificaciones</th>
-                      <th className="py-1 px-2 text-center bg-gray-50/80 rounded-tr-md border-2 border-gray-200" colSpan={5}>Con Productos Bonificadores</th>
+                    <tr className="comparison-head text-gray-600">
+                      <th className="comparison-head-cell py-1 px-2 text-center bg-gray-50/80 rounded-tl-md border-2 border-gray-200 border-r-4" colSpan={1}>{t.results}</th>
+                      <th className="comparison-head-cell py-1 px-2 text-center bg-gray-50/80 border-2 border-gray-200" colSpan={3}>Sin Bonificaciones</th>
+                      <th className="comparison-head-cell py-1 px-2 text-center bg-gray-50/80 rounded-tr-md border-2 border-gray-200" colSpan={5}>Con Productos Bonificadores</th>
                     </tr>
                     <tr className="text-gray-600">
                       <th className="py-2 pr-3 text-left border-r-2 border-gray-200">{t.bank}</th>
