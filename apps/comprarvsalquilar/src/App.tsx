@@ -8,26 +8,12 @@ import {
 
 type Lang = 'es' | 'en';
 type HomeType = 'used' | 'new';
-type ThemeMode = 'light' | 'dark';
 
 const LANG_STORAGE_KEY = 'finanzas.lang';
-const THEME_STORAGE_KEY = 'finanzas.theme';
 const getStoredLang = (): Lang => {
   if (typeof window === 'undefined') return 'es';
   const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
   return stored === 'en' ? 'en' : 'es';
-};
-
-const getStoredThemeChoice = (): ThemeMode | null => {
-  if (typeof window === 'undefined') return null;
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === 'light' || stored === 'dark' ? stored : null;
-};
-
-const resolveTheme = (themeChoice: ThemeMode | null): ThemeMode => {
-  if (themeChoice) return themeChoice;
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
 
 type CcaaData = {
@@ -563,56 +549,12 @@ function ChartTooltipContent({ active, payload, label, locale, t }: any) {
   );
 }
 
-function SunIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2.5V5" />
-      <path d="M12 19v2.5" />
-      <path d="M4.9 4.9 6.7 6.7" />
-      <path d="M17.3 17.3 19.1 19.1" />
-      <path d="M2.5 12H5" />
-      <path d="M19 12h2.5" />
-      <path d="M4.9 19.1 6.7 17.3" />
-      <path d="M17.3 6.7 19.1 4.9" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M21 14.1A8.8 8.8 0 1 1 9.9 3a7 7 0 0 0 11.1 11.1Z" />
-    </svg>
-  );
-}
-
 // ─── Main App ───────────────────────────────────────────────────
 
 export default function App() {
   const [lang, setLang] = useState<Lang>(getStoredLang);
-  const [themeChoice, setThemeChoice] = useState<ThemeMode | null>(getStoredThemeChoice);
   const t = TEXTS[lang] as I18n;
   const locale = lang === 'es' ? 'es-ES' : 'en-GB';
-  const activeTheme = resolveTheme(themeChoice);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -620,35 +562,6 @@ export default function App() {
       document.documentElement.lang = lang;
     }
   }, [lang]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const applyTheme = () => {
-      const resolved = themeChoice ?? (media.matches ? 'dark' : 'light');
-      document.documentElement.dataset.theme = resolved;
-      document.documentElement.style.colorScheme = resolved;
-    };
-    applyTheme();
-    if (themeChoice !== null) {
-      return;
-    }
-    media.addEventListener('change', applyTheme);
-    return () => media.removeEventListener('change', applyTheme);
-  }, [themeChoice]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    if (themeChoice) {
-      window.localStorage.setItem(THEME_STORAGE_KEY, themeChoice);
-    } else {
-      window.localStorage.removeItem(THEME_STORAGE_KEY);
-    }
-  }, [themeChoice]);
 
   // ─── Input State ────────────────────────────────────────────
   const [homePrice, setHomePrice] = useState(250000);
@@ -796,12 +709,6 @@ export default function App() {
             linear-gradient(to bottom,rgba(15,23,42,.04) 1px,transparent 1px),
             linear-gradient(to right,rgba(15,23,42,.04) 1px,transparent 1px);
             background-size:auto,auto,100% 100%,24px 24px,24px 24px;background-position:center}
-          html[data-theme="dark"] .landing-bg{background:
-            radial-gradient(900px 600px at 10% 0%, rgba(14,165,233,.20), transparent 62%),
-            radial-gradient(900px 600px at 90% -10%, rgba(8,47,73,.55), transparent 62%),
-            linear-gradient(180deg,#020617 0%,#0f172a 60%,#020617 100%),
-            linear-gradient(to bottom, rgba(148,163,184,.10) 1px, transparent 1px),
-            linear-gradient(to right, rgba(148,163,184,.10) 1px, transparent 1px)}
         `}</style>
         <div className="landing-bg" aria-hidden="true" />
 
@@ -811,50 +718,15 @@ export default function App() {
             <a href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline">
               <span aria-hidden="true">&larr;</span>{t.back}
             </a>
-            <div className="flex items-center gap-2">
-              <div
-                className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
-                role="group"
-                aria-label={lang === 'es' ? 'Selector de tema' : 'Theme switcher'}
-              >
-                <button
-                  type="button"
-                  onClick={() => setThemeChoice('light')}
-                  aria-label={lang === 'es' ? 'Tema claro' : 'Light theme'}
-                  aria-pressed={activeTheme === 'light'}
-                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                    activeTheme === 'light' ? 'bg-cyan-600 text-white' : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <SunIcon />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setThemeChoice('dark')}
-                  aria-label={lang === 'es' ? 'Tema oscuro' : 'Dark theme'}
-                  aria-pressed={activeTheme === 'dark'}
-                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                    activeTheme === 'dark' ? 'bg-cyan-600 text-white' : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <MoonIcon />
-                </button>
-              </div>
-              <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm" role="group" aria-label="Language">
-                {(['es', 'en'] as Lang[]).map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setLang(l)}
-                    aria-pressed={lang === l}
-                    className={`inline-flex h-9 min-w-[44px] items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                      lang === l ? 'bg-cyan-600 text-white' : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
+            <div className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1" role="radiogroup" aria-label="Language">
+              {(['es', 'en'] as Lang[]).map(l => (
+                <label key={l} className="cursor-pointer">
+                  <input type="radio" name="lang" className="sr-only peer" checked={lang === l} onChange={() => setLang(l)} />
+                  <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-gray-700 peer-checked:bg-cyan-600 peer-checked:text-white">
                     {l.toUpperCase()}
-                  </button>
-                ))}
-              </div>
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
@@ -1212,23 +1084,23 @@ export default function App() {
 
               {/* Head-to-head */}
               <div className={`rounded-2xl shadow px-6 pt-3 pb-5 text-center ${exitData.buyAdvantage >= 0 ? 'bg-cyan-50 border-2 border-cyan-300' : 'bg-emerald-50 border-2 border-emerald-300'}`}>
-                <h3 className="comparison-dark-label font-semibold text-gray-700 mb-1">{t.comparison} &mdash; {t.atYear} {clampedExitYear}</h3>
+                <h3 className="font-semibold text-gray-700 mb-1">{t.comparison} &mdash; {t.atYear} {clampedExitYear}</h3>
                 <p className={`text-2xl font-extrabold mb-3 ${exitData.buyAdvantage >= 0 ? 'text-cyan-700' : 'text-emerald-600'}`}>
                   {exitData.buyAdvantage >= 0 ? t.buyAdvantage : t.rentAdvantage}
                 </p>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="comparison-dark-label text-xs text-gray-500">{t.grossProceeds}</p>
+                    <p className="text-xs text-gray-500">{t.grossProceeds}</p>
                     <p className="font-bold text-cyan-700">{formatEUR(exitData.grossProceedsBuy, locale)}</p>
                   </div>
                   <div>
-                    <p className="comparison-dark-label text-xs text-gray-500 mb-1">{lang === 'es' ? 'Diferencia' : 'Difference'}</p>
+                    <p className="text-xs text-gray-500 mb-1">{lang === 'es' ? 'Diferencia' : 'Difference'}</p>
                     <p className={`text-2xl font-extrabold ${exitData.buyAdvantage >= 0 ? 'text-cyan-700' : 'text-emerald-600'}`}>
                       {exitData.buyAdvantage >= 0 ? '+' : '-'}{formatEUR(Math.abs(exitData.buyAdvantage), locale)}
                     </p>
                   </div>
                   <div>
-                    <p className="comparison-dark-label text-xs text-gray-500">{t.netPortfolio}</p>
+                    <p className="text-xs text-gray-500">{t.netPortfolio}</p>
                     <p className="font-bold text-emerald-600">{formatEUR(exitData.netPortfolioAfterTax, locale)}</p>
                   </div>
                 </div>
