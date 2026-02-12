@@ -937,7 +937,7 @@ const GrowthChart = ({
 }: {
   series: { name: string; values: number[]; color: string }[];
   contribution: number[];
-  labels: { title: string; contributionLabel: string; axisYears: string; axisValue: string };
+  labels: { title: string; contributionLabel: string; axisYears: string };
   lang: Lang;
   isDark: boolean;
 }) => {
@@ -1011,13 +1011,6 @@ const GrowthChart = ({
             <YAxis
               tick={{ fontSize: 11, fill: axisColor }}
               tickFormatter={(value: number) => formatAxisCurrency(value, lang)}
-              label={{
-                value: labels.axisValue,
-                angle: -90,
-                position: "insideLeft",
-                fill: axisColor,
-                fontSize: 11,
-              }}
             />
             <Tooltip
               content={(props: any) => (
@@ -1983,7 +1976,6 @@ export default function App() {
                   title: texts.growthTitle,
                   contributionLabel: texts.contributedLine,
                   axisYears: texts.growthAxisYears,
-                  axisValue: texts.growthAxisValue,
                 }}
                 lang={lang}
                 isDark={activeTheme === "dark"}
