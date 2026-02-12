@@ -39,6 +39,21 @@
         --accent-strong:#0284c7;/* hover */
         --ring:rgba(14,165,233,.3);
         --shadow:0 14px 40px rgba(15,23,42,.08);
+        --topbar-bg:rgba(255,255,255,.92);
+        color-scheme: light;
+      }
+      html[data-theme="dark"]{
+        --bg:#020617;
+        --panel:#0f172a;
+        --text:#e2e8f0;
+        --muted:#94a3b8;
+        --border:#334155;
+        --accent:#22d3ee;
+        --accent-strong:#67e8f9;
+        --ring:rgba(34,211,238,.35);
+        --shadow:0 16px 42px rgba(2,6,23,.58);
+        --topbar-bg:rgba(2,6,23,.86);
+        color-scheme: dark;
       }
       *{box-sizing:border-box}
       html,body{height:100%}
@@ -61,15 +76,18 @@
       }
 
       /* Topbar */
-      .topbar{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:saturate(120%) blur(8px);border-bottom:1px solid var(--border)}
+      .topbar{position:sticky;top:0;background:var(--topbar-bg);backdrop-filter:saturate(120%) blur(8px);border-bottom:1px solid var(--border)}
       .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
       .brand{font-weight:900;letter-spacing:.4px;font-size:clamp(20px,2.6vw,28px);text-transform:uppercase;color:var(--text)}
       .brand .capslead{font-size:1.22em;line-height:0.9;display:inline-block}
       .brand-word{display:inline-block;white-space:nowrap}
 
-      /* Lang chips (ES | EN) */
-      .lang-switch{display:inline-flex;gap:4px;border:1px solid var(--border);border-radius:999px;background:#fff;padding:4px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
-      .chip{display:inline-flex;align-items:center;border:none;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;background:transparent;color:var(--text);user-select:none}
+      /* Controls */
+      .controls{display:inline-flex;align-items:center;gap:8px}
+      .control-switch{display:inline-flex;gap:4px;border:1px solid var(--border);border-radius:999px;background:var(--panel);padding:4px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+      .chip{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:36px;border:none;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:var(--text);user-select:none}
+      .chip-icon{padding:0;width:36px;min-width:36px}
+      .chip svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
       .chip[aria-pressed="true"]{background:var(--accent);color:#fff}
       .chip:focus{outline:none;box-shadow:0 0 0 3px var(--ring)}
 
@@ -101,6 +119,8 @@
 
       /* Responsive tweaks */
       @media (max-width:520px){
+        .topbar-inner{flex-wrap:wrap;justify-content:center;padding-top:12px;padding-bottom:12px}
+        .controls{justify-content:center;flex-wrap:wrap}
         .grid{grid-template-columns:1fr;max-width:520px}
         .card{min-height:124px;padding:20px}
         .card:last-child:nth-child(odd){max-width:100%;grid-column:auto}
@@ -113,9 +133,31 @@
     <header class="topbar">
       <div class="wrap topbar-inner">
         <div class="brand"><span data-i18n="title">Herramientas financieras</span></div>
-        <div class="lang-switch" role="group" aria-label="Selector de idioma">
-          <button class="chip" id="chip-es" data-lang="es" aria-pressed="true">ES</button>
-          <button class="chip" id="chip-en" data-lang="en" aria-pressed="false">EN</button>
+        <div class="controls">
+          <div class="control-switch theme-switch" role="group" aria-label="Selector de tema">
+            <button class="chip chip-icon" id="chip-theme-light" aria-label="Tema claro" aria-pressed="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2.5V5"></path>
+                <path d="M12 19v2.5"></path>
+                <path d="M4.9 4.9 6.7 6.7"></path>
+                <path d="M17.3 17.3 19.1 19.1"></path>
+                <path d="M2.5 12H5"></path>
+                <path d="M19 12h2.5"></path>
+                <path d="M4.9 19.1 6.7 17.3"></path>
+                <path d="M17.3 6.7 19.1 4.9"></path>
+              </svg>
+            </button>
+            <button class="chip chip-icon" id="chip-theme-dark" aria-label="Tema oscuro" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 14.1A8.8 8.8 0 1 1 9.9 3a7 7 0 0 0 11.1 11.1Z"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="control-switch lang-switch" role="group" aria-label="Selector de idioma">
+            <button class="chip" id="chip-es" data-lang="es" aria-pressed="true">ES</button>
+            <button class="chip" id="chip-en" data-lang="en" aria-pressed="false">EN</button>
+          </div>
         </div>
       </div>
     </header>
@@ -193,6 +235,7 @@
 
     <script>
       const LANG_STORAGE_KEY = 'finanzas.lang';
+      const THEME_STORAGE_KEY = 'finanzas.theme';
       const I18N = {
         es:{
           title:'Herramientas financieras',
@@ -255,8 +298,11 @@
         buyrent_title: document.querySelector('[data-i18n="buyrent_title"]'),
         buyrent_desc: document.querySelector('[data-i18n="buyrent_desc"]'),
         footer_text: document.querySelector('[data-i18n="footer_text"]'),
+        chipThemeLight: document.getElementById('chip-theme-light'),
+        chipThemeDark: document.getElementById('chip-theme-dark'),
         chipEs: document.getElementById('chip-es'),
-        chipEn: document.getElementById('chip-en')
+        chipEn: document.getElementById('chip-en'),
+        themeColor: document.querySelector('meta[name="theme-color"]')
       };
 
       function applyLang(lang){
@@ -295,6 +341,28 @@
         localStorage.setItem(LANG_STORAGE_KEY, lang);
         els.chipEs.setAttribute('aria-pressed', String(lang==='es'));
         els.chipEn.setAttribute('aria-pressed', String(lang==='en'));
+        els.chipThemeLight.setAttribute('aria-label', lang === 'es' ? 'Tema claro' : 'Light theme');
+        els.chipThemeDark.setAttribute('aria-label', lang === 'es' ? 'Tema oscuro' : 'Dark theme');
+      }
+
+      function getStoredThemeChoice(){
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        return stored === 'light' || stored === 'dark' ? stored : null;
+      }
+
+      function getSystemTheme(){
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      function applyTheme(themeChoice){
+        const resolved = themeChoice || getSystemTheme();
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.style.colorScheme = resolved;
+        if (els.themeColor) {
+          els.themeColor.setAttribute('content', resolved === 'dark' ? '#0f172a' : '#0ea5e9');
+        }
+        els.chipThemeLight.setAttribute('aria-pressed', String(resolved === 'light'));
+        els.chipThemeDark.setAttribute('aria-pressed', String(resolved === 'dark'));
       }
 
       function stripHTML(s){ const div=document.createElement('div'); div.innerHTML=s; return div.textContent||div.innerText||''; }
@@ -307,10 +375,35 @@
         el.innerHTML = html;
       }
 
+      let themeChoice = getStoredThemeChoice();
+      const onSystemThemeChange = () => {
+        if (!themeChoice) {
+          applyTheme(themeChoice);
+        }
+      };
+      const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+      if (themeMedia.addEventListener) {
+        themeMedia.addEventListener('change', onSystemThemeChange);
+      } else {
+        themeMedia.addListener(onSystemThemeChange);
+      }
+
       const saved = localStorage.getItem(LANG_STORAGE_KEY) || 'es';
       applyLang(saved);
+      applyTheme(themeChoice);
+
       els.chipEs.addEventListener('click', ()=>applyLang('es'));
       els.chipEn.addEventListener('click', ()=>applyLang('en'));
+      els.chipThemeLight.addEventListener('click', () => {
+        themeChoice = 'light';
+        localStorage.setItem(THEME_STORAGE_KEY, themeChoice);
+        applyTheme(themeChoice);
+      });
+      els.chipThemeDark.addEventListener('click', () => {
+        themeChoice = 'dark';
+        localStorage.setItem(THEME_STORAGE_KEY, themeChoice);
+        applyTheme(themeChoice);
+      });
     </script>
   </body>
 </html>

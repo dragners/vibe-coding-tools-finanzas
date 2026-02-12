@@ -4,8 +4,10 @@ import portfoliosData from "./data/Carteras.json";
 import fundsData from "./data/Fondos.json";
 
 type Lang = "es" | "en";
+type ThemeMode = "light" | "dark";
 
 const LANG_STORAGE_KEY = "finanzas.lang";
+const THEME_STORAGE_KEY = "finanzas.theme";
 
 const getStoredLang = (): Lang => {
   if (typeof window === "undefined") {
@@ -13,6 +15,24 @@ const getStoredLang = (): Lang => {
   }
   const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
   return stored === "en" ? "en" : "es";
+};
+
+const getStoredThemeChoice = (): ThemeMode | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  return stored === "light" || stored === "dark" ? stored : null;
+};
+
+const resolveTheme = (themeChoice: ThemeMode | null): ThemeMode => {
+  if (themeChoice) {
+    return themeChoice;
+  }
+  if (typeof window === "undefined") {
+    return "light";
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
 type RiskPreference = "high" | "moderate" | "low" | "safest";
@@ -1020,8 +1040,51 @@ const GrowthChart = ({
   );
 };
 
+function SunIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5V5" />
+      <path d="M12 19v2.5" />
+      <path d="M4.9 4.9 6.7 6.7" />
+      <path d="M17.3 17.3 19.1 19.1" />
+      <path d="M2.5 12H5" />
+      <path d="M19 12h2.5" />
+      <path d="M4.9 19.1 6.7 17.3" />
+      <path d="M17.3 6.7 19.1 4.9" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 14.1A8.8 8.8 0 1 1 9.9 3a7 7 0 0 0 11.1 11.1Z" />
+    </svg>
+  );
+}
+
 export default function App() {
   const [lang, setLang] = useState<Lang>(getStoredLang);
+  const [themeChoice, setThemeChoice] = useState<ThemeMode | null>(getStoredThemeChoice);
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<
     "intro" | "form" | "risk" | "options" | "addons" | "final"
@@ -1053,6 +1116,7 @@ export default function App() {
   const [addons, setAddons] = useState<AddonState>(() => createDefaultAddons());
 
   const texts = TEXTS[lang];
+  const activeTheme = resolveTheme(themeChoice);
   const optionLabel = (index: number) => `${texts.option} ${index + 1}`;
   const totalQuestions = QUESTIONS.length;
 
@@ -1157,6 +1221,35 @@ export default function App() {
       document.documentElement.lang = lang;
     }
   }, [lang]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const resolved = themeChoice ?? (media.matches ? "dark" : "light");
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.style.colorScheme = resolved;
+    };
+    applyTheme();
+    if (themeChoice !== null) {
+      return;
+    }
+    media.addEventListener("change", applyTheme);
+    return () => media.removeEventListener("change", applyTheme);
+  }, [themeChoice]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (themeChoice) {
+      window.localStorage.setItem(THEME_STORAGE_KEY, themeChoice);
+    } else {
+      window.localStorage.removeItem(THEME_STORAGE_KEY);
+    }
+  }, [themeChoice]);
 
   const handleAnswer = (key: keyof Answers, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
@@ -1390,35 +1483,61 @@ export default function App() {
             <h1 className="mt-3 text-3xl font-semibold text-slate-900">{texts.title}</h1>
             <p className="mt-2 text-sm text-slate-600">{texts.subtitle}</p>
           </div>
-          <div
-            className="inline-flex gap-1 rounded-xl border border-slate-200 bg-white p-1 text-sm shadow-sm"
-            role="radiogroup"
-            aria-label={texts.language}
-          >
-            <label className="cursor-pointer">
-              <input
-                type="radio"
-                name="lang"
-                className="sr-only peer"
-                checked={lang === "es"}
-                onChange={() => setLang("es")}
-              />
-              <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-slate-600 peer-checked:bg-cyan-600 peer-checked:text-white">
+          <div className="flex items-center gap-2">
+            <div
+              className="inline-flex gap-1 rounded-xl border border-slate-200 bg-white p-1 text-sm shadow-sm"
+              role="group"
+              aria-label={lang === "es" ? "Selector de tema" : "Theme switcher"}
+            >
+              <button
+                type="button"
+                onClick={() => setThemeChoice("light")}
+                aria-label={lang === "es" ? "Tema claro" : "Light theme"}
+                aria-pressed={activeTheme === "light"}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                  activeTheme === "light" ? "bg-cyan-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <SunIcon />
+              </button>
+              <button
+                type="button"
+                onClick={() => setThemeChoice("dark")}
+                aria-label={lang === "es" ? "Tema oscuro" : "Dark theme"}
+                aria-pressed={activeTheme === "dark"}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                  activeTheme === "dark" ? "bg-cyan-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <MoonIcon />
+              </button>
+            </div>
+            <div
+              className="inline-flex gap-1 rounded-xl border border-slate-200 bg-white p-1 text-sm shadow-sm"
+              role="group"
+              aria-label={texts.language}
+            >
+              <button
+                type="button"
+                onClick={() => setLang("es")}
+                aria-pressed={lang === "es"}
+                className={`inline-flex h-9 min-w-[44px] items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                  lang === "es" ? "bg-cyan-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
                 {texts.langES}
-              </span>
-            </label>
-            <label className="cursor-pointer">
-              <input
-                type="radio"
-                name="lang"
-                className="sr-only peer"
-                checked={lang === "en"}
-                onChange={() => setLang("en")}
-              />
-              <span className="px-3 py-1.5 text-sm rounded-lg block select-none text-slate-600 peer-checked:bg-cyan-600 peer-checked:text-white">
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("en")}
+                aria-pressed={lang === "en"}
+                className={`inline-flex h-9 min-w-[44px] items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                  lang === "en" ? "bg-cyan-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
                 {texts.langEN}
-              </span>
-            </label>
+              </button>
+            </div>
           </div>
         </header>
 
