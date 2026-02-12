@@ -1387,24 +1387,16 @@ export default function App() {
 
   const growthSeries = useMemo(() => {
     if (!selectedPortfolio) return [];
-    const selectedOptionIndex = options.findIndex(
-      (portfolio) => portfolio.name === selectedPortfolio.name,
-    );
-    const colors = ["#38BDF8", "#6366F1", "#F97316"];
-    const seriesIndex = selectedOptionIndex >= 0 ? selectedOptionIndex : 0;
-
-    return [
-      {
-        name: optionLabel(seriesIndex),
-        values: buildGrowthSeries(
-          initial,
-          monthly,
-          horizonYears,
-          selectedPortfolio.annualReturn,
-        ),
-        color: colors[seriesIndex] ?? colors[0],
-      },
-    ];
+    return options.map((portfolio, index) => ({
+      name: optionLabel(index),
+      values: buildGrowthSeries(
+        initial,
+        monthly,
+        horizonYears,
+        portfolio.annualReturn,
+      ),
+      color: ["#38BDF8", "#6366F1", "#F97316"][index],
+    }));
   }, [options, selectedPortfolio, initial, monthly, horizonYears, texts.option]);
 
   const contributionSeries = buildContributionSeries(
@@ -1970,7 +1962,6 @@ export default function App() {
 
             {selectedPortfolio && (
               <GrowthChart
-                key={selectedPortfolio.name}
                 series={growthSeries}
                 contribution={contributionSeries}
                 labels={{
