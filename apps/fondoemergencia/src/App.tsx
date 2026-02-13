@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 type ThemeMode = 'light' | 'dark';
 type Lang = 'es' | 'en';
@@ -42,18 +42,16 @@ const texts = {
     forWhom: '¿Para quién es?',
     onlyMe: 'Solo yo',
     withFamily: 'Yo y mi familia',
-    householdMembers: 'Personas hogar',
+    incomeCount: 'Número de ingresos (nóminas)',
+    incomeCountInfo:
+      'Número de personas que aportan ingresos laborales al mes. En "Solo yo" se asume 1 persona. En "Yo y mi familia" se asumen 2 adultos y puedes indicar si entra 1 o 2 nóminas.',
     dependents: 'Personas a cargo',
-    employmentStatus: 'Situación laboral principal',
+    employmentStatus: 'Situación laboral por persona',
+    workerPrefix: 'Persona',
     publicWorker: 'Funcionario/a',
     salariedWithBenefit: 'Cuenta ajena con paro',
     salariedNoBenefit: 'Cuenta ajena sin paro',
     selfEmployed: 'Autónomo/a o sin prestación',
-    unemploymentMonths: 'Meses de paro estimados',
-    householdIncomeSources: 'Ingresos en el hogar',
-    cutCapacity: 'Capacidad de recorte',
-    precisionHint:
-      'Dato extra para precisión: cuánto podrías reducir gastos no esenciales en caso de emergencia.',
     expensesTitle: 'Gastos mensuales esenciales',
     housing: 'Vivienda (hipoteca o alquiler)',
     food: 'Comida y supermercado',
@@ -96,18 +94,16 @@ const texts = {
     forWhom: 'Who is this for?',
     onlyMe: 'Only me',
     withFamily: 'Me and my family',
-    householdMembers: 'Household members',
+    incomeCount: 'Number of income sources (salaries)',
+    incomeCountInfo:
+      'Number of people bringing labor income each month. In "Only me" we assume 1 person. In "Me and my family" we assume 2 adults, and you can set whether 1 or 2 salaries come in.',
     dependents: 'Dependents',
-    employmentStatus: 'Main employment status',
+    employmentStatus: 'Employment status per worker',
+    workerPrefix: 'Person',
     publicWorker: 'Public employee',
     salariedWithBenefit: 'Salaried with unemployment benefit',
     salariedNoBenefit: 'Salaried without unemployment benefit',
     selfEmployed: 'Self-employed / no benefit',
-    unemploymentMonths: 'Estimated unemployment-benefit months',
-    householdIncomeSources: 'Income sources in household',
-    cutCapacity: 'Possible expense reduction',
-    precisionHint:
-      'Extra precision input: how much non-essential spending you could realistically cut in an emergency.',
     expensesTitle: 'Essential monthly expenses',
     housing: 'Housing (mortgage or rent)',
     food: 'Food and groceries',
@@ -151,34 +147,34 @@ const statusMonthsBase: Record<EmploymentStatus, number> = {
 };
 
 function computeRecommendedMonths(params: {
-  employmentStatus: EmploymentStatus;
+  employmentStatuses: EmploymentStatus[];
   householdType: HouseholdType;
-  householdMembers: number;
   dependents: number;
   incomeSources: number;
-  cutCapacityPct: number;
-  unemploymentBenefitMonths: number;
   housingCost: number;
   loansCost: number;
   totalEssential: number;
 }): number {
   const {
-    employmentStatus,
+    employmentStatuses,
     householdType,
-    householdMembers,
     dependents,
     incomeSources,
-    cutCapacityPct,
-    unemploymentBenefitMonths,
     housingCost,
     loansCost,
     totalEssential,
   } = params;
 
-  let months = statusMonthsBase[employmentStatus];
+  const baseMonthsByWorker =
+    employmentStatuses.length > 0
+      ? employmentStatuses.map((status) => statusMonthsBase[status])
+      : [statusMonthsBase.autonomo_sin_paro];
+  let months =
+    baseMonthsByWorker.reduce((sum, monthsValue) => sum + monthsValue, 0) /
+    baseMonthsByWorker.length;
 
-  if (householdType === 'familia') months += 1;
-  if (householdMembers >= 4) months += 1;
+  const assumedAdults = householdType === 'solo' ? 1 : 2;
+  if (assumedAdults === 2) months += 1;
   if (dependents >= 2) months += 1;
 
   if (incomeSources >= 2) months -= 1;
@@ -186,14 +182,6 @@ function computeRecommendedMonths(params: {
 
   const debtWeight = totalEssential > 0 ? (housingCost + loansCost) / totalEssential : 0;
   if (debtWeight >= 0.45) months += 1;
-
-  if (employmentStatus === 'cuenta_ajena_con_paro') {
-    if (unemploymentBenefitMonths >= 12) months -= 1;
-    if (unemploymentBenefitMonths <= 4) months += 1;
-  }
-
-  if (cutCapacityPct <= 10) months += 1;
-  if (cutCapacityPct >= 30) months -= 1;
 
   return clamp(Math.round(months), 0, 24);
 }
@@ -240,6 +228,77 @@ function MoonIcon() {
   );
 }
 
+function InfoTip({
+  content,
+  label = 'Info',
+  side = 'bottom',
+  className = '',
+}: {
+  content: React.ReactNode;
+  label?: string;
+  side?: 'top' | 'bottom';
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const popRef = useRef<HTMLDivElement | null>(null);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: Event) => {
+      const target = event.target as Node;
+      if (btnRef.current?.contains(target) || popRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    const onScroll = () => setOpen(false);
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('touchstart', onDoc, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('touchstart', onDoc);
+      window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <span className={`relative inline-flex ${className}`}>
+      <button
+        ref={btnRef}
+        type="button"
+        aria-label={label}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((value) => !value)}
+        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] align-middle focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+          open ? 'border-cyan-400 bg-cyan-50 text-cyan-700' : 'border-gray-300 bg-white text-gray-600'
+        }`}
+      >
+        i
+      </button>
+      {open && (
+        <div
+          ref={popRef}
+          id={id}
+          role="tooltip"
+          className={`absolute left-1/2 z-50 max-w-[280px] -translate-x-1/2 rounded-lg border bg-white p-2.5 text-xs text-gray-700 shadow-lg ${
+            side === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
+        >
+          {content}
+        </div>
+      )}
+    </span>
+  );
+}
+
 function EuroInput({
   label,
   value,
@@ -282,13 +341,11 @@ export default function App() {
     });
 
   const [householdType, setHouseholdType] = useState<HouseholdType>('solo');
-  const [householdMembers, setHouseholdMembers] = useState(1);
   const [dependents, setDependents] = useState(0);
   const [incomeSources, setIncomeSources] = useState(1);
-
-  const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatus>('cuenta_ajena_con_paro');
-  const [unemploymentBenefitMonths, setUnemploymentBenefitMonths] = useState(12);
-  const [cutCapacityPct, setCutCapacityPct] = useState(15);
+  const [employmentStatuses, setEmploymentStatuses] = useState<EmploymentStatus[]>([
+    'cuenta_ajena_con_paro',
+  ]);
 
   const [housingCost, setHousingCost] = useState(900);
   const [foodCost, setFoodCost] = useState(350);
@@ -302,13 +359,23 @@ export default function App() {
 
   useEffect(() => {
     if (householdType === 'solo') {
-      setHouseholdMembers(1);
       setDependents(0);
+      setIncomeSources(1);
+      return;
     }
-    if (householdType === 'familia' && householdMembers < 2) {
-      setHouseholdMembers(2);
-    }
-  }, [householdType, householdMembers]);
+    setIncomeSources((previous) => clamp(previous, 1, 2));
+  }, [householdType]);
+
+  useEffect(() => {
+    setEmploymentStatuses((previous) => {
+      if (previous.length === incomeSources) return previous;
+      if (previous.length > incomeSources) return previous.slice(0, incomeSources);
+      return [
+        ...previous,
+        ...Array.from({ length: incomeSources - previous.length }, () => 'cuenta_ajena_con_paro' as EmploymentStatus),
+      ];
+    });
+  }, [incomeSources]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -375,25 +442,19 @@ export default function App() {
   const recommendedMonths = useMemo(
     () =>
       computeRecommendedMonths({
-        employmentStatus,
+        employmentStatuses,
         householdType,
-        householdMembers,
         dependents,
         incomeSources,
-        cutCapacityPct,
-        unemploymentBenefitMonths,
         housingCost,
         loansCost,
         totalEssential: totalEssentialMonthly,
       }),
     [
-      employmentStatus,
+      employmentStatuses,
       householdType,
-      householdMembers,
       dependents,
       incomeSources,
-      cutCapacityPct,
-      unemploymentBenefitMonths,
       housingCost,
       loansCost,
       totalEssentialMonthly,
@@ -407,6 +468,14 @@ export default function App() {
       setSelectedMonths(recommendedMonths);
     }
   }, [recommendedMonths, isMonthsCustomized]);
+
+  const updateEmploymentStatus = (index: number, status: EmploymentStatus) => {
+    setEmploymentStatuses((previous) => {
+      const next = [...previous];
+      next[index] = status;
+      return next;
+    });
+  };
 
   const selectedFundTarget = totalEssentialMonthly * selectedMonths;
 
@@ -534,22 +603,22 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.householdMembers}</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    {t.incomeCount}
+                    <InfoTip content={t.incomeCountInfo} label={t.incomeCount} className="ml-1" />
+                  </label>
                   <input
                     type="number"
-                    min={householdType === 'solo' ? 1 : 2}
-                    max={10}
-                    value={householdMembers}
+                    min={1}
+                    max={householdType === 'solo' ? 1 : 2}
+                    disabled={householdType === 'solo'}
+                    value={incomeSources}
                     onChange={(event) =>
-                      setHouseholdMembers(
-                        clamp(
-                          Number(event.target.value) || (householdType === 'solo' ? 1 : 2),
-                          householdType === 'solo' ? 1 : 2,
-                          10,
-                        ),
+                      setIncomeSources(
+                        clamp(Number(event.target.value) || 1, 1, householdType === 'solo' ? 1 : 2),
                       )
                     }
-                    className="w-full rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 </div>
                 <div>
@@ -568,65 +637,29 @@ export default function App() {
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">{t.employmentStatus}</label>
-                <select
-                  value={employmentStatus}
-                  onChange={(event) => setEmploymentStatus(event.target.value as EmploymentStatus)}
-                  className="w-full rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                >
-                  <option value="funcionario">{t.publicWorker}</option>
-                  <option value="cuenta_ajena_con_paro">{t.salariedWithBenefit}</option>
-                  <option value="cuenta_ajena_sin_paro">{t.salariedNoBenefit}</option>
-                  <option value="autonomo_sin_paro">{t.selfEmployed}</option>
-                </select>
-              </div>
-
-              {employmentStatus === 'cuenta_ajena_con_paro' && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.unemploymentMonths}</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={24}
-                      step={1}
-                      value={unemploymentBenefitMonths}
-                      onChange={(event) => setUnemploymentBenefitMonths(Number(event.target.value))}
-                      className="flex-1 accent-cyan-600"
-                    />
-                    <span className="w-12 text-right text-sm font-medium">{unemploymentBenefitMonths}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.householdIncomeSources}</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={4}
-                    value={incomeSources}
-                    onChange={(event) => setIncomeSources(clamp(Number(event.target.value) || 1, 1, 4))}
-                    className="w-full rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.cutCapacity}</label>
-                  <div className="flex items-center gap-2 pt-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={40}
-                      step={1}
-                      value={cutCapacityPct}
-                      onChange={(event) => setCutCapacityPct(Number(event.target.value))}
-                      className="flex-1 accent-cyan-600"
-                    />
-                    <span className="w-12 text-right text-sm font-medium">{cutCapacityPct}%</span>
-                  </div>
+                <div className="space-y-2">
+                  {employmentStatuses.map((status, index) => (
+                    <div key={index}>
+                      <label className="mb-1 block text-xs font-medium text-gray-500">
+                        {t.workerPrefix} {index + 1}
+                      </label>
+                      <select
+                        value={status}
+                        onChange={(event) => updateEmploymentStatus(index, event.target.value as EmploymentStatus)}
+                        className="w-full rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      >
+                        <option value="funcionario">{t.publicWorker}</option>
+                        <option value="cuenta_ajena_con_paro">{t.salariedWithBenefit}</option>
+                        <option value="cuenta_ajena_sin_paro">{t.salariedNoBenefit}</option>
+                        <option value="autonomo_sin_paro">{t.selfEmployed}</option>
+                      </select>
+                    </div>
+                  ))}
+                  {employmentStatuses.length === 0 && (
+                    <p className="text-xs text-gray-500">{t.incomeCountInfo}</p>
+                  )}
                 </div>
               </div>
-              <p className="text-xs text-gray-500">{t.precisionHint}</p>
             </div>
 
             <div className="space-y-3 rounded-2xl bg-white p-4 shadow">
