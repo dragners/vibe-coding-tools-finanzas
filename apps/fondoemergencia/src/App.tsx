@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 type ThemeMode = 'light' | 'dark';
+type Lang = 'es' | 'en';
 type HouseholdType = 'solo' | 'familia';
 type EmploymentStatus =
   | 'funcionario'
@@ -8,9 +9,8 @@ type EmploymentStatus =
   | 'cuenta_ajena_sin_paro'
   | 'autonomo_sin_paro';
 
-type CoverageTone = 'red' | 'amber' | 'green' | 'blue';
-
 const THEME_STORAGE_KEY = 'finanzas.theme';
+const LANG_STORAGE_KEY = 'finanzas.lang';
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -20,25 +20,116 @@ const getStoredThemeChoice = (): ThemeMode | null => {
   return stored === 'light' || stored === 'dark' ? stored : null;
 };
 
+const getStoredLang = (): Lang => {
+  if (typeof window === 'undefined') return 'es';
+  const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
+  return stored === 'en' ? 'en' : 'es';
+};
+
 const resolveTheme = (themeChoice: ThemeMode | null): ThemeMode => {
   if (themeChoice) return themeChoice;
   if (typeof window === 'undefined') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
 
-const formatEUR = (value: number): string =>
-  value.toLocaleString('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  });
-
-const statusLabel: Record<EmploymentStatus, string> = {
-  funcionario: 'Funcionario/a',
-  cuenta_ajena_con_paro: 'Cuenta ajena con paro',
-  cuenta_ajena_sin_paro: 'Cuenta ajena sin paro',
-  autonomo_sin_paro: 'Autónomo/a o sin prestación',
-};
+const texts = {
+  es: {
+    back: 'Volver al inicio',
+    title: 'Fondo de Emergencia',
+    subtitle:
+      'Calcula cuánto dinero deberías tener para cubrir tus gastos esenciales si te quedas sin ingresos. La recomendación general suele estar entre 6 y 12 meses, pero puede variar según estabilidad laboral y situación familiar.',
+    householdTitle: 'Perfil del hogar',
+    forWhom: '¿Para quién es?',
+    onlyMe: 'Solo yo',
+    withFamily: 'Yo y mi familia',
+    householdMembers: 'Personas hogar',
+    dependents: 'Personas a cargo',
+    employmentStatus: 'Situación laboral principal',
+    publicWorker: 'Funcionario/a',
+    salariedWithBenefit: 'Cuenta ajena con paro',
+    salariedNoBenefit: 'Cuenta ajena sin paro',
+    selfEmployed: 'Autónomo/a o sin prestación',
+    unemploymentMonths: 'Meses de paro estimados',
+    householdIncomeSources: 'Ingresos en el hogar',
+    cutCapacity: 'Capacidad de recorte',
+    precisionHint:
+      'Dato extra para precisión: cuánto podrías reducir gastos no esenciales en caso de emergencia.',
+    expensesTitle: 'Gastos mensuales esenciales',
+    housing: 'Vivienda (hipoteca o alquiler)',
+    food: 'Comida y supermercado',
+    loans: 'Préstamos y deudas',
+    utilities: 'Suministros (luz, agua, internet)',
+    transport: 'Transporte',
+    healthEducation: 'Salud, educación y seguros',
+    otherNecessary: 'Otros gastos necesarios',
+    targetTitle: 'Objetivo del fondo',
+    recommendedMonths: 'Meses recomendados',
+    recommendedByProfile:
+      'Calculado según estabilidad laboral, tipo de hogar, deudas, ingresos y capacidad de ajuste.',
+    monthsToCover: 'Meses a cubrir',
+    useRecommended: 'Usar recomendado',
+    usualRecommendation: 'Recomendación habitual general',
+    usualRecommendationValue: 'Entre 6 y 12 meses',
+    stableProfilesNote:
+      'Para perfiles estables (funcionario o con buena cobertura de paro) puede estar por debajo.',
+    selectedResult: 'Cálculo con meses escogidos',
+    recommendedResult: 'Cálculo con meses recomendados',
+    monthlyEssentialExpense: 'Gasto esencial mensual',
+    months: 'meses',
+    themeSwitcher: 'Selector de tema',
+    lightTheme: 'Tema claro',
+    darkTheme: 'Tema oscuro',
+    languageSwitcher: 'Selector de idioma',
+  },
+  en: {
+    back: 'Back to home',
+    title: 'Emergency Fund',
+    subtitle:
+      'Estimate how much money you should keep to cover essential expenses if your income stops. The general recommendation is usually between 6 and 12 months, but it changes based on job stability and family situation.',
+    householdTitle: 'Household profile',
+    forWhom: 'Who is this for?',
+    onlyMe: 'Only me',
+    withFamily: 'Me and my family',
+    householdMembers: 'Household members',
+    dependents: 'Dependents',
+    employmentStatus: 'Main employment status',
+    publicWorker: 'Public employee',
+    salariedWithBenefit: 'Salaried with unemployment benefit',
+    salariedNoBenefit: 'Salaried without unemployment benefit',
+    selfEmployed: 'Self-employed / no benefit',
+    unemploymentMonths: 'Estimated unemployment-benefit months',
+    householdIncomeSources: 'Income sources in household',
+    cutCapacity: 'Possible expense reduction',
+    precisionHint:
+      'Extra precision input: how much non-essential spending you could realistically cut in an emergency.',
+    expensesTitle: 'Essential monthly expenses',
+    housing: 'Housing (mortgage or rent)',
+    food: 'Food and groceries',
+    loans: 'Loans and debt',
+    utilities: 'Utilities (electricity, water, internet)',
+    transport: 'Transport',
+    healthEducation: 'Health, education and insurance',
+    otherNecessary: 'Other necessary expenses',
+    targetTitle: 'Fund target',
+    recommendedMonths: 'Recommended months',
+    recommendedByProfile:
+      'Calculated from job stability, household profile, debt load, income sources and adjustment capacity.',
+    monthsToCover: 'Months to cover',
+    useRecommended: 'Use recommended',
+    usualRecommendation: 'Common overall recommendation',
+    usualRecommendationValue: 'Between 6 and 12 months',
+    stableProfilesNote:
+      'For stable profiles (public employee or strong unemployment coverage) it can be lower.',
+    selectedResult: 'Amount for selected months',
+    recommendedResult: 'Amount for recommended months',
+    monthlyEssentialExpense: 'Essential monthly expense',
+    months: 'months',
+    themeSwitcher: 'Theme switcher',
+    lightTheme: 'Light theme',
+    darkTheme: 'Dark theme',
+    languageSwitcher: 'Language switcher',
+  },
+} as const;
 
 const statusMonthsBase: Record<EmploymentStatus, number> = {
   funcionario: 5,
@@ -165,8 +256,18 @@ function EuroInput({
 }
 
 export default function App() {
+  const [lang, setLang] = useState<Lang>(getStoredLang);
   const [themeChoice, setThemeChoice] = useState<ThemeMode | null>(getStoredThemeChoice);
   const activeTheme = resolveTheme(themeChoice);
+  const t = texts[lang];
+  const locale = lang === 'es' ? 'es-ES' : 'en-GB';
+
+  const formatEUR = (value: number): string =>
+    value.toLocaleString(locale, {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    });
 
   const [householdType, setHouseholdType] = useState<HouseholdType>('solo');
   const [householdMembers, setHouseholdMembers] = useState(1);
@@ -185,7 +286,6 @@ export default function App() {
   const [healthEducationCost, setHealthEducationCost] = useState(80);
   const [otherEssentialCost, setOtherEssentialCost] = useState(100);
 
-  const [currentFund, setCurrentFund] = useState(4_000);
   const [isMonthsCustomized, setIsMonthsCustomized] = useState(false);
 
   useEffect(() => {
@@ -197,6 +297,14 @@ export default function App() {
       setHouseholdMembers(2);
     }
   }, [householdType, householdMembers]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.localStorage.setItem(LANG_STORAGE_KEY, lang);
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -290,44 +398,6 @@ export default function App() {
 
   const selectedFundTarget = totalEssentialMonthly * selectedMonths;
   const autoFundTarget = totalEssentialMonthly * recommendedMonths;
-  const range6To12Min = totalEssentialMonthly * 6;
-  const range6To12Max = totalEssentialMonthly * 12;
-
-  const coveredMonths = totalEssentialMonthly > 0 ? currentFund / totalEssentialMonthly : 0;
-  const gapToSelected = selectedFundTarget - currentFund;
-  const gapToAuto = autoFundTarget - currentFund;
-
-  const coverage = useMemo(() => {
-    let title = 'Insuficiente';
-    let body = 'Tu fondo actual no cubre los meses recomendados para tu situación actual.';
-    let tone: CoverageTone = 'red';
-
-    if (coveredMonths >= selectedMonths && coveredMonths >= 6) {
-      title = 'Bien cubierto';
-      body = 'Tu fondo cubre el objetivo actual y está en un nivel prudente.';
-      tone = coveredMonths > 12 ? 'blue' : 'green';
-    } else if (coveredMonths >= recommendedMonths) {
-      title = 'Aceptable para tu perfil';
-      body = 'Cubres tu recomendación automática, aunque podrías reforzarlo para mayor tranquilidad.';
-      tone = 'green';
-    } else if (coveredMonths >= 3) {
-      title = 'Algo justo';
-      body = 'Tienes margen, pero podrías quedarte corto si hay imprevistos largos.';
-      tone = 'amber';
-    }
-
-    return { title, body, tone };
-  }, [coveredMonths, selectedMonths, recommendedMonths]);
-
-  const coverageColorClass: Record<CoverageTone, string> = {
-    red: 'border-red-200 bg-red-50 text-red-700',
-    amber: 'border-amber-200 bg-amber-50 text-amber-700',
-    green: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    blue: 'border-cyan-200 bg-cyan-50 text-cyan-700',
-  };
-
-  const coverageProgress =
-    selectedMonths <= 0 ? (coveredMonths > 0 ? 100 : 0) : clamp((coveredMonths / selectedMonths) * 100, 0, 100);
 
   return (
     <>
@@ -355,56 +425,74 @@ export default function App() {
               href="/"
               className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline"
             >
-              <span aria-hidden="true">&larr;</span> Volver al inicio
+              <span aria-hidden="true">&larr;</span> {t.back}
             </a>
 
-            <div
-              className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
-              role="group"
-              aria-label="Selector de tema"
-            >
-              <button
-                type="button"
-                onClick={() => setThemeChoice('light')}
-                aria-label="Tema claro"
-                aria-pressed={activeTheme === 'light'}
-                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                  activeTheme === 'light' ? 'bg-cyan-600 text-white' : 'text-gray-700 hover:bg-gray-100'
-                }`}
+            <div className="flex items-center gap-2">
+              <div
+                className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
+                role="group"
+                aria-label={t.themeSwitcher}
               >
-                <SunIcon />
-              </button>
-              <button
-                type="button"
-                onClick={() => setThemeChoice('dark')}
-                aria-label="Tema oscuro"
-                aria-pressed={activeTheme === 'dark'}
-                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                  activeTheme === 'dark' ? 'bg-cyan-600 text-white' : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                <button
+                  type="button"
+                  onClick={() => setThemeChoice('light')}
+                  aria-label={t.lightTheme}
+                  aria-pressed={activeTheme === 'light'}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                    activeTheme === 'light' ? 'bg-cyan-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <SunIcon />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setThemeChoice('dark')}
+                  aria-label={t.darkTheme}
+                  aria-pressed={activeTheme === 'dark'}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                    activeTheme === 'dark' ? 'bg-cyan-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <MoonIcon />
+                </button>
+              </div>
+
+              <div
+                className="inline-flex gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
+                role="group"
+                aria-label={t.languageSwitcher}
               >
-                <MoonIcon />
-              </button>
+                {(['es', 'en'] as Lang[]).map((nextLang) => (
+                  <button
+                    key={nextLang}
+                    type="button"
+                    onClick={() => setLang(nextLang)}
+                    aria-pressed={lang === nextLang}
+                    className={`inline-flex h-9 min-w-[44px] items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                      lang === nextLang ? 'bg-cyan-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {nextLang.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="mx-auto max-w-6xl space-y-6 p-6">
           <div>
-            <h1 className="text-3xl font-extrabold md:text-4xl">Fondo de Emergencia</h1>
-            <p className="mt-2 max-w-4xl text-sm text-gray-700 md:text-base">
-              Calcula cuánto dinero deberías tener para cubrir tus gastos esenciales si te quedas sin ingresos. La
-              recomendación general suele estar entre 6 y 12 meses, pero puede variar según estabilidad laboral y
-              situación familiar.
-            </p>
+            <h1 className="text-3xl font-extrabold md:text-4xl">{t.title}</h1>
+            <p className="mt-2 max-w-4xl text-sm text-gray-700 md:text-base">{t.subtitle}</p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-4 rounded-2xl bg-white p-4 shadow">
-              <h2 className="text-lg font-semibold">Perfil del hogar</h2>
+              <h2 className="text-lg font-semibold">{t.householdTitle}</h2>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">¿Para quién es?</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">{t.forWhom}</label>
                 <div className="flex gap-2">
                   <label className="flex-1 cursor-pointer">
                     <input
@@ -415,7 +503,7 @@ export default function App() {
                       onChange={() => setHouseholdType('solo')}
                     />
                     <span className="block select-none rounded-lg border border-gray-300 py-1.5 text-center text-sm peer-checked:border-cyan-600 peer-checked:bg-cyan-600 peer-checked:text-white">
-                      Solo yo
+                      {t.onlyMe}
                     </span>
                   </label>
                   <label className="flex-1 cursor-pointer">
@@ -427,7 +515,7 @@ export default function App() {
                       onChange={() => setHouseholdType('familia')}
                     />
                     <span className="block select-none rounded-lg border border-gray-300 py-1.5 text-center text-sm peer-checked:border-cyan-600 peer-checked:bg-cyan-600 peer-checked:text-white">
-                      Yo y mi familia
+                      {t.withFamily}
                     </span>
                   </label>
                 </div>
@@ -435,7 +523,7 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Personas hogar</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.householdMembers}</label>
                   <input
                     type="number"
                     min={householdType === 'solo' ? 1 : 2}
@@ -454,7 +542,7 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Personas a cargo</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.dependents}</label>
                   <input
                     type="number"
                     min={0}
@@ -468,22 +556,22 @@ export default function App() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Situación laboral principal</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">{t.employmentStatus}</label>
                 <select
                   value={employmentStatus}
                   onChange={(event) => setEmploymentStatus(event.target.value as EmploymentStatus)}
                   className="w-full rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 >
-                  <option value="funcionario">Funcionario/a</option>
-                  <option value="cuenta_ajena_con_paro">Cuenta ajena con paro</option>
-                  <option value="cuenta_ajena_sin_paro">Cuenta ajena sin paro</option>
-                  <option value="autonomo_sin_paro">Autónomo/a o sin prestación</option>
+                  <option value="funcionario">{t.publicWorker}</option>
+                  <option value="cuenta_ajena_con_paro">{t.salariedWithBenefit}</option>
+                  <option value="cuenta_ajena_sin_paro">{t.salariedNoBenefit}</option>
+                  <option value="autonomo_sin_paro">{t.selfEmployed}</option>
                 </select>
               </div>
 
               {employmentStatus === 'cuenta_ajena_con_paro' && (
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Meses de paro estimados</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.unemploymentMonths}</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="range"
@@ -501,7 +589,7 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Ingresos en el hogar</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.householdIncomeSources}</label>
                   <input
                     type="number"
                     min={1}
@@ -512,7 +600,7 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Capacidad de recorte</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">{t.cutCapacity}</label>
                   <div className="flex items-center gap-2 pt-2">
                     <input
                       type="range"
@@ -527,43 +615,34 @@ export default function App() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500">
-                Dato extra para precisión: cuánto podrías reducir gastos no esenciales en caso de emergencia.
-              </p>
+              <p className="text-xs text-gray-500">{t.precisionHint}</p>
             </div>
 
             <div className="space-y-3 rounded-2xl bg-white p-4 shadow">
-              <h2 className="text-lg font-semibold">Gastos mensuales esenciales</h2>
-              <EuroInput label="Vivienda (hipoteca o alquiler)" value={housingCost} onChange={setHousingCost} />
-              <EuroInput label="Comida y supermercado" value={foodCost} onChange={setFoodCost} />
-              <EuroInput label="Préstamos y deudas" value={loansCost} onChange={setLoansCost} />
-              <EuroInput label="Suministros (luz, agua, internet)" value={utilitiesCost} onChange={setUtilitiesCost} />
-              <EuroInput label="Transporte" value={transportCost} onChange={setTransportCost} />
-              <EuroInput
-                label="Salud, educación y seguros"
-                value={healthEducationCost}
-                onChange={setHealthEducationCost}
-              />
-              <EuroInput label="Otros gastos necesarios" value={otherEssentialCost} onChange={setOtherEssentialCost} />
+              <h2 className="text-lg font-semibold">{t.expensesTitle}</h2>
+              <EuroInput label={t.housing} value={housingCost} onChange={setHousingCost} />
+              <EuroInput label={t.food} value={foodCost} onChange={setFoodCost} />
+              <EuroInput label={t.loans} value={loansCost} onChange={setLoansCost} />
+              <EuroInput label={t.utilities} value={utilitiesCost} onChange={setUtilitiesCost} />
+              <EuroInput label={t.transport} value={transportCost} onChange={setTransportCost} />
+              <EuroInput label={t.healthEducation} value={healthEducationCost} onChange={setHealthEducationCost} />
+              <EuroInput label={t.otherNecessary} value={otherEssentialCost} onChange={setOtherEssentialCost} />
             </div>
 
             <div className="space-y-4 rounded-2xl bg-white p-4 shadow">
-              <h2 className="text-lg font-semibold">Objetivo del fondo</h2>
-
-              <EuroInput label="Fondo actual disponible" value={currentFund} onChange={setCurrentFund} />
+              <h2 className="text-lg font-semibold">{t.targetTitle}</h2>
 
               <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">Meses automáticos</p>
-                <p className="mt-1 text-2xl font-extrabold text-cyan-700">{recommendedMonths} meses</p>
-                <p className="mt-1 text-xs text-cyan-700">
-                  Calculado según: {statusLabel[employmentStatus]}, tipo de hogar, deudas, ingresos y capacidad de
-                  ajuste.
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">{t.recommendedMonths}</p>
+                <p className="mt-1 text-2xl font-extrabold text-cyan-700">
+                  {recommendedMonths} {t.months}
                 </p>
+                <p className="mt-1 text-xs text-cyan-700">{t.recommendedByProfile}</p>
               </div>
 
               <div>
                 <div className="mb-1 flex items-center justify-between gap-3">
-                  <label className="text-sm font-medium text-gray-700">Meses a cubrir (editable)</label>
+                  <label className="text-sm font-medium text-gray-700">{t.monthsToCover}</label>
                   {isMonthsCustomized && (
                     <button
                       type="button"
@@ -573,7 +652,7 @@ export default function App() {
                       }}
                       className="rounded-full border border-cyan-600 px-3 py-1 text-xs font-semibold text-cyan-700 hover:bg-cyan-50"
                     >
-                      Usar recomendado
+                      {t.useRecommended}
                     </button>
                   )}
                 </div>
@@ -595,87 +674,31 @@ export default function App() {
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500">Recomendación habitual general</p>
-                <p className="text-sm font-semibold text-gray-800">Entre 6 y 12 meses</p>
-                <p className="mt-1 text-xs text-gray-500">
-                  Para perfiles estables (funcionario o con buena cobertura de paro) puede estar por debajo.
-                </p>
+                <p className="text-xs text-gray-500">{t.usualRecommendation}</p>
+                <p className="text-sm font-semibold text-gray-800">{t.usualRecommendationValue}</p>
+                <p className="mt-1 text-xs text-gray-500">{t.stableProfilesNote}</p>
               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div className="rounded-2xl bg-white p-4 shadow">
-              <p className="text-xs text-gray-500">Gasto esencial mensual</p>
-              <p className="mt-1 text-2xl font-extrabold text-cyan-700">{formatEUR(totalEssentialMonthly)}</p>
-            </div>
-            <div className="rounded-2xl bg-white p-4 shadow">
-              <p className="text-xs text-gray-500">Objetivo con meses elegidos</p>
-              <p className="mt-1 text-2xl font-extrabold text-cyan-700">{formatEUR(selectedFundTarget)}</p>
-            </div>
-            <div className="rounded-2xl bg-white p-4 shadow">
-              <p className="text-xs text-gray-500">Objetivo automático</p>
-              <p className="mt-1 text-2xl font-extrabold text-cyan-700">{formatEUR(autoFundTarget)}</p>
-            </div>
-            <div className="rounded-2xl bg-white p-4 shadow">
-              <p className="text-xs text-gray-500">Cobertura actual</p>
-              <p className="mt-1 text-2xl font-extrabold text-cyan-700">{coveredMonths.toFixed(1)} meses</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className={`rounded-2xl border p-4 ${coverageColorClass[coverage.tone]}`}>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em]">Diagnóstico</p>
-              <h3 className="mt-1 text-xl font-extrabold">{coverage.title}</h3>
-              <p className="mt-1 text-sm">{coverage.body}</p>
-
-              <div className="mt-4">
-                <p className="mb-1 text-xs">Cobertura frente a objetivo elegido</p>
-                <div className="h-2 overflow-hidden rounded-full bg-white/80">
-                  <div className="h-full rounded-full bg-current" style={{ width: `${coverageProgress}%` }} />
-                </div>
-              </div>
-
-              <p className="mt-3 text-sm">
-                {gapToSelected <= 0
-                  ? `Ya alcanzas tu objetivo editable (${selectedMonths} meses).`
-                  : `Te faltan ${formatEUR(gapToSelected)} para llegar a ${selectedMonths} meses.`}
+            <div className="rounded-2xl bg-white p-4 shadow">
+              <p className="text-xs text-gray-500">{t.selectedResult}</p>
+              <p className="mt-1 text-3xl font-extrabold text-cyan-700">{formatEUR(selectedFundTarget)}</p>
+              <p className="mt-1 text-xs text-gray-500">
+                {selectedMonths} {t.months} x {formatEUR(totalEssentialMonthly)}
               </p>
-
-              {gapToAuto > 0 && (
-                <p className="mt-1 text-sm">
-                  Para tu estado actual ({statusLabel[employmentStatus]}), todavía faltarían {formatEUR(gapToAuto)}.
-                </p>
-              )}
             </div>
 
             <div className="rounded-2xl bg-white p-4 shadow">
-              <h3 className="text-lg font-semibold">Resumen rápido</h3>
-              <ul className="mt-3 space-y-2 text-sm text-gray-700">
-                <li>
-                  <span className="font-semibold">6 meses:</span> {formatEUR(range6To12Min)}
-                </li>
-                <li>
-                  <span className="font-semibold">12 meses:</span> {formatEUR(range6To12Max)}
-                </li>
-                <li>
-                  <span className="font-semibold">Objetivo editable ({selectedMonths} meses):</span>{' '}
-                  {formatEUR(selectedFundTarget)}
-                </li>
-                <li>
-                  <span className="font-semibold">Fondo actual:</span> {formatEUR(currentFund)}
-                </li>
-              </ul>
-
-              <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
-                <p className="font-semibold">Cómo mejorar la precisión</p>
-                <p className="mt-1">
-                  Revisa estos datos cada pocos meses: gastos reales del hogar, si hay más de una fuente de ingresos y
-                  el tiempo de cobertura por paro.
-                </p>
-              </div>
+              <p className="text-xs text-gray-500">{t.recommendedResult}</p>
+              <p className="mt-1 text-3xl font-extrabold text-cyan-700">{formatEUR(autoFundTarget)}</p>
+              <p className="mt-1 text-xs text-gray-500">
+                {recommendedMonths} {t.months} x {formatEUR(totalEssentialMonthly)}
+              </p>
             </div>
           </div>
+
         </div>
       </div>
     </>
