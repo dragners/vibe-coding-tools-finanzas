@@ -951,7 +951,7 @@ export default function App() {
                 </p>
               </div>
 
-              <div className="no-print rounded-xl border border-cyan-200 bg-cyan-50 p-3">
+              <div className="no-print">
                 <button
                   type="button"
                   onClick={onShare}
@@ -960,7 +960,7 @@ export default function App() {
                   {t.shareLink}
                 </button>
                 {shareUrl && (
-                  <div className="mt-3 rounded-xl border border-cyan-200 bg-white p-3 text-xs text-gray-600">
+                  <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">{t.shareReady}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
                       <input
