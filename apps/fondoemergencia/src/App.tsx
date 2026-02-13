@@ -130,7 +130,7 @@ const texts = {
       'You can keep the rest in liquid assets, such as savings accounts and investment funds.',
     ],
     referralTitle:
-      \"If you don't have a savings account in MyInvestor, you can create one using the referral link; this helps us grow and gives you €25:\",
+      "If you don't have a savings account in MyInvestor, you can create one using the referral link; this helps us grow and gives you €25:",
     referralLinkLabel: 'Create a MyInvestor account',
     referralCode: 'Referral code is: RQU46',
     months: 'months',
