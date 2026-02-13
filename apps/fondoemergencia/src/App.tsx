@@ -768,35 +768,8 @@ export default function App() {
 
         <div className="mx-auto max-w-6xl space-y-6 p-6">
           <div>
-            <div className="mb-2 flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-extrabold md:text-4xl">{t.title}</h1>
-              <button
-                type="button"
-                onClick={onShare}
-                className="no-print rounded-full border border-cyan-600 bg-cyan-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:border-cyan-700 hover:bg-cyan-700"
-              >
-                {t.shareLink}
-              </button>
-            </div>
+            <h1 className="text-3xl font-extrabold md:text-4xl">{t.title}</h1>
             <p className="mt-2 max-w-4xl text-sm text-gray-700 md:text-base">{t.subtitle}</p>
-            {shareUrl && (
-              <div className="no-print mt-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">{t.shareReady}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <input
-                    type="text"
-                    value={shareUrl}
-                    readOnly
-                    className="min-w-[260px] flex-1 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs text-gray-700 shadow-sm"
-                  />
-                  {shareCopied && (
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
-                      {t.shareCopied}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -976,6 +949,33 @@ export default function App() {
                 <p className="mt-1 text-xs text-cyan-700">
                   {selectedMonths} {t.months} x {formatEUR(totalEssentialMonthly)}
                 </p>
+                <div className="no-print mt-3 border-t border-cyan-200 pt-3">
+                  <button
+                    type="button"
+                    onClick={onShare}
+                    className="rounded-full border border-cyan-600 bg-cyan-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:border-cyan-700 hover:bg-cyan-700"
+                  >
+                    {t.shareLink}
+                  </button>
+                  {shareUrl && (
+                    <div className="mt-3 rounded-xl border border-cyan-200 bg-white p-3 text-xs text-gray-600">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">{t.shareReady}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <input
+                          type="text"
+                          value={shareUrl}
+                          readOnly
+                          className="min-w-[220px] flex-1 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs text-gray-700 shadow-sm"
+                        />
+                        {shareCopied && (
+                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                            {t.shareCopied}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
