@@ -69,7 +69,7 @@ const texts = {
     monthsToCover: 'Meses a cubrir',
     useRecommended: 'Usar recomendado',
     emergencyFundTitle: 'Fondo de Emergencia',
-    recommendationsTitle: 'Recomendación habitual general',
+    recommendationsTitle: 'Recomendaciones',
     recommendationsList: [
       'Como referencia general, suele recomendarse entre 6 y 12 meses de gastos esenciales.',
       'Si tu perfil es estable (por ejemplo, funcionario o con buena cobertura por desempleo), el objetivo puede ser menor.',
@@ -122,7 +122,7 @@ const texts = {
     monthsToCover: 'Months to cover',
     useRecommended: 'Use recommended',
     emergencyFundTitle: 'Emergency Fund',
-    recommendationsTitle: 'Common overall recommendation',
+    recommendationsTitle: 'Recommendations',
     recommendationsList: [
       'As a general benchmark, people often target between 6 and 12 months of essential expenses.',
       'For stable profiles (for example, public employees or people with strong unemployment coverage), the target can be lower.',
@@ -704,24 +704,24 @@ export default function App() {
                 </li>
               ))}
             </ul>
-          </div>
 
-          <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900 shadow">
-            <p className="text-[15px] font-semibold text-cyan-900">{t.referralTitle}</p>
-            <ul className="mt-3 space-y-1 text-sm">
-              <li>
-                •{' '}
-                <a
-                  href="https://newapp.myinvestor.es/do/signup?promotionalCode=RQU46"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-semibold text-cyan-700 underline"
-                >
-                  {t.referralLinkLabel}
-                </a>
-              </li>
-              <li>• {t.referralCode}</li>
-            </ul>
+            <div className="keep-light-panel mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900">
+              <p className="text-[15px] font-semibold text-cyan-900">{t.referralTitle}</p>
+              <ul className="mt-3 space-y-1 text-sm">
+                <li>
+                  •{' '}
+                  <a
+                    href="https://newapp.myinvestor.es/do/signup?promotionalCode=RQU46"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-cyan-700 underline"
+                  >
+                    {t.referralLinkLabel}
+                  </a>
+                </li>
+                <li>• {t.referralCode}</li>
+              </ul>
+            </div>
           </div>
 
         </div>
