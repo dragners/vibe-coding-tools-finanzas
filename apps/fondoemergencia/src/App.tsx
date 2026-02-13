@@ -68,13 +68,18 @@ const texts = {
       'Calculado según estabilidad laboral, tipo de hogar, deudas, ingresos y capacidad de ajuste.',
     monthsToCover: 'Meses a cubrir',
     useRecommended: 'Usar recomendado',
-    usualRecommendation: 'Recomendación habitual general',
-    usualRecommendationValue: 'Entre 6 y 12 meses',
-    stableProfilesNote:
-      'Para perfiles estables (funcionario o con buena cobertura de paro) puede estar por debajo.',
-    selectedResult: 'Cálculo con meses escogidos',
-    recommendedResult: 'Cálculo con meses recomendados',
-    monthlyEssentialExpense: 'Gasto esencial mensual',
+    emergencyFundTitle: 'Fondo de Emergencia',
+    recommendationsTitle: 'Recomendación habitual general',
+    recommendationsList: [
+      'Como referencia general, suele recomendarse entre 6 y 12 meses de gastos esenciales.',
+      'Si tu perfil es estable (por ejemplo, funcionario o con buena cobertura por desempleo), el objetivo puede ser menor.',
+      'Mantén una parte del fondo disponible de inmediato para usar de un momento a otro.',
+      'El resto puedes tenerlo en activos líquidos, como cuentas de ahorro y fondos de inversión.',
+    ],
+    referralTitle:
+      'Si no tienes cuenta de ahorro en MyInvestor, puedes crearla usando el enlace de referido; así nos ayudas a crecer y te llevas 25€:',
+    referralLinkLabel: 'Crear cuenta con MyInvestor',
+    referralCode: 'El código de referido es: RQU46',
     months: 'meses',
     themeSwitcher: 'Selector de tema',
     lightTheme: 'Tema claro',
@@ -116,13 +121,18 @@ const texts = {
       'Calculated from job stability, household profile, debt load, income sources and adjustment capacity.',
     monthsToCover: 'Months to cover',
     useRecommended: 'Use recommended',
-    usualRecommendation: 'Common overall recommendation',
-    usualRecommendationValue: 'Between 6 and 12 months',
-    stableProfilesNote:
-      'For stable profiles (public employee or strong unemployment coverage) it can be lower.',
-    selectedResult: 'Amount for selected months',
-    recommendedResult: 'Amount for recommended months',
-    monthlyEssentialExpense: 'Essential monthly expense',
+    emergencyFundTitle: 'Emergency Fund',
+    recommendationsTitle: 'Common overall recommendation',
+    recommendationsList: [
+      'As a general benchmark, people often target between 6 and 12 months of essential expenses.',
+      'For stable profiles (for example, public employees or people with strong unemployment coverage), the target can be lower.',
+      'Keep part of the fund immediately available so you can use it right away.',
+      'You can keep the rest in liquid assets, such as savings accounts and investment funds.',
+    ],
+    referralTitle:
+      \"If you don't have a savings account in MyInvestor, you can create one using the referral link; this helps us grow and gives you €25:\",
+    referralLinkLabel: 'Create a MyInvestor account',
+    referralCode: 'Referral code is: RQU46',
     months: 'months',
     themeSwitcher: 'Theme switcher',
     lightTheme: 'Light theme',
@@ -397,7 +407,6 @@ export default function App() {
   }, [recommendedMonths, isMonthsCustomized]);
 
   const selectedFundTarget = totalEssentialMonthly * selectedMonths;
-  const autoFundTarget = totalEssentialMonthly * recommendedMonths;
 
   return (
     <>
@@ -673,30 +682,46 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500">{t.usualRecommendation}</p>
-                <p className="text-sm font-semibold text-gray-800">{t.usualRecommendationValue}</p>
-                <p className="mt-1 text-xs text-gray-500">{t.stableProfilesNote}</p>
+              <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
+                  {t.emergencyFundTitle}
+                </p>
+                <p className="mt-1 text-3xl font-extrabold text-cyan-700">{formatEUR(selectedFundTarget)}</p>
+                <p className="mt-1 text-xs text-cyan-700">
+                  {selectedMonths} {t.months} x {formatEUR(totalEssentialMonthly)}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-2xl bg-white p-4 shadow">
-              <p className="text-xs text-gray-500">{t.selectedResult}</p>
-              <p className="mt-1 text-3xl font-extrabold text-cyan-700">{formatEUR(selectedFundTarget)}</p>
-              <p className="mt-1 text-xs text-gray-500">
-                {selectedMonths} {t.months} x {formatEUR(totalEssentialMonthly)}
-              </p>
-            </div>
+          <div className="rounded-2xl bg-white p-4 shadow">
+            <h3 className="text-lg font-semibold text-gray-900">{t.recommendationsTitle}</h3>
+            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+              {t.recommendationsList.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <span className="mt-[2px] text-cyan-600">•</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-            <div className="rounded-2xl bg-white p-4 shadow">
-              <p className="text-xs text-gray-500">{t.recommendedResult}</p>
-              <p className="mt-1 text-3xl font-extrabold text-cyan-700">{formatEUR(autoFundTarget)}</p>
-              <p className="mt-1 text-xs text-gray-500">
-                {recommendedMonths} {t.months} x {formatEUR(totalEssentialMonthly)}
-              </p>
-            </div>
+          <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900 shadow">
+            <p className="text-[15px] font-semibold text-cyan-900">{t.referralTitle}</p>
+            <ul className="mt-3 space-y-1 text-sm">
+              <li>
+                •{' '}
+                <a
+                  href="https://newapp.myinvestor.es/do/signup?promotionalCode=RQU46"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-cyan-700 underline"
+                >
+                  {t.referralLinkLabel}
+                </a>
+              </li>
+              <li>• {t.referralCode}</li>
+            </ul>
           </div>
 
         </div>
