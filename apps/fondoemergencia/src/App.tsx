@@ -36,6 +36,9 @@ const texts = {
   es: {
     back: 'Volver al inicio',
     title: 'Fondo de Emergencia',
+    shareLink: 'Link permanente',
+    shareCopied: 'Link copiado',
+    shareReady: 'Listo para compartir',
     subtitle:
       'Calcula cuánto dinero deberías tener para cubrir tus gastos esenciales si te quedas sin ingresos. La recomendación general suele estar entre 6 y 12 meses, pero puede variar según estabilidad laboral y situación familiar.',
     householdTitle: 'Perfil del hogar',
@@ -89,6 +92,9 @@ const texts = {
   en: {
     back: 'Back to home',
     title: 'Emergency Fund',
+    shareLink: 'Permanent link',
+    shareCopied: 'Link copied',
+    shareReady: 'Ready to share',
     subtitle:
       'Estimate how much money you should keep to cover essential expenses if your income stops. The general recommendation is usually between 6 and 12 months, but it changes based on job stability and family situation.',
     householdTitle: 'Household profile',
@@ -147,6 +153,16 @@ const statusMonthsBase: Record<EmploymentStatus, number> = {
   cuenta_ajena_sin_paro: 8,
   autonomo_sin_paro: 10,
 };
+
+const EMPLOYMENT_STATUS_VALUES: EmploymentStatus[] = [
+  'funcionario',
+  'cuenta_ajena_con_paro',
+  'cuenta_ajena_sin_paro',
+  'autonomo_sin_paro',
+];
+
+const isEmploymentStatus = (value: unknown): value is EmploymentStatus =>
+  typeof value === 'string' && EMPLOYMENT_STATUS_VALUES.includes(value as EmploymentStatus);
 
 function computeRecommendedMonths(params: {
   employmentStatuses: EmploymentStatus[];
@@ -373,6 +389,8 @@ export default function App() {
   const [otherEssentialCost, setOtherEssentialCost] = useState(100);
 
   const [isMonthsCustomized, setIsMonthsCustomized] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     if (householdType === 'solo') {
@@ -496,6 +514,120 @@ export default function App() {
     }
   }, [recommendedMonths, isMonthsCustomized]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('s');
+    if (!raw) return;
+
+    try {
+      const data: unknown = JSON.parse(atob(raw));
+      if (!data || typeof data !== 'object') return;
+      const shareData = data as Record<string, unknown>;
+
+      const sharedHouseholdType =
+        shareData.hh === 'solo' || shareData.hh === 'familia' ? shareData.hh : null;
+      const resolvedHouseholdType: HouseholdType = sharedHouseholdType ?? 'solo';
+      const maxIncomeSources = resolvedHouseholdType === 'solo' ? 1 : 2;
+
+      if (sharedHouseholdType) {
+        setHouseholdType(sharedHouseholdType);
+      }
+
+      const sharedIncomeSources =
+        typeof shareData.inc === 'number' && Number.isFinite(shareData.inc)
+          ? clamp(Math.round(shareData.inc), 1, maxIncomeSources)
+          : null;
+
+      const sharedEmploymentStatuses = Array.isArray(shareData.es)
+        ? shareData.es.filter(isEmploymentStatus).slice(0, maxIncomeSources)
+        : [];
+
+      const targetIncomeSources =
+        sharedIncomeSources ??
+        (sharedEmploymentStatuses.length > 0
+          ? clamp(sharedEmploymentStatuses.length, 1, maxIncomeSources)
+          : null);
+
+      if (targetIncomeSources !== null) {
+        setIncomeSources(targetIncomeSources);
+      }
+
+      if (typeof shareData.dep === 'number' && Number.isFinite(shareData.dep)) {
+        setDependents(
+          resolvedHouseholdType === 'solo' ? 0 : clamp(Math.round(shareData.dep), 0, 8),
+        );
+      }
+
+      const normalizedWorkers =
+        targetIncomeSources ?? clamp(sharedEmploymentStatuses.length || 1, 1, maxIncomeSources);
+
+      if (sharedEmploymentStatuses.length > 0) {
+        const normalizedStatuses = [
+          ...sharedEmploymentStatuses.slice(0, normalizedWorkers),
+          ...Array.from(
+            { length: Math.max(0, normalizedWorkers - sharedEmploymentStatuses.length) },
+            () => 'cuenta_ajena_con_paro' as EmploymentStatus,
+          ),
+        ];
+        setEmploymentStatuses(normalizedStatuses);
+      }
+
+      if (Array.isArray(shareData.ubm)) {
+        const normalizedUnemploymentMonths = shareData.ubm
+          .slice(0, normalizedWorkers)
+          .map((value) =>
+            typeof value === 'number' && Number.isFinite(value)
+              ? clamp(Math.round(value), 0, 24)
+              : 12,
+          );
+        while (normalizedUnemploymentMonths.length < normalizedWorkers) {
+          normalizedUnemploymentMonths.push(12);
+        }
+        setUnemploymentBenefitMonthsByWorker(normalizedUnemploymentMonths);
+      }
+
+      if (typeof shareData.h === 'number' && Number.isFinite(shareData.h)) {
+        setHousingCost(clamp(Math.round(shareData.h), 0, 999_999));
+      }
+      if (typeof shareData.f === 'number' && Number.isFinite(shareData.f)) {
+        setFoodCost(clamp(Math.round(shareData.f), 0, 999_999));
+      }
+      if (typeof shareData.l === 'number' && Number.isFinite(shareData.l)) {
+        setLoansCost(clamp(Math.round(shareData.l), 0, 999_999));
+      }
+      if (typeof shareData.u === 'number' && Number.isFinite(shareData.u)) {
+        setUtilitiesCost(clamp(Math.round(shareData.u), 0, 999_999));
+      }
+      if (typeof shareData.t === 'number' && Number.isFinite(shareData.t)) {
+        setTransportCost(clamp(Math.round(shareData.t), 0, 999_999));
+      }
+      if (typeof shareData.he === 'number' && Number.isFinite(shareData.he)) {
+        setHealthEducationCost(clamp(Math.round(shareData.he), 0, 999_999));
+      }
+      if (typeof shareData.o === 'number' && Number.isFinite(shareData.o)) {
+        setOtherEssentialCost(clamp(Math.round(shareData.o), 0, 999_999));
+      }
+
+      const sharedSelectedMonths =
+        typeof shareData.sm === 'number' && Number.isFinite(shareData.sm)
+          ? clamp(Math.round(shareData.sm), 0, 24)
+          : null;
+      if (sharedSelectedMonths !== null) {
+        setSelectedMonths(sharedSelectedMonths);
+      }
+
+      if (typeof shareData.mc === 'boolean') {
+        setIsMonthsCustomized(shareData.mc);
+      } else if (sharedSelectedMonths !== null) {
+        setIsMonthsCustomized(true);
+      }
+    } catch {
+      // Ignore invalid share links.
+    }
+  }, []);
+
   const updateEmploymentStatus = (index: number, status: EmploymentStatus) => {
     setEmploymentStatuses((previous) => {
       const next = [...previous];
@@ -510,6 +642,44 @@ export default function App() {
       next[index] = clamp(value, 0, 24);
       return next;
     });
+  };
+
+  const onShare = async () => {
+    if (typeof window === 'undefined') return;
+
+    const payload = btoa(
+      JSON.stringify({
+        hh: householdType,
+        dep: dependents,
+        inc: incomeSources,
+        es: employmentStatuses.slice(0, incomeSources),
+        ubm: unemploymentBenefitMonthsByWorker.slice(0, incomeSources),
+        h: housingCost,
+        f: foodCost,
+        l: loansCost,
+        u: utilitiesCost,
+        t: transportCost,
+        he: healthEducationCost,
+        o: otherEssentialCost,
+        sm: selectedMonths,
+        mc: isMonthsCustomized,
+      }),
+    );
+
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.searchParams.set('s', payload);
+    const nextUrl = url.toString();
+    setShareUrl(nextUrl);
+    setShareCopied(false);
+
+    try {
+      await navigator.clipboard.writeText(nextUrl);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      // Clipboard can be unavailable in some browsers.
+    }
   };
 
   const selectedFundTarget = totalEssentialMonthly * selectedMonths;
@@ -598,8 +768,35 @@ export default function App() {
 
         <div className="mx-auto max-w-6xl space-y-6 p-6">
           <div>
-            <h1 className="text-3xl font-extrabold md:text-4xl">{t.title}</h1>
+            <div className="mb-2 flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-extrabold md:text-4xl">{t.title}</h1>
+              <button
+                type="button"
+                onClick={onShare}
+                className="no-print rounded-full border border-cyan-600 bg-cyan-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:border-cyan-700 hover:bg-cyan-700"
+              >
+                {t.shareLink}
+              </button>
+            </div>
             <p className="mt-2 max-w-4xl text-sm text-gray-700 md:text-base">{t.subtitle}</p>
+            {shareUrl && (
+              <div className="no-print mt-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">{t.shareReady}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <input
+                    type="text"
+                    value={shareUrl}
+                    readOnly
+                    className="min-w-[260px] flex-1 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs text-gray-700 shadow-sm"
+                  />
+                  {shareCopied && (
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                      {t.shareCopied}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
