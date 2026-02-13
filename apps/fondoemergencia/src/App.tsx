@@ -42,9 +42,9 @@ const texts = {
     forWhom: '¿Para quién es?',
     onlyMe: 'Solo yo',
     withFamily: 'Yo y mi familia',
-    incomeCount: 'Número de ingresos (nóminas)',
+    incomeCount: 'Número de ingresos',
     incomeCountInfo:
-      'Número de personas que aportan ingresos laborales al mes. En "Solo yo" se asume 1 persona. En "Yo y mi familia" se asumen 2 adultos y puedes indicar si entra 1 o 2 nóminas.',
+      'Número de personas que aportan ingresos laborales al mes. En "Yo y mi familia" se asumen 2 adultos y puedes indicar si entra 1 o 2 nóminas.',
     dependents: 'Personas a cargo',
     employmentStatus: 'Situación laboral por persona',
     workerPrefix: 'Persona',
@@ -52,6 +52,7 @@ const texts = {
     salariedWithBenefit: 'Cuenta ajena con paro',
     salariedNoBenefit: 'Cuenta ajena sin paro',
     selfEmployed: 'Autónomo/a o sin prestación',
+    unemploymentMonths: 'Meses de paro estimados',
     expensesTitle: 'Gastos mensuales esenciales',
     housing: 'Vivienda (hipoteca o alquiler)',
     food: 'Comida y supermercado',
@@ -63,7 +64,7 @@ const texts = {
     targetTitle: 'Objetivo del fondo',
     recommendedMonths: 'Meses recomendados',
     recommendedByProfile:
-      'Calculado según estabilidad laboral, tipo de hogar, deudas, ingresos y capacidad de ajuste.',
+      'Calculado según estabilidad laboral, meses de paro estimados, tipo de hogar, deudas e ingresos.',
     monthsToCover: 'Meses a cubrir',
     useRecommended: 'Usar recomendado',
     emergencyFundTitle: 'Fondo de Emergencia',
@@ -94,9 +95,9 @@ const texts = {
     forWhom: 'Who is this for?',
     onlyMe: 'Only me',
     withFamily: 'Me and my family',
-    incomeCount: 'Number of income sources (salaries)',
+    incomeCount: 'Number of income sources',
     incomeCountInfo:
-      'Number of people bringing labor income each month. In "Only me" we assume 1 person. In "Me and my family" we assume 2 adults, and you can set whether 1 or 2 salaries come in.',
+      'Number of people bringing labor income each month. In "Me and my family" we assume 2 adults, and you can set whether 1 or 2 salaries come in.',
     dependents: 'Dependents',
     employmentStatus: 'Employment status per worker',
     workerPrefix: 'Person',
@@ -104,6 +105,7 @@ const texts = {
     salariedWithBenefit: 'Salaried with unemployment benefit',
     salariedNoBenefit: 'Salaried without unemployment benefit',
     selfEmployed: 'Self-employed / no benefit',
+    unemploymentMonths: 'Estimated unemployment-benefit months',
     expensesTitle: 'Essential monthly expenses',
     housing: 'Housing (mortgage or rent)',
     food: 'Food and groceries',
@@ -115,7 +117,7 @@ const texts = {
     targetTitle: 'Fund target',
     recommendedMonths: 'Recommended months',
     recommendedByProfile:
-      'Calculated from job stability, household profile, debt load, income sources and adjustment capacity.',
+      'Calculated from job stability, estimated unemployment coverage, household profile, debt load and income sources.',
     monthsToCover: 'Months to cover',
     useRecommended: 'Use recommended',
     emergencyFundTitle: 'Emergency Fund',
@@ -148,6 +150,7 @@ const statusMonthsBase: Record<EmploymentStatus, number> = {
 
 function computeRecommendedMonths(params: {
   employmentStatuses: EmploymentStatus[];
+  unemploymentBenefitMonthsByWorker: number[];
   householdType: HouseholdType;
   dependents: number;
   incomeSources: number;
@@ -157,6 +160,7 @@ function computeRecommendedMonths(params: {
 }): number {
   const {
     employmentStatuses,
+    unemploymentBenefitMonthsByWorker,
     householdType,
     dependents,
     incomeSources,
@@ -182,6 +186,18 @@ function computeRecommendedMonths(params: {
 
   const debtWeight = totalEssential > 0 ? (housingCost + loansCost) / totalEssential : 0;
   if (debtWeight >= 0.45) months += 1;
+
+  const unemploymentMonths = employmentStatuses
+    .map((status, index) =>
+      status === 'cuenta_ajena_con_paro' ? unemploymentBenefitMonthsByWorker[index] ?? 12 : null,
+    )
+    .filter((value): value is number => value !== null);
+  if (unemploymentMonths.length > 0) {
+    const avgUnemploymentMonths =
+      unemploymentMonths.reduce((sum, value) => sum + value, 0) / unemploymentMonths.length;
+    if (avgUnemploymentMonths >= 12) months -= 1;
+    if (avgUnemploymentMonths <= 4) months += 1;
+  }
 
   return clamp(Math.round(months), 0, 24);
 }
@@ -288,7 +304,7 @@ function InfoTip({
           ref={popRef}
           id={id}
           role="tooltip"
-          className={`absolute left-1/2 z-50 max-w-[280px] -translate-x-1/2 rounded-lg border bg-white p-2.5 text-xs text-gray-700 shadow-lg ${
+          className={`absolute left-1/2 z-50 w-[360px] max-w-[92vw] -translate-x-1/2 rounded-lg border bg-white p-2.5 text-xs text-gray-700 shadow-lg ${
             side === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
           }`}
         >
@@ -346,6 +362,7 @@ export default function App() {
   const [employmentStatuses, setEmploymentStatuses] = useState<EmploymentStatus[]>([
     'cuenta_ajena_con_paro',
   ]);
+  const [unemploymentBenefitMonthsByWorker, setUnemploymentBenefitMonthsByWorker] = useState<number[]>([12]);
 
   const [housingCost, setHousingCost] = useState(900);
   const [foodCost, setFoodCost] = useState(350);
@@ -374,6 +391,14 @@ export default function App() {
         ...previous,
         ...Array.from({ length: incomeSources - previous.length }, () => 'cuenta_ajena_con_paro' as EmploymentStatus),
       ];
+    });
+  }, [incomeSources]);
+
+  useEffect(() => {
+    setUnemploymentBenefitMonthsByWorker((previous) => {
+      if (previous.length === incomeSources) return previous;
+      if (previous.length > incomeSources) return previous.slice(0, incomeSources);
+      return [...previous, ...Array.from({ length: incomeSources - previous.length }, () => 12)];
     });
   }, [incomeSources]);
 
@@ -443,6 +468,7 @@ export default function App() {
     () =>
       computeRecommendedMonths({
         employmentStatuses,
+        unemploymentBenefitMonthsByWorker,
         householdType,
         dependents,
         incomeSources,
@@ -452,6 +478,7 @@ export default function App() {
       }),
     [
       employmentStatuses,
+      unemploymentBenefitMonthsByWorker,
       householdType,
       dependents,
       incomeSources,
@@ -473,6 +500,14 @@ export default function App() {
     setEmploymentStatuses((previous) => {
       const next = [...previous];
       next[index] = status;
+      return next;
+    });
+  };
+
+  const updateUnemploymentMonths = (index: number, value: number) => {
+    setUnemploymentBenefitMonthsByWorker((previous) => {
+      const next = [...previous];
+      next[index] = clamp(value, 0, 24);
       return next;
     });
   };
@@ -653,6 +688,25 @@ export default function App() {
                         <option value="cuenta_ajena_sin_paro">{t.salariedNoBenefit}</option>
                         <option value="autonomo_sin_paro">{t.selfEmployed}</option>
                       </select>
+                      {status === 'cuenta_ajena_con_paro' && (
+                        <div className="mt-2">
+                          <label className="mb-1 block text-xs font-medium text-gray-500">{t.unemploymentMonths}</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min={0}
+                              max={24}
+                              step={1}
+                              value={unemploymentBenefitMonthsByWorker[index] ?? 12}
+                              onChange={(event) => updateUnemploymentMonths(index, Number(event.target.value) || 0)}
+                              className="flex-1 accent-cyan-600"
+                            />
+                            <span className="w-12 text-right text-sm font-medium">
+                              {unemploymentBenefitMonthsByWorker[index] ?? 12}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {employmentStatuses.length === 0 && (
