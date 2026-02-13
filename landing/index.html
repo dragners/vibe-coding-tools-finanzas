@@ -192,6 +192,14 @@
             </div>
           </a>
 
+          <a class="card" href="/fondoemergencia/">
+            <div>
+              <div class="pill" data-i18n="emergency_badge">Calculadora</div>
+              <h2 class="title" data-i18n="emergency_title">Fondo de Emergencia</h2>
+              <p class="desc" data-i18n="emergency_desc">Calcula cuántos meses de gastos esenciales deberías cubrir según tu situación familiar y laboral.</p>
+            </div>
+          </a>
+
           <a class="card" href="/listadofondos/">
             <div>
               <div class="pill" data-i18n="fund_badge">Listado</div>
@@ -200,19 +208,19 @@
             </div>
           </a>
 
-          <a class="card" href="/planvsfondo/">
-            <div>
-              <div class="pill" data-i18n="calc_badge">Calculadora</div>
-              <h2 class="title" data-i18n="calc_title">Plan de Pensiones vs Fondo de Inversión</h2>
-              <p class="desc" data-i18n="calc_desc">Compara el neto a recibir al invertir en plan de pensiones o fondo, con tramos IRPF estatales y autonómicos 2025, rescates parciales y rescate total.</p>
-            </div>
-          </a>
-
           <a class="card" href="/comparadorhipotecas/">
             <div>
               <div class="pill" data-i18n="comp_badge">Comparador</div>
               <h2 class="title" data-i18n="comp_title">Comparador de Ofertas de Hipoteca</h2>
               <p class="desc" data-i18n="comp_desc">Compara fácilmente las ofertas de hipotecas, teniendo en cuenta todos los productos que bonifican las hipotecas.</p>
+            </div>
+          </a>
+
+          <a class="card" href="/planvsfondo/">
+            <div>
+              <div class="pill" data-i18n="calc_badge">Calculadora</div>
+              <h2 class="title" data-i18n="calc_title">Plan de Pensiones vs Fondo de Inversión</h2>
+              <p class="desc" data-i18n="calc_desc">Compara el neto a recibir al invertir en plan de pensiones o fondo, con tramos IRPF estatales y autonómicos 2025, rescates parciales y rescate total.</p>
             </div>
           </a>
 
@@ -252,6 +260,9 @@
           portfolio_badge:'Planificador',
           portfolio_title:'Planificador de Cartera de Inversion',
           portfolio_desc:'Planifica una cartera de inversion pasiva basada principalmente en fondos indexados, aprovechando la fiscalidad de los fondos en España.',
+          emergency_badge:'Calculadora',
+          emergency_title:'Fondo de Emergencia',
+          emergency_desc:'Calcula cuántos meses de gastos esenciales deberías cubrir según tu situación familiar y laboral.',
           calc_badge:'Calculadora',
           calc_title:'Plan de Pensiones vs Fondo de Inversión',
           calc_desc:'Compara el neto a recibir al invertir en plan de pensiones o fondo, con tramos IRPF estatales y autonómicos 2025, rescates parciales y rescate total.',
@@ -272,6 +283,9 @@
           portfolio_badge:'Planner',
           portfolio_title:'Investment Portfolio Planner',
           portfolio_desc:'Plan a passive investment portfolio mainly with index funds, taking advantage of Spanish fund tax benefits.',
+          emergency_badge:'Calculator',
+          emergency_title:'Emergency Fund',
+          emergency_desc:'Estimate how many months of essential expenses you should cover based on your household and job stability.',
           calc_badge:'Calculator',
           calc_title:'Pension Plan vs Investment Fund',
           calc_desc:'Compare net outcomes for pension plans vs funds with 2025 state/regional tax brackets, partial withdrawals and lump sum.',
@@ -294,6 +308,9 @@
         portfolio_badge: document.querySelector('[data-i18n="portfolio_badge"]'),
         portfolio_title: document.querySelector('[data-i18n="portfolio_title"]'),
         portfolio_desc: document.querySelector('[data-i18n="portfolio_desc"]'),
+        emergency_badge: document.querySelector('[data-i18n="emergency_badge"]'),
+        emergency_title: document.querySelector('[data-i18n="emergency_title"]'),
+        emergency_desc: document.querySelector('[data-i18n="emergency_desc"]'),
         calc_badge: document.querySelector('[data-i18n="calc_badge"]'),
         calc_title: document.querySelector('[data-i18n="calc_title"]'),
         calc_desc: document.querySelector('[data-i18n="calc_desc"]'),
@@ -334,6 +351,9 @@
         if(els.portfolio_badge) els.portfolio_badge.textContent = stripHTML(t.portfolio_badge);
         if(els.portfolio_title) els.portfolio_title.textContent = stripHTML(t.portfolio_title);
         if(els.portfolio_desc) els.portfolio_desc.textContent = stripHTML(t.portfolio_desc);
+        if(els.emergency_badge) els.emergency_badge.textContent = stripHTML(t.emergency_badge);
+        if(els.emergency_title) els.emergency_title.textContent = stripHTML(t.emergency_title);
+        if(els.emergency_desc) els.emergency_desc.textContent = stripHTML(t.emergency_desc);
         if(els.calc_badge) els.calc_badge.textContent = stripHTML(t.calc_badge);
         if(els.calc_title) els.calc_title.textContent = stripHTML(t.calc_title);
         if(els.calc_desc) els.calc_desc.textContent = stripHTML(t.calc_desc);
