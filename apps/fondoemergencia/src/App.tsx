@@ -952,13 +952,15 @@ export default function App() {
               </div>
 
               <div className="no-print">
-                <button
-                  type="button"
-                  onClick={onShare}
-                  className="rounded-full border border-cyan-600 bg-cyan-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:border-cyan-700 hover:bg-cyan-700"
-                >
-                  {t.shareLink}
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={onShare}
+                    className="rounded-full border border-cyan-600 bg-cyan-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:border-cyan-700 hover:bg-cyan-700"
+                  >
+                    {t.shareLink}
+                  </button>
+                </div>
                 {shareUrl && (
                   <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">{t.shareReady}</p>
