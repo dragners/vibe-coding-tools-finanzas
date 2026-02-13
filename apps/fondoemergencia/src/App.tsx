@@ -179,7 +179,8 @@ function computeRecommendedMonths(params: {
 
   const assumedAdults = householdType === 'solo' ? 1 : 2;
   if (assumedAdults === 2) months += 1;
-  if (dependents >= 2) months += 1;
+  if (dependents >= 1) months += 1;
+  if (dependents >= 3) months += 1;
 
   if (incomeSources >= 2) months -= 1;
   if (incomeSources <= 1) months += 1;
@@ -193,10 +194,9 @@ function computeRecommendedMonths(params: {
     )
     .filter((value): value is number => value !== null);
   if (unemploymentMonths.length > 0) {
-    const avgUnemploymentMonths =
-      unemploymentMonths.reduce((sum, value) => sum + value, 0) / unemploymentMonths.length;
-    if (avgUnemploymentMonths >= 12) months -= 1;
-    if (avgUnemploymentMonths <= 4) months += 1;
+    const weakestCoverageMonths = Math.min(...unemploymentMonths);
+    if (weakestCoverageMonths >= 12) months -= 1;
+    if (weakestCoverageMonths <= 4) months += 1;
   }
 
   return clamp(Math.round(months), 0, 24);
