@@ -80,6 +80,7 @@ const texts = {
       'Si no tienes cuenta de ahorro en MyInvestor, puedes crearla usando el enlace de referido; así nos ayudas a crecer y te llevas 25€:',
     referralLinkLabel: 'Crear cuenta con MyInvestor',
     referralCode: 'El código de referido es: RQU46',
+    footer: '© David Gonzalez, si quieres saber más sobre mí, visita',
     months: 'meses',
     themeSwitcher: 'Selector de tema',
     lightTheme: 'Tema claro',
@@ -133,6 +134,7 @@ const texts = {
       "If you don't have a savings account in MyInvestor, you can create one using the referral link; this helps us grow and gives you €25:",
     referralLinkLabel: 'Create a MyInvestor account',
     referralCode: 'Referral code is: RQU46',
+    footer: '© David Gonzalez, want to know more about me? Visit',
     months: 'months',
     themeSwitcher: 'Theme switcher',
     lightTheme: 'Light theme',
@@ -723,6 +725,13 @@ export default function App() {
               </ul>
             </div>
           </div>
+
+          <footer className="text-sm text-gray-500">
+            <span>{t.footer}</span>{' '}
+            <a href="https://dragner.net/" target="_blank" rel="noreferrer" className="text-cyan-600 hover:underline">
+              dragner.net
+            </a>
+          </footer>
 
         </div>
       </div>
