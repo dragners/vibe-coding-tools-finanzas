@@ -8,12 +8,14 @@ COPY apps/comparadorhipotecas/package.json apps/comparadorhipotecas/package-lock
 COPY apps/listadofondos/package.json apps/listadofondos/package-lock.json* ./apps/listadofondos/
 COPY apps/portfoliocreator/package.json apps/portfoliocreator/package-lock.json* ./apps/portfoliocreator/
 COPY apps/comprarvsalquilar/package.json apps/comprarvsalquilar/package-lock.json* ./apps/comprarvsalquilar/
+COPY apps/fondoemergencia/package.json apps/fondoemergencia/package-lock.json* ./apps/fondoemergencia/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm ci) && \
     (cd apps/comparadorhipotecas && npm ci) && \
     (cd apps/listadofondos && npm ci) && \
     (cd apps/portfoliocreator && npm ci) && \
-    (cd apps/comprarvsalquilar && npm ci)
+    (cd apps/comprarvsalquilar && npm ci) && \
+    (cd apps/fondoemergencia && npm ci)
 
 # Copia fuentes y build
 COPY apps/planvsfondo/ ./apps/planvsfondo/
@@ -21,12 +23,14 @@ COPY apps/comparadorhipotecas/ ./apps/comparadorhipotecas/
 COPY apps/listadofondos/ ./apps/listadofondos/
 COPY apps/portfoliocreator/ ./apps/portfoliocreator/
 COPY apps/comprarvsalquilar/ ./apps/comprarvsalquilar/
+COPY apps/fondoemergencia/ ./apps/fondoemergencia/
 RUN --mount=type=cache,target=/root/.npm \
     (cd apps/planvsfondo && npm run build) && \
     (cd apps/comparadorhipotecas && npm run build) && \
     (cd apps/listadofondos && npm run build) && \
     (cd apps/portfoliocreator && npm run build) && \
-    (cd apps/comprarvsalquilar && npm run build)
+    (cd apps/comprarvsalquilar && npm run build) && \
+    (cd apps/fondoemergencia && npm run build)
 
 # --- Runtime: Nginx sirviendo landing + apps ---
 FROM nginx:alpine AS runtime
@@ -41,6 +45,7 @@ COPY --from=builder /build/apps/comparadorhipotecas/dist/ /usr/share/nginx/html/
 COPY --from=builder /build/apps/listadofondos/dist/ /usr/share/nginx/html/listadofondos/
 COPY --from=builder /build/apps/portfoliocreator/dist/ /usr/share/nginx/html/portfoliocreator/
 COPY --from=builder /build/apps/comprarvsalquilar/dist/ /usr/share/nginx/html/comprarvsalquilar/
+COPY --from=builder /build/apps/fondoemergencia/dist/ /usr/share/nginx/html/fondoemergencia/
 
 RUN chmod -R 755 /usr/share/nginx/html
 EXPOSE 80
