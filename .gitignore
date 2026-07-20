@@ -7,3 +7,5 @@ apps/ejemplo/node_modules
 apps/portfolio-creator/node_modules
 apps/portfolio-creator/dist
 apps/portfolio-creator/tsconfig.tsbuildinfo
+
+.DS_Store
