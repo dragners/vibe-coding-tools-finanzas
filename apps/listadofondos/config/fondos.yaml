@@ -189,6 +189,12 @@ funds:
   category: Global Flexible Bond
   morningstarId: 
   comment: 'Nuevo fondo de Horos de RF, objetivo de superar inflación, 4-5% de rentabilidad, € cubierto'
+- name: iMGP DBi Managed Futures Fund  
+  isin: LU2550036748
+  category: Global Systematic Trend
+  morningstarId: 0P0001PYXG
+  comment: 'Fondo que opera futuros siguiendo tendencias y suele tener correlación baja o negativa con la renta variable'
+  
 plans:
 - name: Myinvestor Indexado Global PP
   isin: N5396
