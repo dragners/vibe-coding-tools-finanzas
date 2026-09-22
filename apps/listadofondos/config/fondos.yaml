@@ -187,7 +187,7 @@ funds:
 - name: Horos Patrimonio 
   isin: ES0146296001
   category: Global Flexible Bond
-  morningstarId: 
+  morningstarId: 0P0001Y13C
   comment: 'Nuevo fondo de Horos de RF, objetivo de superar inflación, 4-5% de rentabilidad, € cubierto'
 - name: iMGP DBi Managed Futures Fund  
   isin: LU2550036748
