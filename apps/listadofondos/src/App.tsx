@@ -10,6 +10,7 @@ import React, {
 import { createPortal } from "react-dom";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
+import { getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./morningstarCompare";
 
 type Lang = "es" | "en";
 type ThemeMode = "light" | "dark";
@@ -142,6 +143,12 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Buscar...",
     searchAriaLabel: "Buscar en la tabla",
+    compare: "Comparar",
+    compareHint: "Selecciona entre 2 y 5 fondos para comparar en Morningstar",
+    selectForComparison: "Seleccionar para comparar",
+    comparisonLimit: "Máximo de 5 fondos seleccionados. Desmarca uno para elegir otro.",
+    comparisonUnavailable: "Este fondo no tiene identificador de Morningstar",
+    clearComparison: "Limpiar selección",
     dataNote: "",
     langES: "ES",
     langEN: "EN",
@@ -181,6 +188,12 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Search...",
     searchAriaLabel: "Search within the table",
+    compare: "Compare",
+    compareHint: "Select between 2 and 5 funds to compare on Morningstar",
+    selectForComparison: "Select for comparison",
+    comparisonLimit: "Maximum of 5 funds selected. Deselect one to choose another.",
+    comparisonUnavailable: "This fund has no Morningstar identifier",
+    clearComparison: "Clear selection",
     dataNote: "",
     langES: "ES",
     langEN: "EN",
@@ -1033,6 +1046,24 @@ function CombinedTable({
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [selectedFundIds, setSelectedFundIds] = useState<string[]>([]);
+  const comparisonUrl = getMorningstarCompareUrl(selectedFundIds, lang);
+  const comparisonLimitReached = selectedFundIds.length >= MAX_COMPARISON_FUNDS;
+
+  useEffect(() => {
+    const availableIds = new Set(funds.map((fund) => fund.morningstarId?.trim()).filter(Boolean));
+    setSelectedFundIds((previous) => {
+      const next = previous.filter((id) => availableIds.has(id));
+      return next.length === previous.length ? previous : next;
+    });
+  }, [funds]);
+
+  const toggleFundComparison = (id: string) => {
+    setSelectedFundIds((previous) => {
+      if (previous.includes(id)) return previous.filter((selectedId) => selectedId !== id);
+      return previous.length < MAX_COMPARISON_FUNDS ? [...previous, id] : previous;
+    });
+  };
   const normalizedQuery = useMemo(
     () => searchQuery.trim().toLowerCase(),
     [searchQuery],
@@ -1128,7 +1159,7 @@ function CombinedTable({
     <section className="mt-6 sm:mt-8">
       <div className="rounded-3xl border border-slate-200/70 bg-white/85 p-4 sm:p-6 lg:p-8 shadow-xl backdrop-blur">
         {showSearchInput ? (
-          <div className="mb-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
               <input
                 type="text"
@@ -1153,6 +1184,35 @@ function CombinedTable({
                   d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
                 />
               </svg>
+            </div>
+            <div className="ml-auto flex items-center gap-3">
+              {selectedFundIds.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedFundIds([])}
+                  className="rounded-lg text-xs text-slate-500 transition hover:text-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                >
+                  {texts.clearComparison}
+                </button>
+              ) : null}
+              <a
+                href={comparisonUrl ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-disabled={!comparisonUrl}
+                tabIndex={comparisonUrl ? 0 : -1}
+                title={texts.compareHint}
+                className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
+                  comparisonUrl
+                    ? "border-cyan-200 bg-cyan-50 text-cyan-600 hover:border-cyan-400 hover:text-cyan-700"
+                    : "cursor-not-allowed border-slate-200 bg-white/90 text-slate-400"
+                }`}
+              >
+                {texts.compare}
+                <span className="text-xs tabular-nums" aria-live="polite" aria-atomic="true">
+                  {selectedFundIds.length}/{MAX_COMPARISON_FUNDS}
+                </span>
+              </a>
             </div>
           </div>
         ) : null}
@@ -1338,6 +1398,9 @@ function CombinedTable({
                     const stars = renderStars(row.morningstarRating);
                     const categoryValue = formatValue(row.category, lang);
                     const rowKey = row.morningstarId || row.isin || row.name;
+                    const comparisonId = row.morningstarId?.trim() ?? "";
+                    const comparisonSelected = selectedFundIds.includes(comparisonId);
+                    const comparisonDisabled = !comparisonId || (comparisonLimitReached && !comparisonSelected);
                     const badges = getCategoryBadges(
                       categoryValue,
                       lang,
@@ -1365,7 +1428,7 @@ function CombinedTable({
                           }`}
                         >
                           <div className="flex flex-col items-start gap-1">
-                            <div className="flex items-center gap-1">
+                            <div className="flex w-full items-center gap-1">
                               <a
                                 href={link}
                                 target="_blank"
@@ -1403,6 +1466,21 @@ function CombinedTable({
                                     Fondo en mi cartera personal
                                   </span>
                                 </span>
+                              ) : null}
+                              {section.key === "funds" ? (
+                                <label
+                                  className={`ml-auto inline-flex shrink-0 items-center rounded-md p-1 ${comparisonDisabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
+                                  title={!comparisonId ? texts.comparisonUnavailable : comparisonDisabled ? texts.comparisonLimit : texts.selectForComparison}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={comparisonSelected}
+                                    disabled={comparisonDisabled}
+                                    onChange={() => toggleFundComparison(comparisonId)}
+                                    aria-label={`${texts.selectForComparison}: ${row.name}`}
+                                    className="h-3.5 w-3.5 cursor-inherit rounded border-slate-300 accent-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2"
+                                  />
+                                </label>
                               ) : null}
                             </div>
                             {(badges.length > 0 || stars) && (
