@@ -189,6 +189,26 @@ funds:
   category: Global Flexible Bond
   morningstarId: 0P0001Y13C
   comment: 'Nuevo fondo de Horos de RF, objetivo de superar inflación, 4-5% de rentabilidad, € cubierto'
+- name: Nordea - Low Duration EU Covered Bond Fund 
+  isin: LU1694212348
+  category: EUR Diversified Bond - Short Term
+  morningstarId: F00000ZPRU
+  comment: 'Fundamentalmente bonos garantizados, con mucha exposición indirecta a hipotecas.'
+- name: Neuberger Short Duration Euro Bond Fun Acc
+  isin: IE00BNG2T811
+  category: EUR Diversified Bond - Short Term
+  morningstarId: F00000ZL6G
+  comment: 'RF EUR corta duración'
+- name: B&H Deuda FI
+  isin: ES0112618006
+  category: EUR Flexible Bond
+  morningstarId: F000014T7Y
+  comment: 'RF defensiva tradicional'
+- name: B&H Renta Fija FI
+  isin: ES0184097014
+  category: EUR Flexible Bond
+  morningstarId: F00000ZL6G
+  comment: 'RF defensiva tradicional - Corporativa'
 - name: iMGP DBi Managed Futures Fund  
   isin: LU2550036748
   category: Global Systematic Trend
