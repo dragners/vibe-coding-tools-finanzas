@@ -176,13 +176,13 @@ funds:
   isin: LU1164219682
   category: EUR Flexible Bond
   morningstarId: F00000VPP7
-  comment: ''
+  comment: 'Retorno absoluto RF EUR'
   inPortfolio: true
 - name: DNCA Invest Alpha Bonds B 
   isin: LU1694789535
   category: Global Flexible Bond
   morningstarId: F00000ZY7M
-  comment: ''
+  comment: 'Fondo de Retorno absoluto de RF global (Retorno Abosuluto=Busca ganar siempre una rentabilidad aunque los tipos suban, usa derivados)'
   inPortfolio: true
 - name: Horos Patrimonio 
   isin: ES0146296001
