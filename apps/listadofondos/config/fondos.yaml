@@ -197,7 +197,7 @@ funds:
 - name: Neuberger Short Duration Euro Bond Fun Acc
   isin: IE00BNG2T811
   category: EUR Diversified Bond - Short Term
-  morningstarId: F00000ZL6G
+  morningstarId: F000017L4O
   comment: 'RF EUR corta duración'
 - name: B&H Deuda FI
   isin: ES0112618006
