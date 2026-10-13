@@ -1,0 +1,161 @@
+import React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import App, { type ApiPayload, type FundRow } from "../src/App";
+
+function product(name: string, isin: string, morningstarId: string, ter: FundRow["ter"] = "0,2"): FundRow {
+  return { name, isin, morningstarId, ter, category: "Equity Global", comment: "", url: "", performance: {}, sharpe: {}, volatility: {} };
+}
+const funds = Array.from({ length: 6 }, (_, index) => product(`Fondo ${index + 1}`, `LU000000000${index}`, `F00${index}`));
+const plans = ["N5396", "N5263", "N5116", "N5138", "N5270", "N5219"].map((id, index) => product(`Plan ${index + 1}`, id, `P00${index}`));
+
+beforeEach(() => {
+  window.localStorage.clear();
+  window.history.replaceState(null, "", "/listadofondos/");
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+});
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+
+async function load(payload: Partial<ApiPayload> = {}) {
+  const data: ApiPayload = { lastUpdated: "2026-10-13T08:00:00Z", funds, plans, ...payload };
+  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, headers: { get: () => "application/json" }, text: async () => JSON.stringify(data) })));
+  render(<App />);
+  await screen.findByRole("checkbox", { name: `Seleccionar para comparar: ${data.funds[0]?.name ?? data.plans[0].name}` });
+  return userEvent.setup();
+}
+const checkbox = (name: string) => screen.getByRole("checkbox", { name: `Seleccionar para comparar: ${name}`, exact: true }) as HTMLInputElement;
+const compare = (provider: string) => screen.getByText(new RegExp(`^Comparar en ${provider}`));
+const fundNames = () => Array.from(document.querySelectorAll("tbody tr.align-middle td:first-child a")).map((element) => element.textContent);
+
+describe("visible comparison feedback and selection", () => {
+  it("shows minimum, type lock and maximum messages, preserves hidden selections and allows replacement", async () => {
+    const user = await load();
+    expect(screen.getByRole("status").textContent).toContain("Selecciona al menos 2");
+    expect(compare("Finect").getAttribute("href")).toBeNull();
+    await user.click(checkbox("Fondo 1"));
+    expect(checkbox("Plan 1").disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toContain("fondos o planes por separado");
+    for (let i = 2; i <= 5; i++) await user.click(checkbox(`Fondo ${i}`));
+    expect(screen.getByRole("status").textContent).toContain("Máximo de 5");
+    expect(checkbox("Fondo 6").disabled).toBe(true);
+    expect(checkbox("Fondo 1").disabled).toBe(false);
+    const href = compare("Finect").getAttribute("href");
+    await user.type(screen.getByRole("textbox"), "Fondo 6");
+    expect(checkbox("Fondo 6").disabled).toBe(true);
+    expect(compare("Finect").getAttribute("href")).toBe(href);
+    await user.clear(screen.getByRole("textbox"));
+    await user.click(checkbox("Fondo 1"));
+    await user.click(checkbox("Fondo 6"));
+    expect(compare("Finect").getAttribute("href")).toContain("LU0000000005");
+    expect(compare("Finect").getAttribute("href")).not.toContain("LU0000000000");
+    await user.click(screen.getByRole("button", { name: "Limpiar selección" }));
+    expect(checkbox("Plan 1").disabled).toBe(false);
+  });
+
+  it("locks funds when selecting plans and unlocks both types after the last deselection", async () => {
+    const user = await load();
+    await user.click(checkbox("Plan 1"));
+    expect(checkbox("Fondo 1").disabled).toBe(true);
+    await user.click(checkbox("Plan 2"));
+    expect(compare("Finect").getAttribute("href")).toBe("https://www.finect.com/planes-pensiones/comparador?products=N5396,N5263");
+    await user.click(checkbox("Plan 1"));
+    expect(checkbox("Fondo 1").disabled).toBe(true);
+    await user.click(checkbox("Plan 2"));
+    expect(checkbox("Fondo 1").disabled).toBe(false);
+    expect(checkbox("Plan 1").disabled).toBe(false);
+  });
+
+  it("enforces the limit of five pension plans while allowing replacement", async () => {
+    const user = await load();
+    for (let i = 1; i <= 5; i++) await user.click(checkbox(`Plan ${i}`));
+    expect(checkbox("Plan 6").disabled).toBe(true);
+    expect(checkbox("Fondo 1").disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toContain("Máximo de 5");
+    await user.click(checkbox("Plan 2"));
+    await user.click(checkbox("Plan 6"));
+    expect(compare("Finect").getAttribute("href")).toBe("https://www.finect.com/planes-pensiones/comparador?products=N5396,N5116,N5138,N5270,N5219");
+  });
+
+  it.each([
+    ["morningstarId", "", "Morningstar", "Morningstar no está disponible"],
+    ["isin", "-", "Finect", "Finect no está disponible"],
+  ])("explains missing %s without disabling the other provider", async (field, value, provider, message) => {
+    const user = await load({ funds: [funds[0], { ...funds[1], [field]: value }] });
+    await user.click(checkbox("Fondo 1"));
+    await user.click(checkbox("Fondo 2"));
+    expect(compare(provider).getAttribute("href")).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain(message);
+    expect(compare(provider === "Finect" ? "Morningstar" : "Finect").getAttribute("href")).not.toBeNull();
+  });
+
+  it("visibly explains why a product without any identifiers cannot be selected", async () => {
+    await load({ funds: [product("Sin identificadores", "-", "")] });
+    expect(checkbox("Sin identificadores").disabled).toBe(true);
+    expect(screen.getByText("Este producto no tiene identificadores para comparar")).not.toBeNull();
+  });
+});
+
+describe("header data warnings", () => {
+  it("names duplicate ISIN and MorningstarId products across sections and stays visible during search", async () => {
+    const user = await load({
+      funds: [funds[0], { ...funds[1], isin: funds[0].isin }],
+      plans: [{ ...plans[0], morningstarId: funds[0].morningstarId }],
+    });
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("Corrige el ISIN o MorningstarId");
+    expect(alert.textContent).toContain(`ISIN: ${funds[0].isin}`);
+    expect(alert.textContent).toContain(`MorningstarId: ${funds[0].morningstarId}`);
+    for (const name of ["Fondo 1", "Fondo 2", "Plan 1"]) expect(alert.textContent).toContain(name);
+    expect(alert.closest("main")).toBeNull();
+    await user.type(screen.getByRole("textbox"), "no existe");
+    expect(screen.getByRole("alert")).toBe(alert);
+  });
+
+  it("does not show a warning for valid identifiers", async () => {
+    await load();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("sorting regression", () => {
+  const rows = [
+    { ...product("Alfa", "LU001", "F001", "0,4"), performance: { "1Y": "20,1" }, sharpe: { "1Y": "1,4" }, volatility: { "1Y": "15,2" } },
+    { ...product("Beta", "LU002", "F002", "0,2"), performance: { "1Y": "-5,2" }, sharpe: { "1Y": "-0,1" }, volatility: { "1Y": "5,8" } },
+    product("Sin datos", "LU003", "F003", "-"),
+  ];
+
+  it("leaves absent values last in both directions across TER, returns, Sharpe and volatility", async () => {
+    const user = await load({ funds: rows, plans: [] });
+    for (const label of ["TER", "Rentabilidades (%) 1Y", "Ratio Sharpe 1Y", "Volatilidad 1Y"]) {
+      for (const direction of ["ascendente", "descendente"]) {
+        await user.click(screen.getByRole("button", { name: `Orden ${direction} por ${label}`, exact: true }));
+        expect(fundNames()).toEqual(direction === "ascendente" ? ["Beta", "Alfa", "Sin datos"] : ["Alfa", "Beta", "Sin datos"]);
+      }
+    }
+  });
+
+  it("switches columns without duplicating rows even with invalid duplicate ISINs", async () => {
+    const user = await load({ funds: [rows[0], { ...rows[1], isin: rows[0].isin }, rows[2]], plans: [] });
+    const sequence: [string, string[]][] = [
+      ["Orden descendente por Nombre", ["Sin datos", "Beta", "Alfa"]],
+      ["Orden ascendente por TER", ["Beta", "Alfa", "Sin datos"]],
+      ["Orden descendente por Rentabilidades (%) 1Y", ["Alfa", "Beta", "Sin datos"]],
+    ];
+    for (let iteration = 0; iteration < 3; iteration++) {
+      for (const [label, expected] of sequence) {
+        await user.click(screen.getByRole("button", { name: label, exact: true }));
+        expect(fundNames()).toEqual(expected);
+        expect(document.querySelectorAll('button[aria-label^="Orden "][aria-pressed="true"]').length).toBe(1);
+      }
+    }
+  });
+
+  it("treats empty and placeholder identifiers as missing in text sorting too", async () => {
+    const user = await load({ funds: [rows[0], { ...rows[1], isin: " " }, { ...rows[2], isin: "-" }], plans: [] });
+    for (const direction of ["ascendente", "descendente"]) {
+      await user.click(screen.getByRole("button", { name: `Orden ${direction} por ISIN`, exact: true }));
+      expect(fundNames()).toEqual(["Alfa", "Beta", "Sin datos"]);
+    }
+  });
+});

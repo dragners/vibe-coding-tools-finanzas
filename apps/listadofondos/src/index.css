@@ -75,6 +75,12 @@ html[data-theme="dark"] textarea::placeholder {
   color: #64748b;
 }
 
+html[data-theme="dark"] [role="alert"].bg-amber-50 {
+  background-color: #422006;
+  border-color: #a16207;
+  color: #fef3c7;
+}
+
 html[data-theme="dark"] .shadow,
 html[data-theme="dark"] .shadow-sm,
 html[data-theme="dark"] .shadow-lg,

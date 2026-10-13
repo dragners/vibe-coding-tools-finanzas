@@ -10,7 +10,7 @@ import React, {
 import { createPortal } from "react-dom";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
-import { getFinectCompareUrl, getFundComparisonKey, getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./fundComparison";
+import { findDuplicateIdentifiers, getFinectCompareUrl, getFinectProductId, getFundComparisonKey, getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./fundComparison";
 
 type Lang = "es" | "en";
 type ThemeMode = "light" | "dark";
@@ -109,10 +109,6 @@ type SortKey =
 
 type SortConfig = { key: SortKey; order: SortOrder };
 
-function isPerformanceOrSharpeSortKey(key: SortKey) {
-  return key.startsWith("performance:") || key.startsWith("sharpe:");
-}
-
 const TEXTS = {
   es: {
     title: "Comparativa de Fondos y Planes de Pensiones",
@@ -153,6 +149,10 @@ const TEXTS = {
     comparisonLimit: "Máximo de 5 seleccionados. Desmarca uno para elegir otro.",
     comparisonUnavailable: "Este producto no tiene identificadores para comparar",
     comparisonTypeLocked: "Compara fondos o planes por separado. Limpia la selección para cambiar de tipo.",
+    compareMinimum: "Selecciona al menos 2 fondos o 2 planes para comparar.",
+    comparisonMissingMorningstarVisible: "Morningstar no está disponible: falta su identificador en algún producto seleccionado.",
+    comparisonMissingFinectVisible: "Finect no está disponible: falta el ISIN o código de plan en algún producto seleccionado.",
+    duplicateWarning: "Hay identificadores duplicados. Corrige el ISIN o MorningstarId de los siguientes fondos o planes:",
     clearComparison: "Limpiar selección",
     dataNote: "",
     langES: "ES",
@@ -203,6 +203,10 @@ const TEXTS = {
     comparisonLimit: "Maximum of 5 selected. Deselect one to choose another.",
     comparisonUnavailable: "This product has no identifiers for comparison",
     comparisonTypeLocked: "Compare funds or pension plans separately. Clear the selection to switch types.",
+    compareMinimum: "Select at least 2 funds or 2 pension plans to compare.",
+    comparisonMissingMorningstarVisible: "Morningstar is unavailable: a selected product is missing its identifier.",
+    comparisonMissingFinectVisible: "Finect is unavailable: a selected product is missing its ISIN or pension plan code.",
+    duplicateWarning: "Duplicate identifiers found. Correct the ISIN or MorningstarId of these funds or pension plans:",
     clearComparison: "Clear selection",
     dataNote: "",
     langES: "ES",
@@ -804,10 +808,10 @@ type SortValue =
 
 function getSortValue(row: FundRow, key: SortKey): SortValue {
   if (key === "name") {
-    return { type: "text", value: row.name ?? null };
+    return { type: "text", value: getFinectProductId(row.name) || null };
   }
   if (key === "isin") {
-    return { type: "text", value: row.isin ?? null };
+    return { type: "text", value: getFinectProductId(row.isin) || null };
   }
   if (key === "ter") {
     return { type: "number", value: getMetricNumber(row.ter) };
@@ -848,8 +852,6 @@ function sortRows(
   const sorted = [...rows];
   const locale = lang === "es" ? "es" : "en";
   const multiplier = sortConfig.order === "asc" ? 1 : -1;
-  const missingIsLowestInDesc =
-    sortConfig.order === "desc" && isPerformanceOrSharpeSortKey(sortConfig.key);
 
   sorted.sort((a, b) => {
     const valueA = getSortValue(a, sortConfig.key);
@@ -861,18 +863,9 @@ function sortRows(
     const isNullB = rawB === null || rawB === undefined || rawB === "";
 
     if (isNullA && isNullB) return 0;
-    if (isNullA) {
-      if (missingIsLowestInDesc && valueA.type === "number") {
-        return 1;
-      }
-      return 1 * multiplier;
-    }
-    if (isNullB) {
-      if (missingIsLowestInDesc && valueB.type === "number") {
-        return -1;
-      }
-      return -1 * multiplier;
-    }
+    // Missing values always follow available values, in either direction.
+    if (isNullA) return 1;
+    if (isNullB) return -1;
 
     if (valueA.type === "number" && valueB.type === "number") {
       const diff = (rawA as number) - (rawB as number);
@@ -1068,6 +1061,15 @@ function CombinedTable({
     : getMorningstarCompareUrl(selectedProducts.map((product) => product.morningstarId), lang);
   const finectComparisonUrl = getFinectCompareUrl(selectedProducts.map((product) => product.isin), comparisonSection);
   const comparisonLimitReached = selectedItems.length >= MAX_COMPARISON_FUNDS;
+  const comparisonHelpId = useId();
+  const comparisonMessages = [
+    selectedItems.length < 2 ? texts.compareMinimum : null,
+    selectedItems.length > 0 ? texts.comparisonTypeLocked : null,
+    comparisonLimitReached ? texts.comparisonLimit : null,
+    missingMorningstarId ? texts.comparisonMissingMorningstarVisible : null,
+    selectedProducts.some((product) => !getFinectProductId(product.isin))
+      ? texts.comparisonMissingFinectVisible : null,
+  ].filter((message): message is string => Boolean(message));
 
   useEffect(() => {
     const availableIds = {
@@ -1232,6 +1234,7 @@ function CombinedTable({
                   aria-disabled={!url}
                   tabIndex={url ? 0 : -1}
                   title={hint}
+                  aria-describedby={comparisonHelpId}
                   className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                     url
                       ? "border-cyan-200 bg-cyan-50 text-cyan-600 hover:border-cyan-400 hover:text-cyan-700"
@@ -1247,6 +1250,9 @@ function CombinedTable({
             </div>
           </div>
         ) : null}
+        <div id={comparisonHelpId} role="status" aria-live="polite" className="mb-4 space-y-1 text-xs text-slate-600">
+          {comparisonMessages.map((message) => <p key={message}>{message}</p>)}
+        </div>
         <div className="overflow-x-auto pb-4">
           <table className="w-full border-separate border-spacing-y-1 border-spacing-x-[1px] text-sm text-gray-800">
             <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
@@ -1428,7 +1434,9 @@ function CombinedTable({
                   {section.rows.map((row) => {
                     const stars = renderStars(row.morningstarRating);
                     const categoryValue = formatValue(row.category, lang);
-                    const rowKey = getFundComparisonKey(row) || row.name;
+                    // Keep rows distinct even while duplicate configuration is awaiting correction.
+                    const sourceRows = section.key === "funds" ? funds : plans;
+                    const rowKey = `${getFundComparisonKey(row) || row.name}-${sourceRows.indexOf(row)}`;
                     const comparisonId = getFundComparisonKey(row);
                     const comparisonSelected = selectedItems.some((item) => item.section === section.key && item.key === comparisonId);
                     const comparisonTypeLocked = selectedItems.length > 0 && comparisonSection !== section.key;
@@ -1509,10 +1517,14 @@ function CombinedTable({
                                   disabled={comparisonDisabled}
                                   onChange={() => toggleComparison(section.key, comparisonId)}
                                   aria-label={`${texts.selectForComparison}: ${row.name}`}
+                                  aria-describedby={comparisonHelpId}
                                   className="h-3.5 w-3.5 cursor-inherit rounded border-slate-300 accent-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2"
                                 />
                               </label>
                             </div>
+                            {!comparisonId ? (
+                              <p className="text-[11px] text-slate-600">{texts.comparisonUnavailable}</p>
+                            ) : null}
                             {(badges.length > 0 || stars) && (
                               <div className="flex w-full items-center gap-1">
                                 {stars ? (
@@ -1683,6 +1695,10 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [shouldAutoRefresh, setShouldAutoRefresh] = useState<boolean | null>(
     null,
+  );
+  const duplicateIdentifiers = useMemo(
+    () => findDuplicateIdentifiers(data?.funds ?? [], data?.plans ?? []),
+    [data],
   );
   const dataRef = useRef<ApiPayload | null>(null);
   const pendingRefreshTimeoutRef = useRef<number | null>(null);
@@ -1938,6 +1954,20 @@ export default function App() {
               </div>
             </div>
           </div>
+          {duplicateIdentifiers.length > 0 ? (
+            <div role="alert" className="order-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 md:col-span-2 md:row-start-3">
+              <p className="font-semibold">{texts.duplicateWarning}</p>
+              <ul className="mt-2 space-y-1">
+                {duplicateIdentifiers.map((duplicate) => (
+                  <li key={`${duplicate.field}-${duplicate.value}`}>
+                    <span className="font-semibold">{duplicate.field === "isin" ? "ISIN" : "MorningstarId"}: {duplicate.value}</span>
+                    {" — "}
+                    {duplicate.products.map((product) => `${product.name} (${product.section === "funds" ? texts.fundsTitle : texts.plansTitle})`).join("; ")}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       </div>
 
