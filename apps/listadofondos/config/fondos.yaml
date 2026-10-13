@@ -168,6 +168,11 @@ funds:
   category: Global Systematic Trend
   morningstarId: 0P0001UBZT
   comment: 'Fondo que opera futuros siguiendo tendencias y suele tener correlación baja o negativa con la renta variable'
+- name: Dunas Valor Prudente 
+  isin: ES0175437005
+  category: EUR Multistrategy Bond Equity
+  morningstarId: F00000ZN9Q
+  comment: 'Mixto RV y RF. Retorno absoluto defensivo. Estabilizador de cartera para buscar algo más que un monetario con baja volatilidad.'
 - name: Indexa RV internacional
   isin: ES0148019005
   category: Global Large-Cap Blend Equity
@@ -239,11 +244,7 @@ funds:
   category: EUR Flexible Bond
   morningstarId: F00000ZL6G
   comment: 'RF corporativa flexible con mayor riesgo de crédito que B&H Deuda. Busca aumentar la rentabilidad de la RF'
-- name: Dunas Valor Prudente 
-  isin: ES0175437005
-  category: EUR Multistrategy
-  morningstarId: F00000ZN9Q
-  comment: 'Retorno absoluto defensivo. Estabilizador de cartera para buscar algo más que un monetario con baja volatilidad.'
+
 - name: Groupama Alpha Fixed Income RC
   isin: LU1622557624
   category: EUR Flexible Bond
