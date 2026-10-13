@@ -96,11 +96,6 @@ funds:
   category: Europe Small-Cap Equity
   morningstarId: F00000Q3YK
   comment: Gestor Nicolas Walewski
-- name: Fidelity Global Technology (Acc)
-  isin: LU1213836080
-  category: Sector Equity Technology
-  morningstarId: F00000VKNA
-  comment: ''
 - name: Lazard Emerging Markets Eq C
   isin: IE00BYWPGP72
   category: Global Emerging Markets Equity
