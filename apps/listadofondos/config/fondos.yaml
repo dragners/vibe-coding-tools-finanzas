@@ -157,7 +157,7 @@ funds:
   isin: LU0348784041
   category: Asia-Pacific Equity
   morningstarId: F000005JON
-  comment: 'Renta variable Asia-Pacífico con enfoque en ingresos y crecimiento. Luis lo utiliza como satélite geográfico para diversificar una cartera global y aumentar exposición a Asia.'
+  comment: 'RV Asia-Pacífico con enfoque en ingresos y crecimiento.'
 - name: Impassive Wealth FI
   isin: ES0147897005
   category: Global Flexible Allocation
