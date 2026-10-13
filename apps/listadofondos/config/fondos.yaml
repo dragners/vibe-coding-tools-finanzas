@@ -210,9 +210,9 @@ funds:
   morningstarId: F00000ZL6G
   comment: 'RF defensiva tradicional - Corporativa'
 - name: iMGP DBi Managed Futures Fund  
-  isin: LU2550036748
+  isin: LU2951555403
   category: Global Systematic Trend
-  morningstarId: 0P0001PYXG
+  morningstarId: 0P0001UBZT
   comment: 'Fondo que opera futuros siguiendo tendencias y suele tener correlación baja o negativa con la renta variable'
   
 plans:
