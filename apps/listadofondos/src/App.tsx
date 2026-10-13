@@ -1611,7 +1611,7 @@ function CombinedTable({
                           lang,
                         )}
                         <td
-                          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle ${commentColumnWidthClass}`}
+                          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-[11px] sm:text-xs leading-snug align-middle ${commentColumnWidthClass}`}
                         >
                           {formatValue(row.comment, lang) || texts.commentPlaceholder}
                         </td>
