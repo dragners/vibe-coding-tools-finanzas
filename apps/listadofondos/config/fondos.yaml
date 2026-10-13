@@ -136,7 +136,7 @@ funds:
 - name: Ranmore Global Equity 
   isin: IE00B6ZCS539
   category: Global Flex-Cap Equity
-  morningstarId: 0P000136HE 
+  morningstarId: F00000TISV
   comment: 'RV global value y contrarian. Busca oportunidades fuera de las grandes compañías dominantes de los índices.'
 - name: Dodge & Cox Worldwide Global Stock Acc
   isin: IE00B55JMJ98
@@ -151,7 +151,7 @@ funds:
 - name: Robeco QI Emerging Conservative Equit
   isin: LU0582533245
   category: Global Emerging Markets Equity
-  morningstarId: 0P0000SIG2
+  morningstarId: F00000M0QL
   comment: 'RV emergente de baja volatilidad. Estrategia cuantitativa que selecciona compañías con perfil defensivo.'
 - name: Allianz Oriental Income AT
   isin: LU0348784041
@@ -263,7 +263,7 @@ funds:
 - name: Mandarine Credit Opportunities C
   isin: FR0000971913
   category: EUR Flexible Bond
-  morningstarId: ''
+  morningstarId: F0GBR04GCY
   comment: 'Renta fija corporativa flexible. Busca oportunidades en crédito mediante gestión activa.'
 - name: Storm Bond RC
   isin: LU0840158819
