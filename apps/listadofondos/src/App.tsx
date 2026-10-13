@@ -1428,7 +1428,7 @@ function CombinedTable({
                   {section.rows.map((row) => {
                     const stars = renderStars(row.morningstarRating);
                     const categoryValue = formatValue(row.category, lang);
-                    const rowKey = row.morningstarId || row.isin || row.name;
+                    const rowKey = getFundComparisonKey(row) || row.name;
                     const comparisonId = getFundComparisonKey(row);
                     const comparisonSelected = selectedItems.some((item) => item.section === section.key && item.key === comparisonId);
                     const comparisonTypeLocked = selectedItems.length > 0 && comparisonSection !== section.key;

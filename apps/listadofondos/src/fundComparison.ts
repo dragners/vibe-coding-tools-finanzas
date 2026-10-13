@@ -1,7 +1,8 @@
 export const MAX_COMPARISON_FUNDS = 5;
 
 export function getFundComparisonKey(fund: { morningstarId?: string; isin?: string }) {
-  return fund.morningstarId?.trim() || getFinectProductId(fund.isin);
+  // Distinct products can share a Morningstar ID; use their own identifier first.
+  return getFinectProductId(fund.isin) || fund.morningstarId?.trim() || "";
 }
 
 export function getFinectProductId(isin?: string) {
