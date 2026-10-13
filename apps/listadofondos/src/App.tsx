@@ -145,13 +145,14 @@ const TEXTS = {
     searchAriaLabel: "Buscar en la tabla",
     compare: "Comparar en Morningstar",
     compareFinect: "Comparar en Finect",
-    compareFinectHint: "Selecciona entre 2 y 5 fondos para comparar en Finect",
-    comparisonMissingMorningstar: "Todos los fondos seleccionados deben tener identificador de Morningstar",
-    comparisonMissingIsin: "Todos los fondos seleccionados deben tener ISIN para comparar en Finect",
-    compareHint: "Selecciona entre 2 y 5 fondos para comparar en Morningstar",
+    compareFinectHint: "Selecciona entre 2 y 5 fondos o planes para comparar en Finect",
+    comparisonMissingMorningstar: "Todos los seleccionados deben tener identificador de Morningstar",
+    comparisonMissingIsin: "Todos los seleccionados deben tener ISIN o código de plan para comparar en Finect",
+    compareHint: "Selecciona entre 2 y 5 fondos o planes para comparar en Morningstar",
     selectForComparison: "Seleccionar para comparar",
-    comparisonLimit: "Máximo de 5 fondos seleccionados. Desmarca uno para elegir otro.",
-    comparisonUnavailable: "Este fondo no tiene identificadores para comparar",
+    comparisonLimit: "Máximo de 5 seleccionados. Desmarca uno para elegir otro.",
+    comparisonUnavailable: "Este producto no tiene identificadores para comparar",
+    comparisonTypeLocked: "Compara fondos o planes por separado. Limpia la selección para cambiar de tipo.",
     clearComparison: "Limpiar selección",
     dataNote: "",
     langES: "ES",
@@ -194,13 +195,14 @@ const TEXTS = {
     searchAriaLabel: "Search within the table",
     compare: "Compare on Morningstar",
     compareFinect: "Compare on Finect",
-    compareFinectHint: "Select between 2 and 5 funds to compare on Finect",
-    comparisonMissingMorningstar: "All selected funds must have a Morningstar identifier",
-    comparisonMissingIsin: "All selected funds must have an ISIN to compare on Finect",
-    compareHint: "Select between 2 and 5 funds to compare on Morningstar",
+    compareFinectHint: "Select between 2 and 5 funds or pension plans to compare on Finect",
+    comparisonMissingMorningstar: "All selected products must have a Morningstar identifier",
+    comparisonMissingIsin: "All selected products must have an ISIN or pension plan code to compare on Finect",
+    compareHint: "Select between 2 and 5 funds or pension plans to compare on Morningstar",
     selectForComparison: "Select for comparison",
-    comparisonLimit: "Maximum of 5 funds selected. Deselect one to choose another.",
-    comparisonUnavailable: "This fund has no identifiers for comparison",
+    comparisonLimit: "Maximum of 5 selected. Deselect one to choose another.",
+    comparisonUnavailable: "This product has no identifiers for comparison",
+    comparisonTypeLocked: "Compare funds or pension plans separately. Clear the selection to switch types.",
     clearComparison: "Clear selection",
     dataNote: "",
     langES: "ES",
@@ -1054,29 +1056,37 @@ function CombinedTable({
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-  const [selectedFundKeys, setSelectedFundKeys] = useState<string[]>([]);
-  const selectedFunds = selectedFundKeys
-    .map((key) => funds.find((fund) => getFundComparisonKey(fund) === key))
+  const [selectedItems, setSelectedItems] = useState<{ section: TableSection; key: string }[]>([]);
+  const comparisonSection = selectedItems[0]?.section ?? "funds";
+  const selectedProducts = selectedItems
+    .map(({ section, key }) => (section === "plans" ? plans : funds)
+      .find((product) => getFundComparisonKey(product) === key))
     .filter((fund): fund is FundRow => Boolean(fund));
-  const missingMorningstarId = selectedFunds.some((fund) => !fund.morningstarId?.trim());
+  const missingMorningstarId = selectedProducts.some((product) => !product.morningstarId?.trim());
   const comparisonUrl = missingMorningstarId
     ? null
-    : getMorningstarCompareUrl(selectedFunds.map((fund) => fund.morningstarId), lang);
-  const finectComparisonUrl = getFinectCompareUrl(selectedFunds.map((fund) => fund.isin));
-  const comparisonLimitReached = selectedFundKeys.length >= MAX_COMPARISON_FUNDS;
+    : getMorningstarCompareUrl(selectedProducts.map((product) => product.morningstarId), lang);
+  const finectComparisonUrl = getFinectCompareUrl(selectedProducts.map((product) => product.isin), comparisonSection);
+  const comparisonLimitReached = selectedItems.length >= MAX_COMPARISON_FUNDS;
 
   useEffect(() => {
-    const availableIds = new Set(funds.map(getFundComparisonKey).filter(Boolean));
-    setSelectedFundKeys((previous) => {
-      const next = previous.filter((id) => availableIds.has(id));
+    const availableIds = {
+      funds: new Set(funds.map(getFundComparisonKey).filter(Boolean)),
+      plans: new Set(plans.map(getFundComparisonKey).filter(Boolean)),
+    };
+    setSelectedItems((previous) => {
+      const next = previous.filter(({ section, key }) => availableIds[section].has(key));
       return next.length === previous.length ? previous : next;
     });
-  }, [funds]);
+  }, [funds, plans]);
 
-  const toggleFundComparison = (id: string) => {
-    setSelectedFundKeys((previous) => {
-      if (previous.includes(id)) return previous.filter((selectedId) => selectedId !== id);
-      return previous.length < MAX_COMPARISON_FUNDS ? [...previous, id] : previous;
+  const toggleComparison = (section: TableSection, key: string) => {
+    setSelectedItems((previous) => {
+      if (previous.some((item) => item.section === section && item.key === key)) {
+        return previous.filter((item) => item.section !== section || item.key !== key);
+      }
+      if (previous.length >= MAX_COMPARISON_FUNDS || (previous.length > 0 && previous[0].section !== section)) return previous;
+      return [...previous, { section, key }];
     });
   };
   const normalizedQuery = useMemo(
@@ -1201,10 +1211,10 @@ function CombinedTable({
               </svg>
             </div>
             <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
-              {selectedFundKeys.length > 0 ? (
+              {selectedItems.length > 0 ? (
                 <button
                   type="button"
-                  onClick={() => setSelectedFundKeys([])}
+                  onClick={() => setSelectedItems([])}
                   className="rounded-lg text-xs text-slate-500 transition hover:text-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
                 >
                   {texts.clearComparison}
@@ -1212,7 +1222,7 @@ function CombinedTable({
               ) : null}
               {[
                 { label: texts.compare, url: comparisonUrl, hint: missingMorningstarId ? texts.comparisonMissingMorningstar : texts.compareHint },
-                { label: texts.compareFinect, url: finectComparisonUrl, hint: selectedFundKeys.length >= 2 && !finectComparisonUrl ? texts.comparisonMissingIsin : texts.compareFinectHint },
+                { label: texts.compareFinect, url: finectComparisonUrl, hint: selectedItems.length >= 2 && !finectComparisonUrl ? texts.comparisonMissingIsin : texts.compareFinectHint },
               ].map(({ label, url, hint }) => (
                 <a
                   key={label}
@@ -1230,7 +1240,7 @@ function CombinedTable({
                 >
                   {label}
                   <span className="text-xs tabular-nums" aria-live="polite" aria-atomic="true">
-                    {selectedFundKeys.length}/{MAX_COMPARISON_FUNDS}
+                    {selectedItems.length}/{MAX_COMPARISON_FUNDS}
                   </span>
                 </a>
               ))}
@@ -1420,8 +1430,9 @@ function CombinedTable({
                     const categoryValue = formatValue(row.category, lang);
                     const rowKey = row.morningstarId || row.isin || row.name;
                     const comparisonId = getFundComparisonKey(row);
-                    const comparisonSelected = selectedFundKeys.includes(comparisonId);
-                    const comparisonDisabled = !comparisonId || (comparisonLimitReached && !comparisonSelected);
+                    const comparisonSelected = selectedItems.some((item) => item.section === section.key && item.key === comparisonId);
+                    const comparisonTypeLocked = selectedItems.length > 0 && comparisonSection !== section.key;
+                    const comparisonDisabled = !comparisonId || comparisonTypeLocked || (comparisonLimitReached && !comparisonSelected);
                     const badges = getCategoryBadges(
                       categoryValue,
                       lang,
@@ -1488,21 +1499,19 @@ function CombinedTable({
                                   </span>
                                 </span>
                               ) : null}
-                              {section.key === "funds" ? (
-                                <label
-                                  className={`ml-auto inline-flex shrink-0 items-center rounded-md p-1 ${comparisonDisabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
-                                  title={!comparisonId ? texts.comparisonUnavailable : comparisonDisabled ? texts.comparisonLimit : texts.selectForComparison}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={comparisonSelected}
-                                    disabled={comparisonDisabled}
-                                    onChange={() => toggleFundComparison(comparisonId)}
-                                    aria-label={`${texts.selectForComparison}: ${row.name}`}
-                                    className="h-3.5 w-3.5 cursor-inherit rounded border-slate-300 accent-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2"
-                                  />
-                                </label>
-                              ) : null}
+                              <label
+                                className={`ml-auto inline-flex shrink-0 items-center rounded-md p-1 ${comparisonDisabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
+                                title={!comparisonId ? texts.comparisonUnavailable : comparisonTypeLocked ? texts.comparisonTypeLocked : comparisonDisabled ? texts.comparisonLimit : texts.selectForComparison}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={comparisonSelected}
+                                  disabled={comparisonDisabled}
+                                  onChange={() => toggleComparison(section.key, comparisonId)}
+                                  aria-label={`${texts.selectForComparison}: ${row.name}`}
+                                  className="h-3.5 w-3.5 cursor-inherit rounded border-slate-300 accent-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2"
+                                />
+                              </label>
                             </div>
                             {(badges.length > 0 || stars) && (
                               <div className="flex w-full items-center gap-1">

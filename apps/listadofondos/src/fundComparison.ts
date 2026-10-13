@@ -9,11 +9,12 @@ export function getFinectProductId(isin?: string) {
   return id === "-" ? "" : id;
 }
 
-export function getFinectCompareUrl(isins: string[]) {
+export function getFinectCompareUrl(isins: string[], section: "funds" | "plans" = "funds") {
   if (isins.length < 2 || isins.length > MAX_COMPARISON_FUNDS) return null;
   const productIds = isins.map(getFinectProductId);
   if (productIds.some((id) => !id) || new Set(productIds).size !== productIds.length) return null;
-  return `https://www.finect.com/fondos-inversion/comparador?products=${productIds.map(encodeURIComponent).join(",")}`;
+  const path = section === "plans" ? "planes-pensiones" : "fondos-inversion";
+  return `https://www.finect.com/${path}/comparador?products=${productIds.map(encodeURIComponent).join(",")}`;
 }
 
 export function getMorningstarCompareUrl(ids: string[], lang: "es" | "en") {
