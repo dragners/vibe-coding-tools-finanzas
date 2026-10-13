@@ -66,11 +66,16 @@ funds:
   category: Global Equity Income
   morningstarId: F00000W42B
   comment: Empresas de Dividendos - Tambien existe en distribución 
+- name: Fidelity Global Technology Acc
+  isin: LU1213836080
+  category: Sector Equity Technology
+  morningstarId: 0P00015OFP
+  comment: 'RV tecnológica global. Busca crecimiento a largo plazo mediante empresas tecnológicas.'
 - name: Heptagon Kopernik Glb AllCp
   isin: IE00BH6XSF26
   category: Global Flex-Cap Equity
   morningstarId: F00000YZS6
-  comment: Gestor David B. Iben
+  comment: RV global value y contrarian. Busca compañías infravaloradas y mercados poco populares. Gestor David B. Iben
 - name: GQG Partners Global Equity A
   isin: IE00BH481053
   category: Global Large-Cap Growth Equity
@@ -133,6 +138,31 @@ funds:
   category: Sector Equity Ecology (ESG)
   morningstarId: F000014SSQ
   comment: ESG - Equipo de gestores
+- name: Ranmore Global Equity 
+  isin: IE00B6ZCS539
+  category: Global Flex-Cap Equity
+  morningstarId: 0P000136HE 
+  comment: 'RV global value y contrarian. Busca oportunidades fuera de las grandes compañías dominantes de los índices.'
+- name: Dodge & Cox Worldwide Global Stock Acc
+  isin: IE00B55JMJ98
+  category: Global Large-Cap Value Equity
+  morningstarId: F00000JNOU
+  comment: 'RV global value. Invierte en compañías infravaloradas con horizonte largo.'
+- name: R-co Valor C 
+  isin: FR0011253624
+  category: EUR Flexible Allocation - Global
+  morningstarId: F00000X3BN
+  comment: 'Fondo mixto global flexible con elevada exposición potencial a RV. Busca aprovechar oportunidades de inversión mediante asignación activa entre mercados.'
+- name: Robeco QI Emerging Conservative Equit
+  isin: LU0582533245
+  category: Global Emerging Markets Equity
+  morningstarId: 0P0000SIG2
+  comment: 'RV emergente de baja volatilidad. Estrategia cuantitativa que selecciona compañías con perfil defensivo.'
+- name: Allianz Oriental Income AT
+  isin: LU0348784041
+  category: Asia-Pacific Equity
+  morningstarId: F000005JON
+  comment: 'Renta variable Asia-Pacífico con enfoque en ingresos y crecimiento. Luis lo utiliza como satélite geográfico para diversificar una cartera global y aumentar exposición a Asia.'
 - name: Impassive Wealth FI
   isin: ES0147897005
   category: Global Flexible Allocation
@@ -198,23 +228,62 @@ funds:
   isin: LU1694212348
   category: EUR Diversified Bond - Short Term
   morningstarId: F00000ZPRU
-  comment: 'Fundamentalmente bonos garantizados, con mucha exposición indirecta a hipotecas.'
+  comment: 'Bonos garantizados europeos, principalmente respaldados por hipotecas. Busca rentabilidad estable con duración corta y elevada calidad crediticia.'
 - name: Neuberger Short Euro Bond (Acc)
   isin: IE00BNG2T811
   category: EUR Diversified Bond - Short Term
   morningstarId: F000017L4O
-  comment: 'RF EUR corta duración'
+  comment: 'Renta fija europea de corta duración. Busca superar al monetario asumiendo un riesgo moderado de crédito y tipos.'
 - name: B&H Deuda FI
   isin: ES0112618006
   category: EUR Flexible Bond
   morningstarId: F000014T7Y
-  comment: 'RF defensiva tradicional'
+  comment: 'Renta fija corporativa conservadora. Busca obtener rentabilidad del crédito controlando el riesgo'
 - name: B&H Renta Fija FI
   isin: ES0184097014
   category: EUR Flexible Bond
   morningstarId: F00000ZL6G
-  comment: 'RF defensiva tradicional - Corporativa'
-
+  comment: 'RF corporativa flexible con mayor riesgo de crédito que B&H Deuda. Busca aumentar la rentabilidad de la RF'
+- name: Dunas Valor Prudente 
+  isin: ES0175437005
+  category: EUR Multistrategy
+  morningstarId: F00000ZN9Q
+  comment: 'Retorno absoluto defensivo. Estabilizador de cartera para buscar algo más que un monetario con baja volatilidad.'
+- name: Groupama Alpha Fixed Income RC
+  isin: LU1622557624
+  category: EUR Flexible Bond
+  morningstarId: F000010TQK
+  comment: 'Retorno absoluto de renta fija muy defensivo. Busca superar ligeramente al monetario con volatilidad extremadamente baja.'
+- name: BrightGate Global Income A
+  isin: LU0942882589
+  category: Global Flexible Bond - EUR Hedged
+  morningstarId: F00000QTPH
+  comment: 'Crédito global flexible. Busca rentabilidad superior a la RF de corto plazo mediante bonos corporativos y gubernamentales.'
+- name: M&G Total Return Credit P Acc
+  isin: LU2482630675
+  category: Global Flexible Bond - EUR Hedged
+  morningstarId: F00001DZCX
+  comment: 'Crédito global flexible. Busca rentabilidad adicional mediante selección activa de bonos corporativos, titulizaciones y otros instrumentos de crédito.'
+- name: Mandarine Credit Opportunities C
+  isin: FR0000971913
+  category: EUR Flexible Bond
+  morningstarId: ''
+  comment: 'Renta fija corporativa flexible. Busca oportunidades en crédito mediante gestión activa.'
+- name: Storm Bond RC
+  isin: LU0840158819
+  category: Other Bond
+  morningstarId: F00000OS8X
+  comment: 'Crédito nórdico con exposición a high yield y emisiones sin rating. Busca mayor rentabilidad mediante bonos corporativos nórdicos.'
+- name: DWS Floating Rate Notes LC
+  isin: LU0034353002
+  category: EUR Ultra Short-Term Bond
+  morningstarId: F0GBR04NQN
+  comment: 'Renta fija ultracorta a tipo variable. Muy baja sensibilidad a movimientos de tipos. Casi un Monetario'
+- name: Carmignac Sécurité AW EUR Acc
+  isin: FR0010149120
+  category: EUR Diversified Bond - Short Term
+  morningstarId: F0GBR04F94
+  comment: 'Renta fija europea defensiva con gestión flexible de duración y crédito. Busca preservar capital y obtener rentabilidad moderada.'
   
 plans:
 - name: Myinvestor Indexado Global PP
