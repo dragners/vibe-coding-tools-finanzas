@@ -18,3 +18,11 @@ describe("API payload validation", () => {
     expect(() => validatePayload({ ...MOCK_PAYLOAD, ...change })).toThrow();
   });
 });
+
+it("accepts older responses without Sortino and validates new Sortino values", () => {
+  const { sortino, ...olderFund } = MOCK_PAYLOAD.funds[0];
+  expect(validatePayload({ ...MOCK_PAYLOAD, funds: [olderFund] }).funds[0].sortino).toEqual({});
+  const fund = { ...olderFund, sortino: { '1Y': 0, '3Y': '-1,4', '5Y': null } };
+  expect(validatePayload({ ...MOCK_PAYLOAD, funds: [fund] }).funds[0].sortino).toEqual(fund.sortino);
+  expect(() => validatePayload({ ...MOCK_PAYLOAD, funds: [{ ...fund, sortino: [] }] })).toThrow('Invalid sortino metrics');
+});

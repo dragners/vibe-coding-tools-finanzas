@@ -75,3 +75,18 @@ test("unpublished placeholders differ from malformed or absent metric sections",
     assert.equal(parseTerResult(html).status, "error");
   }
 });
+
+test("Sortino follows its period headings and never borrows Sharpe or volatility", () => {
+  assert.deepEqual(parseRatioResult(ratiosHtml, ['sortino']), { values: { '3Y': '1,4', '5Y': '1,8' }, status: 'available' });
+  const withoutSortino = ratiosHtml.replace(/<tr><td>Ratio de Sortino<\/td>.*?<\/tr>/, '');
+  assert.deepEqual(parseRatioResult(withoutSortino, ['sortino']), { values: {}, status: 'error' });
+  const html = '<table><tr><th>Medida</th><th>5 años</th><th>1 año</th><th>3 años</th></tr><tr><td>Ratio de Sortino</td><td>-</td><td>0</td><td>-1,4</td></tr></table>';
+  assert.deepEqual(parseRatioResult(html, ['sortino']), { values: { '1Y': '0', '3Y': '-1,4' }, status: 'available' });
+  assert.deepEqual(parseRatioResult(html.replace('<td>0</td>', '<td>-</td>').replace('-1,4', '-'), ['sortino']), { values: {}, status: 'unavailable' });
+});
+
+test("text fallback extracts Sortino independently from the other risk measures", () => {
+  const html = '<h2>Análisis de Rentabilidad/Riesgo</h2><p>Volatilidad 12,2 13,4 15,3</p><p>Ratio de Sharpe 0,5 0,8 1,1</p><p>Ratio de Sortino 0 1,4 -1,8</p>';
+  assert.deepEqual(parseRatioResult(html, ['sortino']), { values: { '1Y': '0', '3Y': '1,4', '5Y': '-1,8' }, status: 'available' });
+  assert.equal(parseRatioResult(html.replace(/<p>Ratio de Sortino.*?<\/p>/, ''), ['sortino']).status, 'error');
+});

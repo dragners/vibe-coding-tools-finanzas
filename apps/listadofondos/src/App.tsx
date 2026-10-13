@@ -81,6 +81,7 @@ export type FundRow = {
   inPortfolio?: boolean;
   performance: MetricRecord<PerformanceKey>;
   sharpe: MetricRecord<RatioPeriod>;
+  sortino: MetricRecord<RatioPeriod>;
   volatility: MetricRecord<RatioPeriod>;
   ter: MetricValue;
   isStale?: boolean;
@@ -109,6 +110,7 @@ type SortKey =
   | "ter"
   | `performance:${PerformanceKey}`
   | `sharpe:${RatioPeriod}`
+  | `sortino:${RatioPeriod}`
   | `volatility:${RatioPeriod}`;
 
 type SortConfig = { key: SortKey; order: SortOrder };
@@ -131,6 +133,9 @@ const TEXTS = {
     sharpe: "Ratio Sharpe",
     sharpeInfo:
       "Indica cuánta rentabilidad adicional sobre una referencia sin riesgo ha obtenido el fondo por cada unidad de volatilidad. Entre valores positivos, uno mayor indica una mejor relación histórica entre rentabilidad y riesgo. Un valor negativo significa que no superó esa referencia, aunque no necesariamente perdió dinero. Compáralo para el mismo periodo y moneda: describe el pasado, no garantiza resultados futuros.",
+    sortino: "Ratio Sortino",
+    sortinoInfo:
+      "Relaciona la rentabilidad adicional sobre una referencia sin riesgo con el riesgo de quedar por debajo de ella. A diferencia de Sharpe, solo penaliza las desviaciones a la baja. Entre valores positivos, uno mayor indica más rentabilidad por unidad de ese riesgo. Un valor negativo significa que no se superó la referencia, aunque no necesariamente se perdió dinero. Compáralo en el mismo periodo, moneda y referencia; describe el pasado y no garantiza resultados futuros.",
     volatility: "Volatilidad",
     volatilityInfo:
       "Indica cuánto fluctúa el valor del fondo en el tiempo; un valor menor implica menos oscilaciones.",
@@ -175,7 +180,7 @@ const TEXTS = {
   en: {
     title: "Fund and Pension Plan Comparison",
     subtitle:
-      "Review performance, Sharpe ratios, volatility and TER for each fund or pension plan.",
+      "Review performance, Sharpe and Sortino ratios, volatility and TER for each fund or pension plan.",
     refresh: "Refresh data",
     refreshing: "Refreshing...",
     lastUpdated: "Last updated",
@@ -189,6 +194,9 @@ const TEXTS = {
     sharpe: "Sharpe ratio",
     sharpeInfo:
       "Shows how much excess return over a risk-free reference the fund earned per unit of volatility. Among positive values, a higher ratio indicates better historical risk-adjusted performance. A negative ratio means the fund underperformed that reference, even if it did not lose money. Compare the same period and currency: this describes past performance and does not guarantee future results.",
+    sortino: "Sortino ratio",
+    sortinoInfo:
+      "Relates excess return over a risk-free reference to the risk of falling below it. Unlike Sharpe, it only penalizes downside deviations. Among positive values, a higher ratio indicates more return per unit of that risk. A negative value means the reference was not beaten, even if no money was lost. Compare the same period, currency and reference; it describes past performance and does not guarantee future results.",
     volatility: "Volatility",
     volatilityInfo:
       "Shows how much the fund value fluctuates over time; lower values mean less variability.",
@@ -557,7 +565,7 @@ type ColumnStats = {
   minNegative: number | null;
 };
 
-type MetricAccessor = "performance" | "sharpe" | "volatility";
+type MetricAccessor = "performance" | "sharpe" | "sortino" | "volatility";
 
 type ColumnStatsMap<T extends string> = Record<T, ColumnStats>;
 
@@ -636,7 +644,7 @@ function getSearchIndex(row: FundRow): string {
     tokens.push(...getCategoryBadges(formatValue(row.category, lang), lang, row.indexed).map((badge) => badge.text));
   }
 
-  const metricGroups = [row.performance ?? {}, row.sharpe ?? {}, row.volatility ?? {}];
+  const metricGroups = [row.performance ?? {}, row.sharpe ?? {}, row.sortino ?? {}, row.volatility ?? {}];
   for (const group of metricGroups) {
     for (const value of Object.values(group)) {
       collectSearchTokens(value, tokens);
@@ -772,6 +780,7 @@ function getMetricBackground(
     case "performance":
       return getPerformanceBackground(value, stats);
     case "sharpe":
+    case "sortino":
       return getSharpeBackground(value, stats);
     case "volatility":
       return getVolatilityBackground(value, stats);
@@ -833,7 +842,7 @@ function getSortValue(row: FundRow, key: SortKey): SortValue {
     return { type: "number", value: getMetricNumber(row.ter) };
   }
 
-  const [metric, label] = key.split(":") as ["performance" | "sharpe" | "volatility", string];
+  const [metric, label] = key.split(":") as ["performance" | "sharpe" | "sortino" | "volatility", string];
   if (metric === "performance") {
     return {
       type: "number",
@@ -844,6 +853,12 @@ function getSortValue(row: FundRow, key: SortKey): SortValue {
     return {
       type: "number",
       value: getMetricNumber((row.sharpe ?? {})[label as RatioPeriod]),
+    };
+  }
+  if (metric === "sortino") {
+    return {
+      type: "number",
+      value: getMetricNumber((row.sortino ?? {})[label as RatioPeriod]),
     };
   }
   if (metric === "volatility") {
@@ -1196,6 +1211,10 @@ function CombinedTable({
     () => collectColumnStats([filteredFunds, filteredPlans], "sharpe", RATIO_LABELS),
     [filteredFunds, filteredPlans],
   );
+  const sortinoStats = useMemo(
+    () => collectColumnStats([filteredFunds, filteredPlans], "sortino", RATIO_LABELS),
+    [filteredFunds, filteredPlans],
+  );
   const volatilityStats = useMemo(
     () => collectColumnStats([filteredFunds, filteredPlans], "volatility", RATIO_LABELS),
     [filteredFunds, filteredPlans],
@@ -1224,7 +1243,7 @@ function CombinedTable({
     [sections],
   );
 
-  const totalColumns = 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
+  const totalColumns = 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 3 + 2;
   const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
 
   const handleToggleTooltip = useCallback((id: string) => {
@@ -1401,6 +1420,15 @@ function CombinedTable({
                   className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
+                    <span>{texts.sortino}</span>
+                    <InfoTip content={texts.sortinoInfo} label={texts.sortino} />
+                  </div>
+                </th>
+                <th
+                  colSpan={RATIO_LABELS.length}
+                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                >
+                  <div className="flex items-center justify-center gap-1">
                     <span>{texts.volatility}</span>
                     <InfoTip content={texts.volatilityInfo} label={texts.volatility} />
                   </div>
@@ -1456,6 +1484,30 @@ function CombinedTable({
                         }
                         onChange={(order) =>
                           handleSortChange(`sharpe:${label}` as SortKey, order)
+                        }
+                      />
+                    </div>
+                  </th>
+                ))}
+                {RATIO_LABELS.map((label, index) => (
+                  <th
+                    key={`sortino-${label}`}
+                    className={`px-1 pt-0 pb-1 bg-white/90 backdrop-blur text-center ${
+                      index === 0 ? "border-l border-gray-400" : ""
+                    } ${METRIC_COLUMN_WIDTH_CLASS}`}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>{displayMetricLabel(label)}</span>
+                      <SortControl
+                        lang={lang}
+                        label={`${texts.sortino} ${displayMetricLabel(label)}`}
+                        activeOrder={
+                          sortConfig?.key === `sortino:${label}`
+                            ? sortConfig.order
+                            : null
+                        }
+                        onChange={(order) =>
+                          handleSortChange(`sortino:${label}` as SortKey, order)
                         }
                       />
                     </div>
@@ -1648,6 +1700,14 @@ function CombinedTable({
                           "sharpe",
                           sharpeStats,
                           { metric: "sharpe", addLeftBoundary: true },
+                          lang,
+                        )}
+                        {renderMetricCells(
+                          RATIO_LABELS,
+                          row.sortino,
+                          "sortino",
+                          sortinoStats,
+                          { metric: "sortino", addLeftBoundary: true },
                           lang,
                         )}
                         {renderMetricCells(
