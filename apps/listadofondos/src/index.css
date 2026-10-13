@@ -19,8 +19,8 @@ thead .fund-name-column { z-index: 40; }
   .fund-name-column a { overflow-wrap: anywhere; }
 }
 
-.metric-group-start { border-left: 2px solid #64748b; }
-.metric-group-end { border-right: 2px solid #64748b; }
+.metric-group-start { border-left: 2px solid #94a3b8; }
+.metric-group-end { border-right: 2px solid #94a3b8; }
 html[data-theme="dark"] .metric-group-start,
 html[data-theme="dark"] .metric-group-end { border-color: #94a3b8; }
 
