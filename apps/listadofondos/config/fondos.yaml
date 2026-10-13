@@ -138,6 +138,11 @@ funds:
   category: Global Flexible Allocation
   morningstarId: F00001155A
   comment: Cartera permanente + BTC, parecido a mi cartera de inversión. Gestor Juan Manuel Rodríguez
+- name: iMGP DBi Managed Futures Fund  
+  isin: LU2951555403
+  category: Global Systematic Trend
+  morningstarId: 0P0001UBZT
+  comment: 'Fondo que opera futuros siguiendo tendencias y suele tener correlación baja o negativa con la renta variable'
 - name: Indexa RV internacional
   isin: ES0148019005
   category: Global Large-Cap Blend Equity
@@ -209,11 +214,7 @@ funds:
   category: EUR Flexible Bond
   morningstarId: F00000ZL6G
   comment: 'RF defensiva tradicional - Corporativa'
-- name: iMGP DBi Managed Futures Fund  
-  isin: LU2951555403
-  category: Global Systematic Trend
-  morningstarId: 0P0001UBZT
-  comment: 'Fondo que opera futuros siguiendo tendencias y suele tener correlación baja o negativa con la renta variable'
+
   
 plans:
 - name: Myinvestor Indexado Global PP
