@@ -212,3 +212,63 @@ describe("data loading and mobile controls", () => {
     expect(screen.getByText("Datos pendientes de actualizar")).not.toBeNull();
   });
 });
+
+
+describe("category labels", () => {
+  const categorized = {
+    funds: [
+      { ...funds[0], category: "Equity Global", indexed: true },
+      { ...funds[1], category: "Bond Global", indexed: false },
+      { ...funds[2], category: "Equity Europe", indexed: false },
+    ],
+    plans: [
+      { ...plans[0], category: "Equity Global", indexed: false },
+      { ...plans[1], category: "Bond Europe", indexed: true, comment: "Acciones Global Activa" },
+    ],
+  };
+
+  it.each([
+    ["Acciones", "Fondo 1", ["Fondo 1", "Fondo 3", "Plan 1"]],
+    ["Bonos", "Fondo 2", ["Fondo 2", "Plan 2"]],
+    ["Global", "Fondo 1", ["Fondo 1", "Fondo 2", "Plan 1"]],
+    ["Europe", "Fondo 3", ["Fondo 3", "Plan 2"]],
+    ["Index", "Fondo 1", ["Fondo 1", "Plan 2"]],
+    ["Activa", "Fondo 2", ["Fondo 2", "Fondo 3", "Plan 1"]],
+  ])("clicking %s includes every matching fund and plan and clearing restores the list", async (label, name, expected) => {
+    const user = await load(categorized);
+    await user.click(screen.getByRole("button", { name: `Filtrar por ${label}: ${name}`, exact: true }));
+    expect(fundNames()).toEqual(expected);
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe(label);
+    await user.clear(screen.getByRole("textbox"));
+    expect(fundNames()).toHaveLength(5);
+    await user.type(screen.getByRole("textbox"), "Fondo 3");
+    expect(fundNames()).toEqual(["Fondo 3"]);
+  });
+
+  it("renders the hover description outside the scrollable table and closes it on scroll or Escape", async () => {
+    const user = await load(categorized);
+    const badge = screen.getByRole("button", { name: "Filtrar por Acciones: Fondo 1", exact: true });
+    await user.hover(badge);
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip.textContent).toBe("Equity Global");
+    expect(tooltip.parentElement).toBe(document.body);
+    expect(tooltip.style.position).toBe("fixed");
+    expect(badge.getAttribute("aria-describedby")).toBe(tooltip.id);
+    act(() => document.querySelector('.fund-table-scroll')!.dispatchEvent(new Event('scroll')));
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    await user.unhover(badge);
+    await user.hover(badge);
+    await user.click(badge);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("filters English labels and keeps the same category when switching languages", async () => {
+    const user = await load(categorized);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Filter by Equity: Fondo 1", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 3", "Plan 1"]);
+    await user.click(screen.getByRole("button", { name: "ES", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 3", "Plan 1"]);
+  });
+});
