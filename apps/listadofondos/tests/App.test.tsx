@@ -257,8 +257,8 @@ describe("category labels", () => {
     act(() => document.querySelector('.fund-table-scroll')!.dispatchEvent(new Event('scroll')));
     expect(screen.queryByRole("tooltip")).toBeNull();
     await user.unhover(badge);
-    await user.hover(badge);
-    await user.click(badge);
+    act(() => badge.focus());
+    expect(screen.getByRole("tooltip").textContent).toBe("Equity Global");
     await user.keyboard('{Escape}');
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
