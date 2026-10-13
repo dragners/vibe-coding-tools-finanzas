@@ -10,6 +10,7 @@ import React, {
 import { createPortal } from "react-dom";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
+import { getFinectCompareUrl, getFundComparisonKey, getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./fundComparison";
 
 type Lang = "es" | "en";
 type ThemeMode = "light" | "dark";
@@ -142,6 +143,17 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Buscar...",
     searchAriaLabel: "Buscar en la tabla",
+    compare: "Comparar en Morningstar",
+    compareFinect: "Comparar en Finect",
+    compareFinectHint: "Selecciona entre 2 y 5 fondos o planes para comparar en Finect",
+    comparisonMissingMorningstar: "Todos los seleccionados deben tener identificador de Morningstar",
+    comparisonMissingIsin: "Todos los seleccionados deben tener ISIN o código de plan para comparar en Finect",
+    compareHint: "Selecciona entre 2 y 5 fondos o planes para comparar en Morningstar",
+    selectForComparison: "Seleccionar para comparar",
+    comparisonLimit: "Máximo de 5 seleccionados. Desmarca uno para elegir otro.",
+    comparisonUnavailable: "Este producto no tiene identificadores para comparar",
+    comparisonTypeLocked: "Compara fondos o planes por separado. Limpia la selección para cambiar de tipo.",
+    clearComparison: "Limpiar selección",
     dataNote: "",
     langES: "ES",
     langEN: "EN",
@@ -181,6 +193,17 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Search...",
     searchAriaLabel: "Search within the table",
+    compare: "Compare on Morningstar",
+    compareFinect: "Compare on Finect",
+    compareFinectHint: "Select between 2 and 5 funds or pension plans to compare on Finect",
+    comparisonMissingMorningstar: "All selected products must have a Morningstar identifier",
+    comparisonMissingIsin: "All selected products must have an ISIN or pension plan code to compare on Finect",
+    compareHint: "Select between 2 and 5 funds or pension plans to compare on Morningstar",
+    selectForComparison: "Select for comparison",
+    comparisonLimit: "Maximum of 5 selected. Deselect one to choose another.",
+    comparisonUnavailable: "This product has no identifiers for comparison",
+    comparisonTypeLocked: "Compare funds or pension plans separately. Clear the selection to switch types.",
+    clearComparison: "Clear selection",
     dataNote: "",
     langES: "ES",
     langEN: "EN",
@@ -1033,6 +1056,39 @@ function CombinedTable({
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [selectedItems, setSelectedItems] = useState<{ section: TableSection; key: string }[]>([]);
+  const comparisonSection = selectedItems[0]?.section ?? "funds";
+  const selectedProducts = selectedItems
+    .map(({ section, key }) => (section === "plans" ? plans : funds)
+      .find((product) => getFundComparisonKey(product) === key))
+    .filter((fund): fund is FundRow => Boolean(fund));
+  const missingMorningstarId = selectedProducts.some((product) => !product.morningstarId?.trim());
+  const comparisonUrl = missingMorningstarId
+    ? null
+    : getMorningstarCompareUrl(selectedProducts.map((product) => product.morningstarId), lang);
+  const finectComparisonUrl = getFinectCompareUrl(selectedProducts.map((product) => product.isin), comparisonSection);
+  const comparisonLimitReached = selectedItems.length >= MAX_COMPARISON_FUNDS;
+
+  useEffect(() => {
+    const availableIds = {
+      funds: new Set(funds.map(getFundComparisonKey).filter(Boolean)),
+      plans: new Set(plans.map(getFundComparisonKey).filter(Boolean)),
+    };
+    setSelectedItems((previous) => {
+      const next = previous.filter(({ section, key }) => availableIds[section].has(key));
+      return next.length === previous.length ? previous : next;
+    });
+  }, [funds, plans]);
+
+  const toggleComparison = (section: TableSection, key: string) => {
+    setSelectedItems((previous) => {
+      if (previous.some((item) => item.section === section && item.key === key)) {
+        return previous.filter((item) => item.section !== section || item.key !== key);
+      }
+      if (previous.length >= MAX_COMPARISON_FUNDS || (previous.length > 0 && previous[0].section !== section)) return previous;
+      return [...previous, { section, key }];
+    });
+  };
   const normalizedQuery = useMemo(
     () => searchQuery.trim().toLowerCase(),
     [searchQuery],
@@ -1128,7 +1184,7 @@ function CombinedTable({
     <section className="mt-6 sm:mt-8">
       <div className="rounded-3xl border border-slate-200/70 bg-white/85 p-4 sm:p-6 lg:p-8 shadow-xl backdrop-blur">
         {showSearchInput ? (
-          <div className="mb-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
               <input
                 type="text"
@@ -1153,6 +1209,41 @@ function CombinedTable({
                   d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
                 />
               </svg>
+            </div>
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+              {selectedItems.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedItems([])}
+                  className="rounded-lg text-xs text-slate-500 transition hover:text-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                >
+                  {texts.clearComparison}
+                </button>
+              ) : null}
+              {[
+                { label: texts.compare, url: comparisonUrl, hint: missingMorningstarId ? texts.comparisonMissingMorningstar : texts.compareHint },
+                { label: texts.compareFinect, url: finectComparisonUrl, hint: selectedItems.length >= 2 && !finectComparisonUrl ? texts.comparisonMissingIsin : texts.compareFinectHint },
+              ].map(({ label, url, hint }) => (
+                <a
+                  key={label}
+                  href={url ?? undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-disabled={!url}
+                  tabIndex={url ? 0 : -1}
+                  title={hint}
+                  className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
+                    url
+                      ? "border-cyan-200 bg-cyan-50 text-cyan-600 hover:border-cyan-400 hover:text-cyan-700"
+                      : "cursor-not-allowed border-slate-200 bg-white/90 text-slate-400"
+                  }`}
+                >
+                  {label}
+                  <span className="text-xs tabular-nums" aria-live="polite" aria-atomic="true">
+                    {selectedItems.length}/{MAX_COMPARISON_FUNDS}
+                  </span>
+                </a>
+              ))}
             </div>
           </div>
         ) : null}
@@ -1337,7 +1428,11 @@ function CombinedTable({
                   {section.rows.map((row) => {
                     const stars = renderStars(row.morningstarRating);
                     const categoryValue = formatValue(row.category, lang);
-                    const rowKey = row.morningstarId || row.isin || row.name;
+                    const rowKey = getFundComparisonKey(row) || row.name;
+                    const comparisonId = getFundComparisonKey(row);
+                    const comparisonSelected = selectedItems.some((item) => item.section === section.key && item.key === comparisonId);
+                    const comparisonTypeLocked = selectedItems.length > 0 && comparisonSection !== section.key;
+                    const comparisonDisabled = !comparisonId || comparisonTypeLocked || (comparisonLimitReached && !comparisonSelected);
                     const badges = getCategoryBadges(
                       categoryValue,
                       lang,
@@ -1365,7 +1460,7 @@ function CombinedTable({
                           }`}
                         >
                           <div className="flex flex-col items-start gap-1">
-                            <div className="flex items-center gap-1">
+                            <div className="flex w-full items-center gap-1">
                               <a
                                 href={link}
                                 target="_blank"
@@ -1404,6 +1499,19 @@ function CombinedTable({
                                   </span>
                                 </span>
                               ) : null}
+                              <label
+                                className={`ml-auto inline-flex shrink-0 items-center rounded-md p-1 ${comparisonDisabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
+                                title={!comparisonId ? texts.comparisonUnavailable : comparisonTypeLocked ? texts.comparisonTypeLocked : comparisonDisabled ? texts.comparisonLimit : texts.selectForComparison}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={comparisonSelected}
+                                  disabled={comparisonDisabled}
+                                  onChange={() => toggleComparison(section.key, comparisonId)}
+                                  aria-label={`${texts.selectForComparison}: ${row.name}`}
+                                  className="h-3.5 w-3.5 cursor-inherit rounded border-slate-300 accent-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2"
+                                />
+                              </label>
                             </div>
                             {(badges.length > 0 || stars) && (
                               <div className="flex w-full items-center gap-1">
@@ -1503,7 +1611,7 @@ function CombinedTable({
                           lang,
                         )}
                         <td
-                          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-xs sm:text-[13px] leading-snug align-middle ${commentColumnWidthClass}`}
+                          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-[11px] sm:text-xs leading-snug align-middle ${commentColumnWidthClass}`}
                         >
                           {formatValue(row.comment, lang) || texts.commentPlaceholder}
                         </td>
