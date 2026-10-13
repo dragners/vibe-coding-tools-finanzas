@@ -10,7 +10,8 @@ import React, {
 import { createPortal } from "react-dom";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
-import { getFinectCompareUrl, getFundComparisonKey, getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./fundComparison";
+import { validatePayload } from "./payload";
+import { findDuplicateIdentifiers, getFinectCompareUrl, getFinectProductId, getFundComparisonKey, getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./fundComparison";
 
 type Lang = "es" | "en";
 type ThemeMode = "light" | "dark";
@@ -82,6 +83,8 @@ export type FundRow = {
   sharpe: MetricRecord<RatioPeriod>;
   volatility: MetricRecord<RatioPeriod>;
   ter: MetricValue;
+  isStale?: boolean;
+  dataUpdatedAt?: string | null;
 };
 
 export type ApiPayload = {
@@ -89,6 +92,7 @@ export type ApiPayload = {
   funds: FundRow[];
   plans: FundRow[];
   isUpdating?: boolean;
+  updateFailed?: boolean;
 };
 
 type ApiStatus = "idle" | "loading" | "ready" | "refreshing" | "error";
@@ -109,10 +113,6 @@ type SortKey =
 
 type SortConfig = { key: SortKey; order: SortOrder };
 
-function isPerformanceOrSharpeSortKey(key: SortKey) {
-  return key.startsWith("performance:") || key.startsWith("sharpe:");
-}
-
 const TEXTS = {
   es: {
     title: "Comparativa de Fondos y Planes de Pensiones",
@@ -120,7 +120,7 @@ const TEXTS = {
       "Estos son mis fondos favoritos y planes de pensiones, que sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
     refreshing: "Actualizando...",
-    lastUpdated: "Última actualización",
+    lastUpdated: "Última comprobación",
     name: "Nombre",
     isin: "ISIN",
     category: "Categoría",
@@ -130,7 +130,7 @@ const TEXTS = {
       "Las rentabilidades a 3Y, 5Y y 10Y están anualizadas.",
     sharpe: "Ratio Sharpe",
     sharpeInfo:
-      "Mide la rentabilidad obtenida por unidad de riesgo asumido; cuanto mayor, mejor.",
+      "Indica cuánta rentabilidad adicional sobre una referencia sin riesgo ha obtenido el fondo por cada unidad de volatilidad. Entre valores positivos, uno mayor indica una mejor relación histórica entre rentabilidad y riesgo. Un valor negativo significa que no superó esa referencia, aunque no necesariamente perdió dinero. Compáralo para el mismo periodo y moneda: describe el pasado, no garantiza resultados futuros.",
     volatility: "Volatilidad",
     volatilityInfo:
       "Indica cuánto fluctúa el valor del fondo en el tiempo; un valor menor implica menos oscilaciones.",
@@ -153,7 +153,15 @@ const TEXTS = {
     comparisonLimit: "Máximo de 5 seleccionados. Desmarca uno para elegir otro.",
     comparisonUnavailable: "Este producto no tiene identificadores para comparar",
     comparisonTypeLocked: "Compara fondos o planes por separado. Limpia la selección para cambiar de tipo.",
+    comparisonMissingMorningstarVisible: "Morningstar no está disponible: falta su identificador en algún producto seleccionado.",
+    comparisonMissingFinectVisible: "Finect no está disponible: falta el ISIN o código de plan en algún producto seleccionado.",
+    duplicateWarning: "Hay identificadores duplicados. Corrige el ISIN o MorningstarId de los siguientes fondos o planes:",
     clearComparison: "Limpiar selección",
+    staleData: "Algunos datos no se han podido actualizar. Conservamos las últimas cifras disponibles, si las hay; los productos afectados están marcados.",
+    staleProduct: "Datos pendientes de actualizar",
+    closeNotice: "Cerrar aviso",
+    retry: "Reintentar",
+    scrollHint: "Desliza la tabla para ver más columnas. El nombre del producto permanece visible.",
     dataNote: "",
     langES: "ES",
     langEN: "EN",
@@ -170,7 +178,7 @@ const TEXTS = {
       "Review performance, Sharpe ratios, volatility and TER for each fund or pension plan.",
     refresh: "Refresh data",
     refreshing: "Refreshing...",
-    lastUpdated: "Last update",
+    lastUpdated: "Last checked",
     name: "Name",
     isin: "ISIN",
     category: "Category",
@@ -180,7 +188,7 @@ const TEXTS = {
       "3Y, 5Y and 10Y returns are annualized.",
     sharpe: "Sharpe ratio",
     sharpeInfo:
-      "Measures the return earned per unit of risk taken; higher values are better.",
+      "Shows how much excess return over a risk-free reference the fund earned per unit of volatility. Among positive values, a higher ratio indicates better historical risk-adjusted performance. A negative ratio means the fund underperformed that reference, even if it did not lose money. Compare the same period and currency: this describes past performance and does not guarantee future results.",
     volatility: "Volatility",
     volatilityInfo:
       "Shows how much the fund value fluctuates over time; lower values mean less variability.",
@@ -203,7 +211,15 @@ const TEXTS = {
     comparisonLimit: "Maximum of 5 selected. Deselect one to choose another.",
     comparisonUnavailable: "This product has no identifiers for comparison",
     comparisonTypeLocked: "Compare funds or pension plans separately. Clear the selection to switch types.",
+    comparisonMissingMorningstarVisible: "Morningstar is unavailable: a selected product is missing its identifier.",
+    comparisonMissingFinectVisible: "Finect is unavailable: a selected product is missing its ISIN or pension plan code.",
+    duplicateWarning: "Duplicate identifiers found. Correct the ISIN or MorningstarId of these funds or pension plans:",
     clearComparison: "Clear selection",
+    staleData: "Some data could not be updated. We keep previous figures when available; affected products are marked.",
+    staleProduct: "Data awaiting an update",
+    closeNotice: "Dismiss notice",
+    retry: "Retry",
+    scrollHint: "Swipe the table to see more columns. Product names stay visible.",
     dataNote: "",
     langES: "ES",
     langEN: "EN",
@@ -339,7 +355,7 @@ function InfoTip({
         ref={buttonRef}
         type="button"
         aria-label={label}
-        aria-haspopup="dialog"
+        aria-describedby={open ? id : undefined}
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((prev) => !prev)}
@@ -361,7 +377,7 @@ function InfoTip({
                 left: popoverPosition?.left ?? -9999,
                 opacity: popoverPosition ? 1 : 0,
               }}
-              className="z-50 max-w-[260px] rounded-lg border bg-white p-2 text-xs text-gray-700 shadow-lg"
+              className="z-50 w-[320px] max-w-[calc(100vw-32px)] rounded-lg border bg-white p-3 text-xs leading-relaxed text-gray-700 shadow-lg"
             >
               {content}
             </div>,
@@ -616,6 +632,10 @@ function getSearchIndex(row: FundRow): string {
     tokens.push(row.indexed ? "index indexado indexed" : "active activa");
   }
 
+  for (const lang of ["es", "en"] as const) {
+    tokens.push(...getCategoryBadges(formatValue(row.category, lang), lang, row.indexed).map((badge) => badge.text));
+  }
+
   const metricGroups = [row.performance ?? {}, row.sharpe ?? {}, row.volatility ?? {}];
   for (const group of metricGroups) {
     for (const value of Object.values(group)) {
@@ -804,10 +824,10 @@ type SortValue =
 
 function getSortValue(row: FundRow, key: SortKey): SortValue {
   if (key === "name") {
-    return { type: "text", value: row.name ?? null };
+    return { type: "text", value: getFinectProductId(row.name) || null };
   }
   if (key === "isin") {
-    return { type: "text", value: row.isin ?? null };
+    return { type: "text", value: getFinectProductId(row.isin) || null };
   }
   if (key === "ter") {
     return { type: "number", value: getMetricNumber(row.ter) };
@@ -848,8 +868,6 @@ function sortRows(
   const sorted = [...rows];
   const locale = lang === "es" ? "es" : "en";
   const multiplier = sortConfig.order === "asc" ? 1 : -1;
-  const missingIsLowestInDesc =
-    sortConfig.order === "desc" && isPerformanceOrSharpeSortKey(sortConfig.key);
 
   sorted.sort((a, b) => {
     const valueA = getSortValue(a, sortConfig.key);
@@ -861,18 +879,9 @@ function sortRows(
     const isNullB = rawB === null || rawB === undefined || rawB === "";
 
     if (isNullA && isNullB) return 0;
-    if (isNullA) {
-      if (missingIsLowestInDesc && valueA.type === "number") {
-        return 1;
-      }
-      return 1 * multiplier;
-    }
-    if (isNullB) {
-      if (missingIsLowestInDesc && valueB.type === "number") {
-        return -1;
-      }
-      return -1 * multiplier;
-    }
+    // Missing values always follow available values, in either direction.
+    if (isNullA) return 1;
+    if (isNullB) return -1;
 
     if (valueA.type === "number" && valueB.type === "number") {
       const diff = (rawA as number) - (rawB as number);
@@ -920,12 +929,12 @@ function SortControl({
       : `Sort descending by ${label}`;
 
   return (
-    <span className="ml-1 flex flex-col items-center justify-center gap-0.5">
+    <span className="ml-1 flex flex-col items-center justify-center">
       <button
         type="button"
         aria-label={ascLabel}
         aria-pressed={ascActive}
-        className={`group inline-flex h-3 w-3 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
+        className={`group inline-flex h-6 w-7 sm:h-5 sm:w-6 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
           ascActive ? "text-cyan-600" : "text-gray-300 hover:text-gray-500"
         }`}
         onClick={() => onChange(ascActive ? null : "asc")}
@@ -947,7 +956,7 @@ function SortControl({
         type="button"
         aria-label={descLabel}
         aria-pressed={descActive}
-        className={`group inline-flex h-3 w-3 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
+        className={`group inline-flex h-6 w-7 sm:h-5 sm:w-6 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
           descActive ? "text-cyan-600" : "text-gray-300 hover:text-gray-500"
         }`}
         onClick={() => onChange(descActive ? null : "desc")}
@@ -1037,6 +1046,65 @@ function getCategoryBadges(category: string, lang: Lang, indexed?: boolean): Cat
 }
 
 
+function CategoryLabels({ badges, category, name, lang, onSelect }: {
+  badges: CategoryBadge[];
+  category: string;
+  name: string;
+  lang: Lang;
+  onSelect: (badge: CategoryBadge) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ top: -9999, left: -9999 });
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const tooltipId = useId();
+
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current || !tooltipRef.current) return;
+    const anchor = anchorRef.current.getBoundingClientRect();
+    const tooltip = tooltipRef.current.getBoundingClientRect();
+    const gap = 8;
+    const left = Math.max(gap, Math.min(anchor.left, window.innerWidth - tooltip.width - gap));
+    const top = anchor.bottom + tooltip.height + gap <= window.innerHeight
+      ? anchor.bottom + gap : Math.max(gap, anchor.top - tooltip.height - gap);
+    setPosition({ top, left });
+    const close = () => setOpen(false);
+    // Capture scrolling inside the table as well as scrolling the page.
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open, category]);
+
+  return (
+    <div ref={anchorRef} className="inline-flex flex-wrap sm:flex-nowrap items-center gap-1"
+      onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
+      onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
+      {badges.map((badge) => (
+        <button key={badge.variant} type="button"
+          className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${BADGE_STYLES[badge.variant]}`}
+          aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${badge.text}: ${name}`}
+          aria-describedby={open ? tooltipId : undefined}
+          onClick={() => { setOpen(false); onSelect(badge); }}>
+          {badge.text}
+        </button>
+      ))}
+      {open ? createPortal(
+        <div ref={tooltipRef} id={tooltipId} role="tooltip"
+          style={{ position: "fixed", ...position }}
+          className="pointer-events-none z-50 w-max max-w-[min(320px,calc(100vw-32px))] rounded-md bg-slate-900/95 px-2 py-1 text-xs font-semibold text-white shadow-lg break-words">
+          {category}
+        </div>, document.body,
+      ) : null}
+    </div>
+  );
+}
+
+
 function CombinedTable({
   funds,
   plans,
@@ -1055,6 +1123,7 @@ function CombinedTable({
   showSearchInput?: boolean;
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+  const [badgeFilter, setBadgeFilter] = useState<CategoryBadge | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedItems, setSelectedItems] = useState<{ section: TableSection; key: string }[]>([]);
   const comparisonSection = selectedItems[0]?.section ?? "funds";
@@ -1068,6 +1137,14 @@ function CombinedTable({
     : getMorningstarCompareUrl(selectedProducts.map((product) => product.morningstarId), lang);
   const finectComparisonUrl = getFinectCompareUrl(selectedProducts.map((product) => product.isin), comparisonSection);
   const comparisonLimitReached = selectedItems.length >= MAX_COMPARISON_FUNDS;
+  const comparisonHelpId = useId();
+  const comparisonMessages = [
+    selectedItems.length > 0 ? texts.comparisonTypeLocked : null,
+    comparisonLimitReached ? texts.comparisonLimit : null,
+    missingMorningstarId ? texts.comparisonMissingMorningstarVisible : null,
+    selectedProducts.some((product) => !getFinectProductId(product.isin))
+      ? texts.comparisonMissingFinectVisible : null,
+  ].filter((message): message is string => Boolean(message));
 
   useEffect(() => {
     const availableIds = {
@@ -1094,15 +1171,17 @@ function CombinedTable({
     [searchQuery],
   );
 
-  const filteredFunds = useMemo(() => {
-    if (!normalizedQuery) return funds;
-    return funds.filter((row) => rowMatchesQuery(row, normalizedQuery));
-  }, [funds, normalizedQuery]);
+  const matchesFilter = useCallback((row: FundRow) => {
+    if (badgeFilter && normalizedQuery === badgeFilter.text.toLowerCase()) {
+      return getCategoryBadges(formatValue(row.category, lang), lang, row.indexed)
+        .some((badge) => badge.variant === badgeFilter.variant);
+    }
+    return rowMatchesQuery(row, normalizedQuery);
+  }, [badgeFilter, normalizedQuery, lang]);
 
-  const filteredPlans = useMemo(() => {
-    if (!normalizedQuery) return plans;
-    return plans.filter((row) => rowMatchesQuery(row, normalizedQuery));
-  }, [plans, normalizedQuery]);
+  const filteredFunds = useMemo(() => funds.filter(matchesFilter), [funds, matchesFilter]);
+
+  const filteredPlans = useMemo(() => plans.filter(matchesFilter), [plans, matchesFilter]);
 
   const performanceStats = useMemo(
     () =>
@@ -1145,8 +1224,7 @@ function CombinedTable({
     [sections],
   );
 
-  const totalColumns =
-    2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
+  const totalColumns = 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
   const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
 
   const handleToggleTooltip = useCallback((id: string) => {
@@ -1175,6 +1253,7 @@ function CombinedTable({
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
+      setBadgeFilter(null);
       onSearchChange?.(event.target.value);
     },
     [onSearchChange],
@@ -1232,6 +1311,7 @@ function CombinedTable({
                   aria-disabled={!url}
                   tabIndex={url ? 0 : -1}
                   title={hint}
+                  aria-describedby={comparisonHelpId}
                   className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                     url
                       ? "border-cyan-200 bg-cyan-50 text-cyan-600 hover:border-cyan-400 hover:text-cyan-700"
@@ -1247,13 +1327,18 @@ function CombinedTable({
             </div>
           </div>
         ) : null}
-        <div className="overflow-x-auto pb-4">
+        <div id={comparisonHelpId} role="status" aria-live="polite" className={comparisonMessages.length ? "mb-4 space-y-1 text-xs text-slate-600" : "sr-only"}>
+          {comparisonMessages.map((message) => <p key={message}>{message}</p>)}
+        </div>
+        <p className="mb-2 text-xs text-slate-500 md:hidden">{texts.scrollHint}</p>
+        <div className="fund-table-scroll overflow-auto max-h-[75dvh] pb-4">
+
           <table className="w-full border-separate border-spacing-y-1 border-spacing-x-[1px] text-sm text-gray-800">
             <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
               <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 <th
                   rowSpan={2}
-                  className="px-3 py-2 max-w-[320px] bg-white/90 backdrop-blur text-center rounded-tl-2xl"
+                  className="fund-name-column px-3 py-2 max-w-[320px] bg-white/90 backdrop-blur text-center rounded-tl-2xl"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.name}</span>
@@ -1428,7 +1513,9 @@ function CombinedTable({
                   {section.rows.map((row) => {
                     const stars = renderStars(row.morningstarRating);
                     const categoryValue = formatValue(row.category, lang);
-                    const rowKey = getFundComparisonKey(row) || row.name;
+                    // Keep rows distinct even while duplicate configuration is awaiting correction.
+                    const sourceRows = section.key === "funds" ? funds : plans;
+                    const rowKey = `${getFundComparisonKey(row) || row.name}-${sourceRows.indexOf(row)}`;
                     const comparisonId = getFundComparisonKey(row);
                     const comparisonSelected = selectedItems.some((item) => item.section === section.key && item.key === comparisonId);
                     const comparisonTypeLocked = selectedItems.length > 0 && comparisonSection !== section.key;
@@ -1439,14 +1526,13 @@ function CombinedTable({
                       row.indexed,
                     );
                     const tooltipId = `${section.key}-${rowKey}`;
-                    const tooltipOpen = openTooltipId === tooltipId;
                     const heartTooltipId = `${tooltipId}-heart`;
                     const heartTooltipOpen = openTooltipId === heartTooltipId;
                     const categoryDisplay =
                       categoryValue !== "-" ? categoryValue : texts.noData;
                     const link =
                       getMorningstarUrl(row.morningstarId, lang) ??
-                      row.url ??
+                      (row.url || undefined) ??
                       undefined;
                     const tooltipLabel =
                       categoryDisplay && categoryDisplay !== texts.noData
@@ -1455,8 +1541,8 @@ function CombinedTable({
                     return (
                       <tr key={tooltipId} className="align-middle">
                         <td
-                          className={`relative px-3 py-2 bg-white/95 backdrop-blur max-w-[320px] overflow-visible align-top ${
-                            tooltipOpen ? "z-20" : ""
+                          className={`fund-name-column relative px-3 py-2 bg-white/95 backdrop-blur max-w-[320px] overflow-visible align-top ${
+                            heartTooltipOpen ? "z-20" : ""
                           }`}
                         >
                           <div className="flex flex-col items-start gap-1">
@@ -1509,10 +1595,15 @@ function CombinedTable({
                                   disabled={comparisonDisabled}
                                   onChange={() => toggleComparison(section.key, comparisonId)}
                                   aria-label={`${texts.selectForComparison}: ${row.name}`}
+                                  aria-describedby={comparisonHelpId}
                                   className="h-3.5 w-3.5 cursor-inherit rounded border-slate-300 accent-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2"
                                 />
                               </label>
                             </div>
+                            {row.isStale ? <p className="text-[11px] text-amber-700">{texts.staleProduct}</p> : null}
+                            {!comparisonId ? (
+                              <p className="text-[11px] text-slate-600">{texts.comparisonUnavailable}</p>
+                            ) : null}
                             {(badges.length > 0 || stars) && (
                               <div className="flex w-full items-center gap-1">
                                 {stars ? (
@@ -1524,52 +1615,9 @@ function CombinedTable({
                                   </span>
                                 ) : null}
                                 {badges.length > 0 ? (
-                                  <div
-                                    className={`relative group ${stars ? "ml-auto" : ""}`}
-                                    onMouseEnter={() => handleOpenTooltip(tooltipId)}
-                                    onMouseLeave={() => handleCloseTooltip(tooltipId)}
-                                  >
-                                    <button
-                                      type="button"
-                                      className="inline-flex flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
-                                      onClick={() => handleToggleTooltip(tooltipId)}
-                                      onBlur={() => handleCloseTooltip(tooltipId)}
-                                      onFocus={() => handleOpenTooltip(tooltipId)}
-                                      onKeyDown={(event) => {
-                                        if (event.key === "Escape") {
-                                          event.stopPropagation();
-                                          handleCloseTooltip(tooltipId);
-                                        }
-                                      }}
-                                      aria-haspopup="true"
-                                      aria-expanded={tooltipOpen}
-                                      aria-label={
-                                        categoryDisplay && categoryDisplay !== texts.noData
-                                          ? `${row.name}: ${categoryDisplay}`
-                                          : row.name
-                                      }
-                                      title={tooltipLabel}
-                                    >
-                                      {badges.map((badge) => (
-                                        <span
-                                          key={`${rowKey}-${badge.text}`}
-                                          className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border ${
-                                            BADGE_STYLES[badge.variant] ??
-                                            BADGE_STYLES.default
-                                          }`}
-                                        >
-                                          {badge.text}
-                                        </span>
-                                      ))}
-                                    </button>
-                                    <div
-                                      className={`pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-max max-w-xs -translate-x-1/2 rounded-md bg-slate-900/95 px-2 py-1 text-xs font-semibold text-white shadow-lg transition-opacity duration-150 ${
-                                        tooltipOpen ? "opacity-100" : "opacity-0"
-                                      }`}
-                                      role="tooltip"
-                                    >
-                                      <span className="block whitespace-nowrap">{tooltipLabel}</span>
-                                    </div>
+                                  <div className={stars ? "ml-auto" : ""}>
+                                    <CategoryLabels badges={badges} category={tooltipLabel} name={row.name} lang={lang}
+                                      onSelect={(badge) => { setBadgeFilter(badge); onSearchChange?.(badge.text); }} />
                                   </div>
                                 ) : null}
                               </div>
@@ -1678,11 +1726,16 @@ export default function App() {
   const texts = useTexts(lang);
   const [status, setStatus] = useState<ApiStatus>("idle");
   const [data, setData] = useState<ApiPayload | null>(null);
+  const [staleNoticeDismissed, setStaleNoticeDismissed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usingMockData, setUsingMockData] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [shouldAutoRefresh, setShouldAutoRefresh] = useState<boolean | null>(
     null,
+  );
+  const duplicateIdentifiers = useMemo(
+    () => findDuplicateIdentifiers(data?.funds ?? [], data?.plans ?? []),
+    [data],
   );
   const dataRef = useRef<ApiPayload | null>(null);
   const pendingRefreshTimeoutRef = useRef<number | null>(null);
@@ -1754,6 +1807,7 @@ export default function App() {
     try {
       const endpoint = force ? `${API_BASE}/refresh` : `${API_BASE}/data`;
       const response = await fetch(endpoint, {
+        cache: "no-store",
         method: force ? "POST" : "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -1765,16 +1819,18 @@ export default function App() {
       }
       let payload: ApiPayload;
       try {
-        payload = JSON.parse(rawText) as ApiPayload;
+        payload = JSON.parse(rawText);
       } catch (jsonErr) {
         throw new SyntaxError(
           (jsonErr as Error).message || "Invalid JSON response",
         );
       }
+      payload = validatePayload(payload);
       setData(payload);
       dataRef.current = payload;
       setUsingMockData(false);
       setStatus(payload.isUpdating ? "refreshing" : "ready");
+      if (payload.updateFailed) setError("load-failed");
 
       if (typeof window !== "undefined") {
         if (pendingRefreshTimeoutRef.current !== null) {
@@ -1797,14 +1853,15 @@ export default function App() {
         window.clearTimeout(pendingRefreshTimeoutRef.current);
         pendingRefreshTimeoutRef.current = null;
       }
-      if (shouldUseMockData(err)) {
+      // Never replace a previously loaded real list with fictitious sample funds.
+      if (!hasExistingData && import.meta.env.DEV && shouldUseMockData(err)) {
         setData(MOCK_PAYLOAD);
         dataRef.current = MOCK_PAYLOAD;
         setStatus("ready");
         setUsingMockData(true);
         return;
       }
-      setError((err as Error).message);
+      setError("load-failed");
       setStatus(hasExistingData ? "ready" : "error");
     }
   }, []);
@@ -1938,6 +1995,20 @@ export default function App() {
               </div>
             </div>
           </div>
+          {duplicateIdentifiers.length > 0 ? (
+            <div role="alert" className="order-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 md:col-span-2 md:row-start-3">
+              <p className="font-semibold">{texts.duplicateWarning}</p>
+              <ul className="mt-2 space-y-1">
+                {duplicateIdentifiers.map((duplicate) => (
+                  <li key={`${duplicate.field}-${duplicate.value}`}>
+                    <span className="font-semibold">{duplicate.field === "isin" ? "ISIN" : "MorningstarId"}: {duplicate.value}</span>
+                    {" — "}
+                    {duplicate.products.map((product) => `${product.name} (${product.section === "funds" ? texts.fundsTitle : texts.plansTitle})`).join("; ")}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -1947,10 +2018,22 @@ export default function App() {
             {status === "refreshing" ? texts.refreshing : texts.loading}
           </div>
         )}
+        {data && !staleNoticeDismissed && [...data.funds, ...data.plans].some((product) => product.isStale) && (
+          <div role="status" className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="flex-1">{texts.staleData}</p>
+            <button type="button" onClick={() => setStaleNoticeDismissed(true)}
+              aria-label={texts.closeNotice} title={texts.closeNotice}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-4 w-4" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18" />
+              </svg>
+            </button>
+          </div>
+        )}
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
             {texts.error}
-            {error ? ` (${error})` : null}
+            <button type="button" onClick={() => void fetchData(Boolean(dataRef.current))} className="ml-3 rounded-lg border border-red-300 px-3 py-2 font-semibold focus-visible:ring-2 focus-visible:ring-red-400">{texts.retry}</button>
           </div>
         )}
 

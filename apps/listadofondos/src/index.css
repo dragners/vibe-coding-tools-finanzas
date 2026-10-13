@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+.fund-table-scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.fund-name-column {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  box-shadow: 2px 0 0 #cbd5e1;
+}
+thead .fund-name-column { z-index: 40; }
+@media (max-width: 639px) {
+  .fund-name-column { width: 180px; min-width: 180px; max-width: 180px; }
+  .fund-name-column a { overflow-wrap: anywhere; }
+}
+
 :root {
   color-scheme: light;
 }
@@ -73,6 +90,12 @@ html[data-theme="dark"] textarea {
 html[data-theme="dark"] input::placeholder,
 html[data-theme="dark"] textarea::placeholder {
   color: #64748b;
+}
+
+html[data-theme="dark"] [role="alert"].bg-amber-50 {
+  background-color: #422006;
+  border-color: #a16207;
+  color: #fef3c7;
 }
 
 html[data-theme="dark"] .shadow,

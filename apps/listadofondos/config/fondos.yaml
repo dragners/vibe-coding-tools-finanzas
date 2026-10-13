@@ -18,7 +18,7 @@ funds:
 - name: Hamco Quality Fund
   isin: LU3035951048
   category: Global Small/Mid-Cap Equity
-  morningstarId: 0P0001X8XY
+  morningstarId: F00001S931
   comment: Nuevo fondo de John Tidd en la SICAV de Luxemburgo (2025)
 - name: Cobas International P (Acc)
   isin: LU1598719752
@@ -187,7 +187,7 @@ funds:
 - name: Horos Patrimonio 
   isin: ES0146296001
   category: Global Flexible Bond
-  morningstarId: 0P0001Y13C
+  morningstarId: F00001SWA4
   comment: 'Nuevo fondo de Horos de RF, objetivo de superar inflación, 4-5% de rentabilidad, € cubierto'
 - name: Nordea Low Duration EU Covered Bond 
   isin: LU1694212348
@@ -237,7 +237,7 @@ plans:
 - name: Horos Internacional PP
   isin: N5263
   category: Global Small/Mid-Cap Equity
-  morningstarId: F000010KY6
+  morningstarId: F000010RWV
   comment: Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional pero en PP
   inPortfolio: true
 - name: Azvalor Global Value PP

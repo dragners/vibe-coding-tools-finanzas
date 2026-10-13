@@ -1,0 +1,274 @@
+import React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import App, { type ApiPayload, type FundRow } from "../src/App";
+
+function product(name: string, isin: string, morningstarId: string, ter: FundRow["ter"] = "0,2"): FundRow {
+  return { name, isin, morningstarId, ter, category: "Equity Global", comment: "", url: "", performance: {}, sharpe: {}, volatility: {} };
+}
+const funds = Array.from({ length: 6 }, (_, index) => product(`Fondo ${index + 1}`, `LU000000000${index}`, `F00${index}`));
+const plans = ["N5396", "N5263", "N5116", "N5138", "N5270", "N5219"].map((id, index) => product(`Plan ${index + 1}`, id, `P00${index}`));
+
+beforeEach(() => {
+  window.localStorage.clear();
+  window.history.replaceState(null, "", "/listadofondos/");
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+});
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+
+async function load(payload: Partial<ApiPayload> = {}) {
+  const data: ApiPayload = { lastUpdated: "2026-10-13T08:00:00Z", funds, plans, ...payload };
+  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, headers: { get: () => "application/json" }, text: async () => JSON.stringify(data) })));
+  render(<App />);
+  await screen.findByRole("checkbox", { name: `Seleccionar para comparar: ${data.funds[0]?.name ?? data.plans[0].name}` });
+  return userEvent.setup();
+}
+const checkbox = (name: string) => screen.getByRole("checkbox", { name: `Seleccionar para comparar: ${name}`, exact: true }) as HTMLInputElement;
+const compare = (provider: string) => screen.getByText(new RegExp(`^Comparar en ${provider}`));
+const fundNames = () => Array.from(document.querySelectorAll("tbody tr.align-middle td:first-child a")).map((element) => element.textContent);
+
+describe("visible comparison feedback and selection", () => {
+  it("shows type lock and maximum messages, preserves hidden selections and allows replacement", async () => {
+    const user = await load();
+    expect(screen.queryByText("Selecciona al menos 2 fondos o 2 planes para comparar.")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Todas", exact: true })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Costes y detalles", exact: true })).toBeNull();
+    expect(compare("Finect").getAttribute("href")).toBeNull();
+    await user.click(checkbox("Fondo 1"));
+    expect(checkbox("Plan 1").disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toContain("fondos o planes por separado");
+    for (let i = 2; i <= 5; i++) await user.click(checkbox(`Fondo ${i}`));
+    expect(screen.getByRole("status").textContent).toContain("Máximo de 5");
+    expect(checkbox("Fondo 6").disabled).toBe(true);
+    expect(checkbox("Fondo 1").disabled).toBe(false);
+    const href = compare("Finect").getAttribute("href");
+    await user.type(screen.getByRole("textbox"), "Fondo 6");
+    expect(checkbox("Fondo 6").disabled).toBe(true);
+    expect(compare("Finect").getAttribute("href")).toBe(href);
+    await user.clear(screen.getByRole("textbox"));
+    await user.click(checkbox("Fondo 1"));
+    await user.click(checkbox("Fondo 6"));
+    expect(compare("Finect").getAttribute("href")).toContain("LU0000000005");
+    expect(compare("Finect").getAttribute("href")).not.toContain("LU0000000000");
+    await user.click(screen.getByRole("button", { name: "Limpiar selección" }));
+    expect(checkbox("Plan 1").disabled).toBe(false);
+  });
+
+  it("locks funds when selecting plans and unlocks both types after the last deselection", async () => {
+    const user = await load();
+    await user.click(checkbox("Plan 1"));
+    expect(checkbox("Fondo 1").disabled).toBe(true);
+    await user.click(checkbox("Plan 2"));
+    expect(compare("Finect").getAttribute("href")).toBe("https://www.finect.com/planes-pensiones/comparador?products=N5396,N5263");
+    await user.click(checkbox("Plan 1"));
+    expect(checkbox("Fondo 1").disabled).toBe(true);
+    await user.click(checkbox("Plan 2"));
+    expect(checkbox("Fondo 1").disabled).toBe(false);
+    expect(checkbox("Plan 1").disabled).toBe(false);
+  });
+
+  it("enforces the limit of five pension plans while allowing replacement", async () => {
+    const user = await load();
+    for (let i = 1; i <= 5; i++) await user.click(checkbox(`Plan ${i}`));
+    expect(checkbox("Plan 6").disabled).toBe(true);
+    expect(checkbox("Fondo 1").disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toContain("Máximo de 5");
+    await user.click(checkbox("Plan 2"));
+    await user.click(checkbox("Plan 6"));
+    expect(compare("Finect").getAttribute("href")).toBe("https://www.finect.com/planes-pensiones/comparador?products=N5396,N5116,N5138,N5270,N5219");
+  });
+
+  it.each([
+    ["morningstarId", "", "Morningstar", "Morningstar no está disponible"],
+    ["isin", "-", "Finect", "Finect no está disponible"],
+  ])("explains missing %s without disabling the other provider", async (field, value, provider, message) => {
+    const user = await load({ funds: [funds[0], { ...funds[1], [field]: value }] });
+    await user.click(checkbox("Fondo 1"));
+    await user.click(checkbox("Fondo 2"));
+    expect(compare(provider).getAttribute("href")).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain(message);
+    expect(compare(provider === "Finect" ? "Morningstar" : "Finect").getAttribute("href")).not.toBeNull();
+  });
+
+  it("visibly explains why a product without any identifiers cannot be selected", async () => {
+    await load({ funds: [product("Sin identificadores", "-", "")] });
+    expect(checkbox("Sin identificadores").disabled).toBe(true);
+    expect(screen.getByText("Este producto no tiene identificadores para comparar")).not.toBeNull();
+  });
+});
+
+describe("header data warnings", () => {
+  it("names duplicate ISIN and MorningstarId products across sections and stays visible during search", async () => {
+    const user = await load({
+      funds: [funds[0], { ...funds[1], isin: funds[0].isin }],
+      plans: [{ ...plans[0], morningstarId: funds[0].morningstarId }],
+    });
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("Corrige el ISIN o MorningstarId");
+    expect(alert.textContent).toContain(`ISIN: ${funds[0].isin}`);
+    expect(alert.textContent).toContain(`MorningstarId: ${funds[0].morningstarId}`);
+    for (const name of ["Fondo 1", "Fondo 2", "Plan 1"]) expect(alert.textContent).toContain(name);
+    expect(alert.closest("main")).toBeNull();
+    await user.type(screen.getByRole("textbox"), "no existe");
+    expect(screen.getByRole("alert")).toBe(alert);
+  });
+
+  it("does not show a warning for valid identifiers", async () => {
+    await load();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("sorting regression", () => {
+  const rows = [
+    { ...product("Alfa", "LU001", "F001", "0,4"), performance: { "1Y": "20,1" }, sharpe: { "1Y": "1,4" }, volatility: { "1Y": "15,2" } },
+    { ...product("Beta", "LU002", "F002", "0,2"), performance: { "1Y": "-5,2" }, sharpe: { "1Y": "-0,1" }, volatility: { "1Y": "5,8" } },
+    product("Sin datos", "LU003", "F003", "-"),
+  ];
+
+  it("leaves absent values last in both directions across TER, returns, Sharpe and volatility", async () => {
+    const user = await load({ funds: rows, plans: [] });
+    for (const label of ["TER", "Rentabilidades (%) 1Y", "Ratio Sharpe 1Y", "Volatilidad 1Y"]) {
+      for (const direction of ["ascendente", "descendente"]) {
+        await user.click(screen.getByRole("button", { name: `Orden ${direction} por ${label}`, exact: true }));
+        expect(fundNames()).toEqual(direction === "ascendente" ? ["Beta", "Alfa", "Sin datos"] : ["Alfa", "Beta", "Sin datos"]);
+      }
+    }
+  });
+
+  it("switches columns without duplicating rows even with invalid duplicate ISINs", async () => {
+    const user = await load({ funds: [rows[0], { ...rows[1], isin: rows[0].isin }, rows[2]], plans: [] });
+    const sequence: [string, string[]][] = [
+      ["Orden descendente por Nombre", ["Sin datos", "Beta", "Alfa"]],
+      ["Orden ascendente por TER", ["Beta", "Alfa", "Sin datos"]],
+      ["Orden descendente por Rentabilidades (%) 1Y", ["Alfa", "Beta", "Sin datos"]],
+    ];
+    for (let iteration = 0; iteration < 3; iteration++) {
+      for (const [label, expected] of sequence) {
+        await user.click(screen.getByRole("button", { name: label, exact: true }));
+        expect(fundNames()).toEqual(expected);
+        expect(document.querySelectorAll('button[aria-label^="Orden "][aria-pressed="true"]').length).toBe(1);
+      }
+    }
+  });
+
+  it("treats empty and placeholder identifiers as missing in text sorting too", async () => {
+    const user = await load({ funds: [rows[0], { ...rows[1], isin: " " }, { ...rows[2], isin: "-" }], plans: [] });
+    for (const direction of ["ascendente", "descendente"]) {
+      await user.click(screen.getByRole("button", { name: `Orden ${direction} por ISIN`, exact: true }));
+      expect(fundNames()).toEqual(["Alfa", "Beta", "Sin datos"]);
+    }
+  });
+});
+
+describe("data loading and mobile controls", () => {
+  it("retains real products after a background connection failure instead of replacing them with examples", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    let refresh: (() => void) | undefined;
+    const originalTimeout = window.setTimeout;
+    vi.spyOn(window, "setTimeout").mockImplementation((handler, delay, ...args) => {
+      if (delay === 5000 && typeof handler === "function") refresh = () => handler(...args);
+      return originalTimeout.call(window, handler, delay, ...args);
+    });
+    const user = await load({ isUpdating: true });
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    // Run the application's pending 5-second refresh without sleeping in the test.
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    // Language switches must not fetch again or replace the loaded list.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // A real refresh is scheduled by the initial isUpdating response.
+    expect(refresh).toBeDefined();
+    await act(async () => { refresh!(); });
+    expect(screen.getByText("Fondo 1", { exact: true })).not.toBeNull();
+    expect(screen.queryByText("Fondo Ejemplo Global")).toBeNull();
+    expect(screen.getByRole("button", { name: "Retry" })).not.toBeNull();
+  }, 10000);
+
+  it("rejects an invalid response visibly and lets the user retry", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const payload = { lastUpdated: "bad-date", funds, plans };
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, headers: { get: () => "application/json" }, text: async () => JSON.stringify(payload) })));
+    render(<App />);
+    await screen.findByRole("alert");
+    expect(screen.queryByText("Fondo 1", { exact: true })).toBeNull();
+    expect(screen.queryByText("Fondo Ejemplo Global")).toBeNull();
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, headers: { get: () => "application/json" }, text: async () => JSON.stringify({ ...payload, lastUpdated: "2026-10-13T08:00:00Z" }) } as Response);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Reintentar" }));
+    await screen.findByText("Fondo 1", { exact: true });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(vi.mocked(fetch).mock.calls.every(([, options]) => options?.cache === "no-store")).toBe(true);
+  });
+
+  it("marks preserved older metrics and explains Sharpe", async () => {
+    const user = await load({ funds: [{ ...funds[0], isStale: true, dataUpdatedAt: "2026-10-12T08:00:00Z" }] });
+    expect(screen.getByText("Datos pendientes de actualizar")).not.toBeNull();
+    expect(screen.getByText(/Conservamos las últimas cifras disponibles/)).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Ratio Sharpe", exact: true }));
+    expect(screen.getByText(/Indica cuánta rentabilidad adicional/).textContent).toContain("referencia sin riesgo");
+    await user.click(screen.getByRole("button", { name: "Cerrar aviso", exact: true }));
+    expect(screen.queryByText(/Conservamos las últimas cifras disponibles/)).toBeNull();
+    expect(screen.getByText("Datos pendientes de actualizar")).not.toBeNull();
+  });
+});
+
+
+describe("category labels", () => {
+  const categorized = {
+    funds: [
+      { ...funds[0], category: "Equity Global", indexed: true },
+      { ...funds[1], category: "Bond Global", indexed: false },
+      { ...funds[2], category: "Equity Europe", indexed: false },
+    ],
+    plans: [
+      { ...plans[0], category: "Equity Global", indexed: false },
+      { ...plans[1], category: "Bond Europe", indexed: true, comment: "Acciones Global Activa" },
+    ],
+  };
+
+  it.each([
+    ["Acciones", "Fondo 1", ["Fondo 1", "Fondo 3", "Plan 1"]],
+    ["Bonos", "Fondo 2", ["Fondo 2", "Plan 2"]],
+    ["Global", "Fondo 1", ["Fondo 1", "Fondo 2", "Plan 1"]],
+    ["Europe", "Fondo 3", ["Fondo 3", "Plan 2"]],
+    ["Index", "Fondo 1", ["Fondo 1", "Plan 2"]],
+    ["Activa", "Fondo 2", ["Fondo 2", "Fondo 3", "Plan 1"]],
+  ])("clicking %s includes every matching fund and plan and clearing restores the list", async (label, name, expected) => {
+    const user = await load(categorized);
+    await user.click(screen.getByRole("button", { name: `Filtrar por ${label}: ${name}`, exact: true }));
+    expect(fundNames()).toEqual(expected);
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe(label);
+    await user.clear(screen.getByRole("textbox"));
+    expect(fundNames()).toHaveLength(5);
+    await user.type(screen.getByRole("textbox"), "Fondo 3");
+    expect(fundNames()).toEqual(["Fondo 3"]);
+  });
+
+  it("renders the hover description outside the scrollable table and closes it on scroll or Escape", async () => {
+    const user = await load(categorized);
+    const badge = screen.getByRole("button", { name: "Filtrar por Acciones: Fondo 1", exact: true });
+    await user.hover(badge);
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip.textContent).toBe("Equity Global");
+    expect(tooltip.parentElement).toBe(document.body);
+    expect(tooltip.style.position).toBe("fixed");
+    expect(badge.getAttribute("aria-describedby")).toBe(tooltip.id);
+    act(() => document.querySelector('.fund-table-scroll')!.dispatchEvent(new Event('scroll')));
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    await user.unhover(badge);
+    act(() => badge.focus());
+    expect(screen.getByRole("tooltip").textContent).toBe("Equity Global");
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("filters English labels and keeps the same category when switching languages", async () => {
+    const user = await load(categorized);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Filter by Equity: Fondo 1", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 3", "Plan 1"]);
+    await user.click(screen.getByRole("button", { name: "ES", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 3", "Plan 1"]);
+  });
+});

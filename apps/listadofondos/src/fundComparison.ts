@@ -1,8 +1,37 @@
 export const MAX_COMPARISON_FUNDS = 5;
 
 export function getFundComparisonKey(fund: { morningstarId?: string; isin?: string }) {
-  // Distinct products can share a Morningstar ID; use their own identifier first.
+  // Use the product identifier for stable selection; warn about invalid duplicates separately.
   return getFinectProductId(fund.isin) || fund.morningstarId?.trim() || "";
+}
+
+type IdentifiableProduct = { name: string; isin?: string; morningstarId?: string };
+type DuplicateIdentifier = {
+  field: "isin" | "morningstarId";
+  value: string;
+  products: { name: string; section: "funds" | "plans" }[];
+};
+
+export function findDuplicateIdentifiers(funds: IdentifiableProduct[], plans: IdentifiableProduct[]): DuplicateIdentifier[] {
+  const duplicates: DuplicateIdentifier[] = [];
+  const products = [
+    ...funds.map((product) => ({ ...product, section: "funds" as const })),
+    ...plans.map((product) => ({ ...product, section: "plans" as const })),
+  ];
+  for (const field of ["isin", "morningstarId"] as const) {
+    const groups = new Map<string, DuplicateIdentifier["products"]>();
+    for (const product of products) {
+      const value = getFinectProductId(product[field]).toUpperCase();
+      if (!value) continue;
+      const group = groups.get(value) ?? [];
+      group.push({ name: product.name, section: product.section });
+      groups.set(value, group);
+    }
+    for (const [value, group] of groups) {
+      if (group.length > 1) duplicates.push({ field, value, products: group });
+    }
+  }
+  return duplicates;
 }
 
 export function getFinectProductId(isin?: string) {
