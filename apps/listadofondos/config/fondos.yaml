@@ -69,7 +69,7 @@ funds:
 - name: Fidelity Global Technology Acc
   isin: LU1213836080
   category: Sector Equity Technology
-  morningstarId: 0P00015OFP
+  morningstarId: F00000VKNA
   comment: 'RV tecnológica global. Busca crecimiento a largo plazo mediante empresas tecnológicas.'
 - name: Heptagon Kopernik Glb AllCp
   isin: IE00BH6XSF26
