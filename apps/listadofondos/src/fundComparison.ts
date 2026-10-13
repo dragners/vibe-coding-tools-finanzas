@@ -1,5 +1,21 @@
 export const MAX_COMPARISON_FUNDS = 5;
 
+export function getFundComparisonKey(fund: { morningstarId?: string; isin?: string }) {
+  return fund.morningstarId?.trim() || getFinectProductId(fund.isin);
+}
+
+export function getFinectProductId(isin?: string) {
+  const id = isin?.trim() ?? "";
+  return id === "-" ? "" : id;
+}
+
+export function getFinectCompareUrl(isins: string[]) {
+  if (isins.length < 2 || isins.length > MAX_COMPARISON_FUNDS) return null;
+  const productIds = isins.map(getFinectProductId);
+  if (productIds.some((id) => !id) || new Set(productIds).size !== productIds.length) return null;
+  return `https://www.finect.com/fondos-inversion/comparador?products=${productIds.map(encodeURIComponent).join(",")}`;
+}
+
 export function getMorningstarCompareUrl(ids: string[], lang: "es" | "en") {
   const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
   if (uniqueIds.length < 2 || uniqueIds.length > MAX_COMPARISON_FUNDS) return null;

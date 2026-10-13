@@ -10,7 +10,7 @@ import React, {
 import { createPortal } from "react-dom";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
-import { getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./morningstarCompare";
+import { getFinectCompareUrl, getFundComparisonKey, getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./fundComparison";
 
 type Lang = "es" | "en";
 type ThemeMode = "light" | "dark";
@@ -143,11 +143,15 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Buscar...",
     searchAriaLabel: "Buscar en la tabla",
-    compare: "Comparar",
+    compare: "Comparar en Morningstar",
+    compareFinect: "Comparar en Finect",
+    compareFinectHint: "Selecciona entre 2 y 5 fondos para comparar en Finect",
+    comparisonMissingMorningstar: "Todos los fondos seleccionados deben tener identificador de Morningstar",
+    comparisonMissingIsin: "Todos los fondos seleccionados deben tener ISIN para comparar en Finect",
     compareHint: "Selecciona entre 2 y 5 fondos para comparar en Morningstar",
     selectForComparison: "Seleccionar para comparar",
     comparisonLimit: "Máximo de 5 fondos seleccionados. Desmarca uno para elegir otro.",
-    comparisonUnavailable: "Este fondo no tiene identificador de Morningstar",
+    comparisonUnavailable: "Este fondo no tiene identificadores para comparar",
     clearComparison: "Limpiar selección",
     dataNote: "",
     langES: "ES",
@@ -188,11 +192,15 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Search...",
     searchAriaLabel: "Search within the table",
-    compare: "Compare",
+    compare: "Compare on Morningstar",
+    compareFinect: "Compare on Finect",
+    compareFinectHint: "Select between 2 and 5 funds to compare on Finect",
+    comparisonMissingMorningstar: "All selected funds must have a Morningstar identifier",
+    comparisonMissingIsin: "All selected funds must have an ISIN to compare on Finect",
     compareHint: "Select between 2 and 5 funds to compare on Morningstar",
     selectForComparison: "Select for comparison",
     comparisonLimit: "Maximum of 5 funds selected. Deselect one to choose another.",
-    comparisonUnavailable: "This fund has no Morningstar identifier",
+    comparisonUnavailable: "This fund has no identifiers for comparison",
     clearComparison: "Clear selection",
     dataNote: "",
     langES: "ES",
@@ -1046,20 +1054,27 @@ function CombinedTable({
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-  const [selectedFundIds, setSelectedFundIds] = useState<string[]>([]);
-  const comparisonUrl = getMorningstarCompareUrl(selectedFundIds, lang);
-  const comparisonLimitReached = selectedFundIds.length >= MAX_COMPARISON_FUNDS;
+  const [selectedFundKeys, setSelectedFundKeys] = useState<string[]>([]);
+  const selectedFunds = selectedFundKeys
+    .map((key) => funds.find((fund) => getFundComparisonKey(fund) === key))
+    .filter((fund): fund is FundRow => Boolean(fund));
+  const missingMorningstarId = selectedFunds.some((fund) => !fund.morningstarId?.trim());
+  const comparisonUrl = missingMorningstarId
+    ? null
+    : getMorningstarCompareUrl(selectedFunds.map((fund) => fund.morningstarId), lang);
+  const finectComparisonUrl = getFinectCompareUrl(selectedFunds.map((fund) => fund.isin));
+  const comparisonLimitReached = selectedFundKeys.length >= MAX_COMPARISON_FUNDS;
 
   useEffect(() => {
-    const availableIds = new Set(funds.map((fund) => fund.morningstarId?.trim()).filter(Boolean));
-    setSelectedFundIds((previous) => {
+    const availableIds = new Set(funds.map(getFundComparisonKey).filter(Boolean));
+    setSelectedFundKeys((previous) => {
       const next = previous.filter((id) => availableIds.has(id));
       return next.length === previous.length ? previous : next;
     });
   }, [funds]);
 
   const toggleFundComparison = (id: string) => {
-    setSelectedFundIds((previous) => {
+    setSelectedFundKeys((previous) => {
       if (previous.includes(id)) return previous.filter((selectedId) => selectedId !== id);
       return previous.length < MAX_COMPARISON_FUNDS ? [...previous, id] : previous;
     });
@@ -1185,34 +1200,40 @@ function CombinedTable({
                 />
               </svg>
             </div>
-            <div className="ml-auto flex items-center gap-3">
-              {selectedFundIds.length > 0 ? (
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+              {selectedFundKeys.length > 0 ? (
                 <button
                   type="button"
-                  onClick={() => setSelectedFundIds([])}
+                  onClick={() => setSelectedFundKeys([])}
                   className="rounded-lg text-xs text-slate-500 transition hover:text-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
                 >
                   {texts.clearComparison}
                 </button>
               ) : null}
-              <a
-                href={comparisonUrl ?? undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-disabled={!comparisonUrl}
-                tabIndex={comparisonUrl ? 0 : -1}
-                title={texts.compareHint}
-                className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
-                  comparisonUrl
-                    ? "border-cyan-200 bg-cyan-50 text-cyan-600 hover:border-cyan-400 hover:text-cyan-700"
-                    : "cursor-not-allowed border-slate-200 bg-white/90 text-slate-400"
-                }`}
-              >
-                {texts.compare}
-                <span className="text-xs tabular-nums" aria-live="polite" aria-atomic="true">
-                  {selectedFundIds.length}/{MAX_COMPARISON_FUNDS}
-                </span>
-              </a>
+              {[
+                { label: texts.compare, url: comparisonUrl, hint: missingMorningstarId ? texts.comparisonMissingMorningstar : texts.compareHint },
+                { label: texts.compareFinect, url: finectComparisonUrl, hint: selectedFundKeys.length >= 2 && !finectComparisonUrl ? texts.comparisonMissingIsin : texts.compareFinectHint },
+              ].map(({ label, url, hint }) => (
+                <a
+                  key={label}
+                  href={url ?? undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-disabled={!url}
+                  tabIndex={url ? 0 : -1}
+                  title={hint}
+                  className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
+                    url
+                      ? "border-cyan-200 bg-cyan-50 text-cyan-600 hover:border-cyan-400 hover:text-cyan-700"
+                      : "cursor-not-allowed border-slate-200 bg-white/90 text-slate-400"
+                  }`}
+                >
+                  {label}
+                  <span className="text-xs tabular-nums" aria-live="polite" aria-atomic="true">
+                    {selectedFundKeys.length}/{MAX_COMPARISON_FUNDS}
+                  </span>
+                </a>
+              ))}
             </div>
           </div>
         ) : null}
@@ -1398,8 +1419,8 @@ function CombinedTable({
                     const stars = renderStars(row.morningstarRating);
                     const categoryValue = formatValue(row.category, lang);
                     const rowKey = row.morningstarId || row.isin || row.name;
-                    const comparisonId = row.morningstarId?.trim() ?? "";
-                    const comparisonSelected = selectedFundIds.includes(comparisonId);
+                    const comparisonId = getFundComparisonKey(row);
+                    const comparisonSelected = selectedFundKeys.includes(comparisonId);
                     const comparisonDisabled = !comparisonId || (comparisonLimitReached && !comparisonSelected);
                     const badges = getCategoryBadges(
                       categoryValue,
