@@ -237,7 +237,7 @@ plans:
 - name: Horos Internacional PP
   isin: N5263
   category: Global Small/Mid-Cap Equity
-  morningstarId: F000010KY6
+  morningstarId: 0P0001DYGJ
   comment: Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional pero en PP
   inPortfolio: true
 - name: Azvalor Global Value PP
