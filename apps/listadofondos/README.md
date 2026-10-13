@@ -25,5 +25,4 @@ Los datos de ejemplo solo se pueden usar en desarrollo, nunca en la compilación
 de producción. Los productos con métricas anteriores pendientes de actualizar
 se marcan en la tabla.
 
-Las vistas Todas, Rentabilidades, Riesgo y Costes reducen las columnas visibles.
 El nombre del producto y la cabecera se mantienen visibles al desplazar la tabla.

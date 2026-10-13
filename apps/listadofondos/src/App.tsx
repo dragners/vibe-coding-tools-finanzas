@@ -153,7 +153,6 @@ const TEXTS = {
     comparisonLimit: "Máximo de 5 seleccionados. Desmarca uno para elegir otro.",
     comparisonUnavailable: "Este producto no tiene identificadores para comparar",
     comparisonTypeLocked: "Compara fondos o planes por separado. Limpia la selección para cambiar de tipo.",
-    compareMinimum: "Selecciona al menos 2 fondos o 2 planes para comparar.",
     comparisonMissingMorningstarVisible: "Morningstar no está disponible: falta su identificador en algún producto seleccionado.",
     comparisonMissingFinectVisible: "Finect no está disponible: falta el ISIN o código de plan en algún producto seleccionado.",
     duplicateWarning: "Hay identificadores duplicados. Corrige el ISIN o MorningstarId de los siguientes fondos o planes:",
@@ -161,10 +160,6 @@ const TEXTS = {
     staleData: "Algunos datos no se han podido actualizar. Conservamos las últimas cifras disponibles, si las hay; los productos afectados están marcados.",
     staleProduct: "Datos pendientes de actualizar",
     retry: "Reintentar",
-    allColumns: "Todas",
-    riskView: "Riesgo",
-    costsView: "Costes y detalles",
-    tableView: "Columnas visibles",
     scrollHint: "Desliza la tabla para ver más columnas. El nombre del producto permanece visible.",
     dataNote: "",
     langES: "ES",
@@ -215,7 +210,6 @@ const TEXTS = {
     comparisonLimit: "Maximum of 5 selected. Deselect one to choose another.",
     comparisonUnavailable: "This product has no identifiers for comparison",
     comparisonTypeLocked: "Compare funds or pension plans separately. Clear the selection to switch types.",
-    compareMinimum: "Select at least 2 funds or 2 pension plans to compare.",
     comparisonMissingMorningstarVisible: "Morningstar is unavailable: a selected product is missing its identifier.",
     comparisonMissingFinectVisible: "Finect is unavailable: a selected product is missing its ISIN or pension plan code.",
     duplicateWarning: "Duplicate identifiers found. Correct the ISIN or MorningstarId of these funds or pension plans:",
@@ -223,10 +217,6 @@ const TEXTS = {
     staleData: "Some data could not be updated. We keep previous figures when available; affected products are marked.",
     staleProduct: "Data awaiting an update",
     retry: "Retry",
-    allColumns: "All",
-    riskView: "Risk",
-    costsView: "Costs and details",
-    tableView: "Visible columns",
     scrollHint: "Swipe the table to see more columns. Product names stay visible.",
     dataNote: "",
     langES: "ES",
@@ -804,7 +794,6 @@ function renderMetricCells<T extends string>(
       ? getMetricBackground(options.metric, numericValue, columnStats)
       : undefined;
     const classes = [
-      options.metric === "performance" ? "fund-performance-column" : "fund-risk-column",
       "px-1 py-1.5 text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle",
       METRIC_COLUMN_WIDTH_CLASS,
     ];
@@ -1069,11 +1058,6 @@ function CombinedTable({
   showSearchInput?: boolean;
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
-  const [tableView, setTableView] = useState<"all" | "performance" | "risk" | "costs">("all");
-  const tableScrollRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (tableScrollRef.current) tableScrollRef.current.scrollLeft = 0;
-  }, [tableView]);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedItems, setSelectedItems] = useState<{ section: TableSection; key: string }[]>([]);
   const comparisonSection = selectedItems[0]?.section ?? "funds";
@@ -1089,7 +1073,6 @@ function CombinedTable({
   const comparisonLimitReached = selectedItems.length >= MAX_COMPARISON_FUNDS;
   const comparisonHelpId = useId();
   const comparisonMessages = [
-    selectedItems.length < 2 ? texts.compareMinimum : null,
     selectedItems.length > 0 ? texts.comparisonTypeLocked : null,
     comparisonLimitReached ? texts.comparisonLimit : null,
     missingMorningstarId ? texts.comparisonMissingMorningstarVisible : null,
@@ -1173,10 +1156,7 @@ function CombinedTable({
     [sections],
   );
 
-  const totalColumns = tableView === "performance" ? 1 + PERFORMANCE_LABELS.length
-    : tableView === "risk" ? 1 + RATIO_LABELS.length * 2
-    : tableView === "costs" ? 4
-    : 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
+  const totalColumns = 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
   const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
 
   const handleToggleTooltip = useCallback((id: string) => {
@@ -1278,23 +1258,11 @@ function CombinedTable({
             </div>
           </div>
         ) : null}
-        <div id={comparisonHelpId} role="status" aria-live="polite" className="mb-4 space-y-1 text-xs text-slate-600">
+        <div id={comparisonHelpId} role="status" aria-live="polite" className={comparisonMessages.length ? "mb-4 space-y-1 text-xs text-slate-600" : "sr-only"}>
           {comparisonMessages.map((message) => <p key={message}>{message}</p>)}
         </div>
-        <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label={texts.tableView}>
-          {([
-            ["all", texts.allColumns], ["performance", texts.performance],
-            ["risk", texts.riskView], ["costs", texts.costsView],
-          ] as const).map(([view, label]) => (
-            <button type="button" key={view} aria-pressed={tableView === view}
-              onClick={() => setTableView(view)}
-              className={`rounded-xl border px-3 py-2 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${tableView === view ? "border-cyan-400 bg-cyan-50 text-cyan-600" : "border-slate-200 bg-white/90 text-slate-600"}`}>
-              {label}
-            </button>
-          ))}
-        </div>
         <p className="mb-2 text-xs text-slate-500 md:hidden">{texts.scrollHint}</p>
-        <div ref={tableScrollRef} className="fund-table-scroll overflow-auto max-h-[75dvh] pb-4" data-view={tableView}>
+        <div className="fund-table-scroll overflow-auto max-h-[75dvh] pb-4">
 
           <table className="w-full border-separate border-spacing-y-1 border-spacing-x-[1px] text-sm text-gray-800">
             <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
@@ -1315,7 +1283,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className="fund-cost-column px-2.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
+                  className="px-2.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.isin}</span>
@@ -1329,7 +1297,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className={`fund-cost-column px-1 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center ${TER_COLUMN_WIDTH_CLASS}`}
+                  className={`px-1 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center ${TER_COLUMN_WIDTH_CLASS}`}
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.ter}</span>
@@ -1343,7 +1311,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={PERFORMANCE_LABELS.length}
-                  className="fund-performance-column relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.performance}</span>
@@ -1352,7 +1320,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="fund-risk-column relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.sharpe}</span>
@@ -1361,7 +1329,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="fund-risk-column relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.volatility}</span>
@@ -1370,7 +1338,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className={`fund-cost-column px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
+                  className={`px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
                 >
                   {texts.comment}
                 </th>
@@ -1379,7 +1347,7 @@ function CombinedTable({
                 {PERFORMANCE_LABELS.map((label, index) => (
                   <th
                     key={`perf-${label}`}
-                    className={`fund-performance-column px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
@@ -1403,7 +1371,7 @@ function CombinedTable({
                 {RATIO_LABELS.map((label, index) => (
                   <th
                     key={`sharpe-${label}`}
-                    className={`fund-risk-column px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
@@ -1427,7 +1395,7 @@ function CombinedTable({
                 {RATIO_LABELS.map((label, index) => (
                   <th
                     key={`vol-${label}`}
-                    className={`fund-risk-column px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
@@ -1632,12 +1600,12 @@ function CombinedTable({
                           </div>
                         </td>
                         <td
-                          className="fund-cost-column px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
+                          className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
                         >
                           {formatValue(row.isin, lang)}
                         </td>
                         <td
-                          className={`fund-cost-column px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}
+                          className={`px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}
                         >
                           {formatValue(row.ter, lang)}
                         </td>
@@ -1666,7 +1634,7 @@ function CombinedTable({
                           lang,
                         )}
                         <td
-                          className={`fund-cost-column px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-[11px] sm:text-xs leading-snug align-middle ${commentColumnWidthClass}`}
+                          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-[11px] sm:text-xs leading-snug align-middle ${commentColumnWidthClass}`}
                         >
                           {formatValue(row.comment, lang) || texts.commentPlaceholder}
                         </td>

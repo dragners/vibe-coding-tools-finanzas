@@ -29,9 +29,11 @@ const compare = (provider: string) => screen.getByText(new RegExp(`^Comparar en 
 const fundNames = () => Array.from(document.querySelectorAll("tbody tr.align-middle td:first-child a")).map((element) => element.textContent);
 
 describe("visible comparison feedback and selection", () => {
-  it("shows minimum, type lock and maximum messages, preserves hidden selections and allows replacement", async () => {
+  it("shows type lock and maximum messages, preserves hidden selections and allows replacement", async () => {
     const user = await load();
-    expect(screen.getByRole("status").textContent).toContain("Selecciona al menos 2");
+    expect(screen.queryByText("Selecciona al menos 2 fondos o 2 planes para comparar.")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Todas", exact: true })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Costes y detalles", exact: true })).toBeNull();
     expect(compare("Finect").getAttribute("href")).toBeNull();
     await user.click(checkbox("Fondo 1"));
     expect(checkbox("Plan 1").disabled).toBe(true);
@@ -199,15 +201,10 @@ describe("data loading and mobile controls", () => {
     expect(vi.mocked(fetch).mock.calls.every(([, options]) => options?.cache === "no-store")).toBe(true);
   });
 
-  it("marks preserved older metrics and exposes selectable column groups", async () => {
+  it("marks preserved older metrics and explains Sharpe", async () => {
     const user = await load({ funds: [{ ...funds[0], isStale: true, dataUpdatedAt: "2026-10-12T08:00:00Z" }] });
     expect(screen.getByText("Datos pendientes de actualizar")).not.toBeNull();
     expect(screen.getByText(/Conservamos las últimas cifras disponibles/)).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: "Riesgo", exact: true }));
-    expect(document.querySelector(".fund-table-scroll")?.getAttribute("data-view")).toBe("risk");
-    await user.click(screen.getByRole("button", { name: "Costes y detalles", exact: true }));
-    expect(document.querySelector(".fund-table-scroll")?.getAttribute("data-view")).toBe("costs");
-    await user.click(screen.getByRole("button", { name: "Riesgo", exact: true }));
     await user.click(screen.getByRole("button", { name: "Ratio Sharpe", exact: true }));
     expect(screen.getByText(/Indica cuánta rentabilidad adicional/).textContent).toContain("referencia sin riesgo");
   });
