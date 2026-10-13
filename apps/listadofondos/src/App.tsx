@@ -1338,7 +1338,7 @@ function CombinedTable({
               <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 <th
                   rowSpan={2}
-                  className="fund-name-column px-3 py-2 max-w-[320px] bg-white/90 backdrop-blur text-center rounded-tl-2xl"
+                  className="fund-name-column px-3 py-1 max-w-[320px] bg-white/90 backdrop-blur text-center rounded-tl-2xl"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.name}</span>
@@ -1352,7 +1352,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className="px-2.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
+                  className="px-2.5 py-1 whitespace-nowrap bg-white/90 backdrop-blur text-center"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.isin}</span>
@@ -1366,7 +1366,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className={`px-1 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center ${TER_COLUMN_WIDTH_CLASS}`}
+                  className={`px-1 py-1 whitespace-nowrap bg-white/90 backdrop-blur text-center ${TER_COLUMN_WIDTH_CLASS}`}
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.ter}</span>
@@ -1380,7 +1380,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={PERFORMANCE_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.performance}</span>
@@ -1389,7 +1389,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.sharpe}</span>
@@ -1398,7 +1398,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.volatility}</span>
@@ -1407,7 +1407,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className={`px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
+                  className={`px-3 py-1 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
                 >
                   {texts.comment}
                 </th>
@@ -1416,7 +1416,7 @@ function CombinedTable({
                 {PERFORMANCE_LABELS.map((label, index) => (
                   <th
                     key={`perf-${label}`}
-                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 pt-0 pb-1 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
@@ -1440,7 +1440,7 @@ function CombinedTable({
                 {RATIO_LABELS.map((label, index) => (
                   <th
                     key={`sharpe-${label}`}
-                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 pt-0 pb-1 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
@@ -1464,7 +1464,7 @@ function CombinedTable({
                 {RATIO_LABELS.map((label, index) => (
                   <th
                     key={`vol-${label}`}
-                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`px-1 pt-0 pb-1 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
