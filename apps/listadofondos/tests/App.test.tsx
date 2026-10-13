@@ -207,5 +207,8 @@ describe("data loading and mobile controls", () => {
     expect(screen.getByText(/Conservamos las últimas cifras disponibles/)).not.toBeNull();
     await user.click(screen.getByRole("button", { name: "Ratio Sharpe", exact: true }));
     expect(screen.getByText(/Indica cuánta rentabilidad adicional/).textContent).toContain("referencia sin riesgo");
+    await user.click(screen.getByRole("button", { name: "Cerrar aviso", exact: true }));
+    expect(screen.queryByText(/Conservamos las últimas cifras disponibles/)).toBeNull();
+    expect(screen.getByText("Datos pendientes de actualizar")).not.toBeNull();
   });
 });
