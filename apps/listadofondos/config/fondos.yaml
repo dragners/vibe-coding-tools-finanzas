@@ -3,54 +3,54 @@ funds:
   isin: ES0112611001
   category: Global Flex-Cap Equity
   morningstarId: F00000WI0D
-  comment: 'Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020. RV global value. Busca empresas infravaloradas a largo plazo.'
+  comment: 'RV global value. Busca empresas infravaloradas a largo plazo. Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020. '
 - name: Azvalor Managers
   isin: ES0112602000
   category: Global Small/Mid-Cap Equity
   morningstarId: F000011HLY
-  comment: 'Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020. RV global value mediante gestores independientes. Busca crecimiento a largo plazo.'
+  comment: 'RV global value mediante gestores independientes. Busca crecimiento a largo plazo. Álvaro Guzmán - Fondo anterior Bestinfond (BestInvest) 10,95% desde 2001 a 2020.'
 - name: Hamco Global Value Fund R
   isin: LU3038481936
   category: Global Small/Mid-Cap Equity
   morningstarId: F00001T5CX
-  comment: 'John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, El fondo antiguo era ES0141116030 que se movio a la SICAV en Luxemburgo (1/12/25). RV global value.'
+  comment: 'RV global value. John Tidd - Fondo anterior Horizon Growth Fund 15,1% anual del 99 al 20, El fondo antiguo era ES0141116030 que se movio a la SICAV en Luxemburgo (1/12/25).'
   inPortfolio: true
 - name: Hamco Quality Fund
   isin: LU3035951048
   category: Global Small/Mid-Cap Equity
   morningstarId: F00001S931
-  comment: 'Nuevo fondo de John Tidd en la SICAV de Luxemburgo (2025). RV global value de calidad. Busca crecimiento en negocios sólidos a precios atractivos.'
+  comment: 'RV global value de calidad. Busca crecimiento en negocios sólidos a precios atractivos. Nuevo fondo de John Tidd en la SICAV de Luxemburgo (2025).'
 - name: Cobas International P (Acc)
   isin: LU1598719752
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000YU4F
-  comment: 'Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional. RV internacional value. Busca empresas infravaloradas a largo plazo.'
+  comment: 'RV internacional value. Busca empresas infravaloradas a largo plazo. Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional.'
 - name: Cobas Selection P (Acc)
   isin: LU1372006947
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000YXEW
-  comment: 'Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional. Parames suele invetir en este fondo. RV global e ibérica value. Busca empresas infravaloradas.'
+  comment: 'RV global e ibérica value. Busca empresas infravaloradas. Francisco García Paramés - Bestinfond (10,95%) y Bestinver Internacional. Parames suele invetir en este fondo.'
   inPortfolio: true
 - name: Horos Value Internacional
   isin: ES0146309002
   category: Global Small/Mid-Cap Equity
   morningstarId: F000010KY6
-  comment: 'Javier Ruiz Miguel Rodríguez y Alejandro Martín (ex Fondo Metagestión). ~12 años de resultados con +11,6% anual. RV internacional value. Busca negocios infravalorados.'
+  comment: 'RV internacional value. Busca negocios infravalorados. Javier Ruiz Miguel Rodríguez y Alejandro Martín (ex Fondo Metagestión). ~12 años de resultados con +11,6% anual.'
 - name: Sigma Internacional A
   isin: ES0175902008
   category: Global Small Equity
   morningstarId: F000016XFO
-  comment: 'Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record. RV global activa. Busca crecimiento a largo plazo, con exposición a pequeñas empresas.'
+  comment: 'RV global activa. Busca crecimiento a largo plazo, con exposición a pequeñas empresas. Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record.'
 - name: Gestión Boutique VI Opportunity
   isin: ES0110407063
   category: Global Small/Mid-Cap Equity & Flexible Allocation
   morningstarId: F0000107JH
-  comment: 'Andbank, lleva tambien BTC y otros activos alternativos. Mixto flexible. Combina activos para buscar crecimiento a largo plazo.'
+  comment: 'Mixto flexible. Combina activos para buscar crecimiento a largo plazo. Andbank, lleva tambien BTC y otros activos alternativos.'
 - name: Renta 4 Numantia Patrimonio Global
   isin: ES0173311103
   category: Global Flexible Allocation
   morningstarId: F00000VYOL
-  comment: 'Emerito Quintana, escuela austriaca y value investing. Gestora Renta4. Mixto global flexible con enfoque value. Busca crecimiento a largo plazo.'
+  comment: 'Mixto global flexible con enfoque value. Busca crecimiento a largo plazo. Emerito Quintana, escuela austriaca y value investing. Gestora Renta4.'
 - name: Avantage Fund A
   isin: ES0112231016
   category: Global Flexible Allocation
@@ -60,12 +60,12 @@ funds:
   isin: LU0690375422
   category: Global Large-Cap Growth Equity
   morningstarId: F00000OHVX
-  comment: 'Un clásico pero con mal rendimiento en los últimos años. RV global de calidad. Busca crecimiento con negocios rentables y duraderos.'
+  comment: 'RV global de calidad. Busca crecimiento con negocios rentables y duraderos. Un clásico pero con mal rendimiento en los últimos años.'
 - name: Fidelity Global Dividend (Acc)
   isin: LU1261431768
   category: Global Equity Income
   morningstarId: F00000W42B
-  comment: 'Empresas de Dividendos - Tambien existe en distribución. RV global de dividendos. Busca ingresos y crecimiento del capital a largo plazo.'
+  comment: 'RV global de dividendos. Busca ingresos y crecimiento del capital a largo plazo. Tambien existe en distribución.'
 - name: Fidelity Global Technology Acc
   isin: LU1213836080
   category: Sector Equity Technology
@@ -75,7 +75,7 @@ funds:
   isin: IE00BH6XSF26
   category: Global Flex-Cap Equity
   morningstarId: F00000YZS6
-  comment: RV global value y contrarian. Busca compañías infravaloradas y mercados poco populares. Gestor David B. Iben
+  comment: 'RV global value y contrarian. Busca compañías infravaloradas y mercados poco populares. Gestor David B. Iben'
 - name: GQG Partners Global Equity A
   isin: IE00BH481053
   category: Global Large-Cap Growth Equity
@@ -85,27 +85,27 @@ funds:
   isin: LU0661986348
   category: Europe Large-Cap Equity
   morningstarId: F00000MZB1
-  comment: 'No disponible MyInvestor. RV de la zona euro. Busca crecimiento mediante selección activa de empresas.'
+  comment: 'RV de la zona euro. Busca crecimiento mediante selección activa de empresas.'
 - name: Alken European Opportunities R
   isin: LU0235308482
   category: Europe Flex-Cap Equity
   morningstarId: F0GBR06MIL
-  comment: 'Nicolas Walewski. RV europea flexible. Busca empresas infravaloradas con potencial de crecimiento.'
+  comment: 'RV europea flexible. Busca empresas infravaloradas con potencial de crecimiento. Gestor Nicolas Walewski.'
 - name: Alken Small Cap Europe A
   isin: LU0524465548
   category: Europe Small-Cap Equity
   morningstarId: F00000Q3YK
-  comment: 'Gestor Nicolas Walewski. RV europea de pequeñas y medianas empresas. Busca crecimiento a largo plazo.'
+  comment: 'RV europea de pequeñas y medianas empresas. Busca crecimiento a largo plazo. Gestor Nicolas Walewski.'
 - name: Lazard Emerging Markets Eq C
   isin: IE00BYWPGP72
   category: Global Emerging Markets Equity
   morningstarId: F00000ZYZI
-  comment: 'No disponible MyInv - https://x.com/Fondos_A_Fondo/status/1950275153964724251. RV emergente activa. Busca crecimiento con selección fundamental de empresas.'
+  comment: 'RV emergente activa. Busca crecimiento con selección fundamental de empresas. https://x.com/Fondos_A_Fondo/status/1950275153964724251'
 - name: Incometric Nartex Equity R (Acc)
   isin: LU2357235576
   category: Global Large-Cap Growth Equity
   morningstarId: F00001DB42
-  comment: 'Tomás Maraver - Poco track record. RV global de calidad. Busca negocios con ventajas competitivas y crecimiento.'
+  comment: 'RV global de calidad. Busca negocios con ventajas competitivas y crecimiento. Gestor Tomás Maraver - Poco track record.'
 - name: Pictet-China Index P 
   isin: LU0625737910
   category: China Equity
@@ -116,23 +116,23 @@ funds:
   isin: LU0329070915
   category: India Equity
   morningstarId: F00000MHIV
-  comment: 'Avinash Vazirani, desde 2008. RV de India. Busca crecimiento mediante selección activa de empresas.'
+  comment: 'RV de India. Busca crecimiento mediante selección activa de empresas. Gestor Avinash Vazirani, desde 2008.'
   inPortfolio: true
 - name: Robeco Indian Equities D 
   isin: LU0491217419
   category: India Equity
   morningstarId: F00000JQCY
-  comment: 'ESG - Equipo de gestores. RV de India. Busca crecimiento con selección activa y análisis fundamental.'
+  comment: 'RV de India. Busca crecimiento con selección activa y análisis fundamental.'
 - name: Robeco BP Global Premium Eqs D 
   isin: LU0203975437
   category: Global Large-Cap Value Equity
   morningstarId: F0GBR05VCE
-  comment: 'ESG - Equipo de gestores. RV global value. Busca crecimiento mediante empresas infravaloradas con potencial de mejora.'
+  comment: 'RV global value. Busca crecimiento mediante empresas infravaloradas con potencial de mejora.'
 - name: Robeco Circular Economy D 
   isin: LU2092758726
   category: Sector Equity Ecology (ESG)
   morningstarId: F000014SSQ
-  comment: 'ESG - Equipo de gestores. RV temática global. Busca crecimiento en empresas de uso eficiente y reutilización de recursos.'
+  comment: 'RV temática global ESG. Busca crecimiento en empresas de uso eficiente y reutilización de recursos.'
 - name: Ranmore Global Equity 
   isin: IE00B6ZCS539
   category: Global Flex-Cap Equity
@@ -162,7 +162,7 @@ funds:
   isin: ES0147897005
   category: Global Flexible Allocation
   morningstarId: F00001155A
-  comment: 'Cartera permanente + BTC, parecido a mi cartera de inversión. Gestor Juan Manuel Rodríguez. Mixto global por reglas. Busca crecimiento controlando la volatilidad.'
+  comment: 'Mixto global por reglas. Busca crecimiento controlando la volatilidad. Cartera permanente + BTC, parecido a mi cartera de inversión. Gestor Juan Manuel Rodríguez.'
 - name: iMGP DBi Managed Futures Fund  
   isin: LU2951555403
   category: Global Systematic Trend
@@ -177,7 +177,7 @@ funds:
   isin: ES0148019005
   category: Global Large-Cap Blend Equity
   morningstarId: F00001QFKV
-  comment: 'No disponible MyInvestor. RV global indexada. Aporta exposición diversificada a bolsas internacionales mediante gestión pasiva.'
+  comment: 'RV global indexada. Aporta exposición diversificada a bolsas internacionales mediante gestión pasiva.'
   indexed: true
 - name: Vanguard Glb Stk Idx (Acc)
   isin: IE00B03HD191
@@ -204,14 +204,14 @@ funds:
   isin: IE00B18GC888
   category: Global Diversified Bond (Hedged)
   morningstarId: F00000T1HT
-  comment: 'Cubierto a Euro lleva un porcentage en deuda corporativa. RF global indexada. Aporta diversificación con bonos públicos y corporativos, con cobertura de divisa.'
+  comment: 'RF global indexada. Aporta diversificación con bonos públicos y corporativos, con cobertura de divisa EUR.'
   indexed: true
   inPortfolio: true
 - name: AXAWF Euro Credit Total Ret A
   isin: LU1164219682
   category: EUR Flexible Bond
   morningstarId: F00000VPP7
-  comment: 'Retorno absoluto RF EUR. RF europea flexible. Busca ingresos y crecimiento mediante gestión activa de duración y crédito.'
+  comment: 'Retorno absoluto, RF europea flexible. Busca ingresos y crecimiento mediante gestión activa de duración y crédito.'
   inPortfolio: true
 - name: DNCA Invest Alpha Bonds B 
   isin: LU1694789535
@@ -292,7 +292,7 @@ plans:
   isin: N5138
   category: Global Large-Cap Blend Equity
   morningstarId: F00000Y5QI
-  comment: 'Accesible desde MyInvestor. Plan de RV global indexada. Busca crecimiento para la jubilación con una cartera diversificada de acciones.'
+  comment: 'Plan de RV global indexada. Busca crecimiento para la jubilación con una cartera diversificada de acciones. Accesible desde MyInvestor.' 
   indexed: true
 - name: Finanbest Eficiente Bolsa Global PP
   isin: N5270
@@ -310,9 +310,9 @@ plans:
   isin: N5116
   category: Global Small-Cap Equity
   morningstarId: F00000XL5T
-  comment: 'Álvaro Guzmán - Plan de pensiones pero similar a los fondos pero no sigue las mismas inversiones. RV global value para la jubilación. Busca negocios infravalorados.'
+  comment: 'RV global value para la jubilación. Busca negocios infravalorados. Gestor Álvaro Guzmán - Plan de pensiones pero similar a los fondos pero no sigue las mismas inversiones. '
 - name: Cobas Global PP
   isin: N5219
   category: Global Small/Mid-Cap Equity
   morningstarId: F00000ZER6
-  comment: 'Francisco García Paramés. Plan de RV global value. Busca crecimiento para la jubilación invirtiendo en empresas infravaloradas.'
+  comment: 'Plan de RV global value. Busca crecimiento para la jubilación invirtiendo en empresas infravaloradas. Gestor Francisco García Paramés.'
