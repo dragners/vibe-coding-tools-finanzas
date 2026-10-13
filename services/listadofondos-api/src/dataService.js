@@ -1,7 +1,7 @@
 import path from "node:path";
 import { mkdir, readFile, writeFile, rename } from "node:fs/promises";
 import { parseConfigYaml } from "./config.js";
-import { parseAccumulatedRentOnly, parseRatio, parseTer, parseMorningstarRating } from "./parsers.js";
+import { parseAccumulatedRentOnly, parseRatioResult, parseTerResult, parseMorningstarRating } from "./parsers.js";
 
 const validValue = (value) => value != null && value !== "" && value !== "-";
 const identity = (entry) => entry.isin || entry.morningstarId || entry.name;
@@ -26,11 +26,16 @@ export function createDataService({ configPath, cacheFile, fetchHtml, now = () =
       ? await Promise.allSettled(urls.map(fetchHtml))
       : urls.map(() => ({ status: "rejected", reason: new Error("Missing MorningstarId") }));
     const html = (index) => results[index].status === "fulfilled" ? results[index].value : "";
+    const performance = parseAccumulatedRentOnly(html(0));
+    const sharpe = parseRatioResult(html(1), ["sharpe"]);
+    const volatility = parseRatioResult(html(1), ["volat"]);
+    const ter = parseTerResult(html(2));
+    const status = { performance: performance.debug.status, sharpe: sharpe.status, volatility: volatility.status, ter: ter.status };
     const fresh = {
-      performance: parseAccumulatedRentOnly(html(0)).values,
-      sharpe: parseRatio(html(1), ["sharpe"]),
-      volatility: parseRatio(html(1), ["volat"]),
-      ter: parseTer(html(2)),
+      performance: performance.values,
+      sharpe: sharpe.values,
+      volatility: volatility.values,
+      ter: ter.value,
       morningstarRating: parseMorningstarRating(html(2)),
     };
     const product = { ...entry, url: entry.morningstarId ? urls[0] : "", metricUpdatedAt: { ...previous?.metricUpdatedAt }, updateErrors: [] };
@@ -42,7 +47,7 @@ export function createDataService({ configPath, cacheFile, fetchHtml, now = () =
         ...previous?.metricUpdatedAt?.[metric],
       };
       for (const period of Object.keys(values)) product.metricUpdatedAt[metric][period] = updatedAt;
-      if (!Object.keys(values).length || Object.keys(previous?.[metric] ?? {}).some((period) => validValue(previous[metric][period]) && !validValue(values[period]))) {
+      if (status[metric] === "error" || Object.keys(previous?.[metric] ?? {}).some((period) => validValue(previous[metric][period]) && !validValue(values[period]))) {
         product.updateErrors.push(metric);
       }
     }
@@ -53,7 +58,7 @@ export function createDataService({ configPath, cacheFile, fetchHtml, now = () =
       } else {
         product[metric] = previous?.[metric] ?? (metric === "ter" ? "-" : null);
         if (validValue(previous?.[metric]) && !product.metricUpdatedAt[metric]) product.metricUpdatedAt[metric] = previous.lastUpdated;
-        if (metric === "ter" || validValue(previous?.[metric])) product.updateErrors.push(metric);
+        if (status[metric] === "error" || validValue(previous?.[metric])) product.updateErrors.push(metric);
       }
     }
     product.isStale = product.updateErrors.length > 0;

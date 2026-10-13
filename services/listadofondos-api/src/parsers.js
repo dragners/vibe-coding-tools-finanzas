@@ -163,6 +163,7 @@ function parsePerformanceNumber(raw) {
 function parseAccumulatedRentOnly(html) {
   const values = {};
   const debug = {
+    status: "error",
     mode: "table_only",
     tableHit: null,
     rowsParsed: 0,
@@ -203,6 +204,8 @@ function parseAccumulatedRentOnly(html) {
     if (valueColumn < 1) continue;
     const candidate = {};
     let hits = 0;
+    let unpublished = 0;
+    let malformed = false;
 
     for (let i = startIndex; i < parsedRows.length; i++) {
       const cells = parsedRows[i];
@@ -220,10 +223,15 @@ function parseAccumulatedRentOnly(html) {
         candidate[target.key] = number;
         debug.matches.push({ key: target.key, label: cells[0], raw, normalized, number });
         hits++;
+      } else if (isUnpublishedValue(raw)) {
+        unpublished++;
+      } else {
+        malformed = true;
       }
     }
 
-    if (hits > 0) {
+    if (hits > 0 || unpublished > 0) {
+      debug.status = malformed ? "error" : hits > 0 ? "available" : "unavailable";
       debug.tableHit = table.slice(0, 200);
       debug.rowsParsed = parsedRows.length;
 
@@ -304,16 +312,13 @@ function parseRatioFromTables(html, keywords) {
       (["1Y","3Y","5Y"]).forEach((p) => {
         if (periodIdxMap[p] != null) {
           const idx = periodIdxMap[p];
-          const val = cells[idx] ?? "";
-          values[p] = sanitizeValue(val);
+          values[p] = cells[idx];
         }
       });
 
-      // If at least one non "-" value, accept and return
-      if (Object.values(values).some((v) => v && v !== "-")) {
-        foundValues = values;
-        break;
-      }
+      // Keep explicit placeholders so unpublished ratios can be distinguished from an unreadable page.
+      foundValues = values;
+      break;
     }
 
     if (foundValues) return foundValues;
@@ -450,95 +455,44 @@ function normalizeForMatching(text) {
     .trim();
 }
 
-function parseTerFromTables(html) {
-  const tables = extractTables(html);
-  const targetHeader = normalizeForMatching("Comisiones anuales");
-  const targetRowLabels = [
-    normalizeForMatching("Comisiones de gestión"),
-    normalizeForMatching("Comisión de gestión"),
-  ].filter(Boolean);
-
-  for (const table of tables) {
-    const rows = extractRows(table);
-    if (!rows.length) continue;
-
-    let matchesHeader = false;
-
-    const captionMatch = table.match(/<caption[^>]*>([\s\S]*?)<\/caption>/i);
-    if (captionMatch) {
-      const captionNormalized = normalizeForMatching(stripHtml(captionMatch[1]));
-      if (captionNormalized.includes(targetHeader)) {
-        matchesHeader = true;
-      }
-    }
-
-    if (!matchesHeader) {
-      for (const row of rows) {
-        const cells = extractCells(row);
-        if (!cells.length) continue;
-        for (const cell of cells) {
-          const isHeaderCell =
-            /<th/i.test(cell) || /class\s*=\s*"[^"]*heading[^"]*"/i.test(cell);
-          if (!isHeaderCell) continue;
-          const cellNormalized = normalizeForMatching(stripHtml(cell));
-          if (cellNormalized.includes(targetHeader)) {
-            matchesHeader = true;
-            break;
-          }
-        }
-        if (matchesHeader) break;
-      }
-    }
-
-    if (!matchesHeader) continue;
-
-    for (const row of rows) {
-      const cells = extractCells(row);
-      if (!cells.length) continue;
-      const labelNormalized = normalizeForMatching(stripHtml(cells[0] ?? ""));
-      if (!labelNormalized) continue;
-      if (
-        targetRowLabels.some(
-          (target) =>
-            labelNormalized === target ||
-            labelNormalized.startsWith(`${target} `) ||
-            labelNormalized.includes(`${target} (`)
-        )
-      ) {
-        for (let idx = 1; idx < cells.length; idx += 1) {
-          const formatted = formatAsPercentage(stripHtml(cells[idx] ?? ""));
-          if (formatted !== "-") {
-            return formatted;
-          }
-        }
-      }
-    }
-  }
-
-  return "-";
+function isUnpublishedValue(value) {
+  return typeof value === "string" && /^(?:[-−–—]\s*%?|n\/a)?$/i.test(value.trim());
 }
 
-function parseTerLegacy(html) {
-  const tables = extractTables(html);
-  for (const table of tables) {
-    const rows = extractRows(table);
-    for (const row of rows) {
-      const text = stripHtml(row).toLowerCase();
-      if (text.includes("ter") || text.includes("gastos corrientes") || text.includes("ratio de gastos")) {
-        const cells = extractCells(row);
-        const last = cells[cells.length - 1];
-        const value = formatAsPercentage(stripHtml(last ?? ""));
-        if (value !== "-") return value;
+function parseRatioResult(html, keywords) {
+  const parsed = parseRatio(html, keywords);
+  const values = {};
+  let malformed = !Object.keys(parsed).length;
+  for (const [period, raw] of Object.entries(parsed)) {
+    if (parsePerformanceNumber(raw).number !== null) values[period] = raw;
+    else if (!isUnpublishedValue(raw)) malformed = true;
+  }
+  return { values, status: malformed ? "error" : Object.keys(values).length ? "available" : "unavailable" };
+}
+
+function parseTerResult(html) {
+  const candidates = [];
+  for (const table of extractTables(html)) {
+    for (const row of extractRows(table)) {
+      const cells = extractCells(row);
+      for (let index = 0; index < cells.length; index++) {
+        const label = normalizeForMatching(stripHtml(cells[index]));
+        // Management, entry and exit fees are not ongoing expenses.
+        if (!/^(?:(?:kid )?gastos corrientes|ongoing charges|ter|total expense ratio|ratio de gastos(?: totales)?)(?: %)?$/.test(label)) continue;
+        const raw = cells[index + 1] == null ? undefined : stripHtml(cells[index + 1]).trim();
+        candidates.push({ raw, priority: label.startsWith("kid gastos corrientes") ? 0 : /gastos corrientes|ongoing charges/.test(label) ? 1 : 2 });
       }
     }
   }
-  return "-";
+  candidates.sort((a, b) => a.priority - b.priority);
+  const candidate = candidates[0];
+  if (!candidate) return { value: "-", status: "error" };
+  const value = formatAsPercentage(candidate.raw ?? "");
+  return { value, status: value !== "-" ? "available" : isUnpublishedValue(candidate.raw) ? "unavailable" : "error" };
 }
 
 function parseTer(html) {
-  const parsed = parseTerFromTables(html);
-  if (parsed && parsed !== "-") return parsed;
-  return parseTerLegacy(html);
+  return parseTerResult(html).value;
 }
 
 function parseMorningstarRating(html) {
@@ -572,4 +526,4 @@ function parseMorningstarRating(html) {
   return Math.max(0, Math.min(5, rating));
 }
 
-export { parsePerformanceNumber, parseAccumulatedRentOnly, parseRatio, parseTer, parseMorningstarRating };
+export { parsePerformanceNumber, parseAccumulatedRentOnly, parseRatio, parseRatioResult, parseTer, parseTerResult, parseMorningstarRating };

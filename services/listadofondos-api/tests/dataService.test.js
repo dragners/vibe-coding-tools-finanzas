@@ -132,3 +132,55 @@ test("API data, health and error responses cannot be cached", async (t) => {
     await response.text();
   }
 });
+
+
+test("pension plans with unpublished costs do not show an update error", async (t) => {
+  const service = await setup(t, (url) => url.includes('tab=5') ? feesHtml.replace('0,3%', '-%') : goodHtml(url), 'funds: []\nplans:\n- name: Plan\n  isin: N5263\n  morningstarId: F001');
+  const { plans: [plan] } = await service.startRefresh();
+  assert.equal(plan.ter, '-');
+  assert.equal(plan.isStale, false);
+  assert.deepEqual(plan.updateErrors, []);
+  assert.equal(plan.metricUpdatedAt.ter, undefined);
+});
+
+test("a recent fund without enough history has unpublished risk metrics, not an update failure", async (t) => {
+  const service = await setup(t, (url) => url.includes('tab=2') ? ratiosHtml.replace(/(?:0,8|1,1|12,2|15,3)/g, '-') : goodHtml(url));
+  const { funds: [fund] } = await service.startRefresh();
+  assert.deepEqual(fund.sharpe, {});
+  assert.deepEqual(fund.volatility, {});
+  assert.equal(fund.ter, '0,3%');
+  assert.equal(fund.isStale, false);
+});
+
+test("a successful page containing unpublished returns does not show an update error", async (t) => {
+  const service = await setup(t, (url) => url.includes('tab=1') ? performanceHtml([['1 mes', '-'], ['3 meses', '-']]) : goodHtml(url));
+  const { funds: [fund] } = await service.startRefresh();
+  assert.deepEqual(fund.performance, {});
+  assert.equal(fund.isStale, false);
+});
+
+test("unpublished replacements retain previously published costs and flag them as stale", async (t) => {
+  let unavailable = false;
+  const service = await setup(t, (url) => url.includes('tab=5') && unavailable ? feesHtml.replace('0,3%', '-%') : goodHtml(url));
+  await service.startRefresh(); unavailable = true;
+  service.setTime('2026-10-13T09:00:00Z');
+  const { funds: [fund] } = await service.startRefresh();
+  assert.equal(fund.ter, '0,3%');
+  assert.equal(fund.metricUpdatedAt.ter, '2026-10-13T08:00:00.000Z');
+  assert.deepEqual(fund.updateErrors, ['ter']);
+});
+
+test("HTTP failures and unrecognizable successful pages remain failures without cached figures", async (t) => {
+  for (const fails of [true, false]) {
+    const service = await setup(t, async (url) => {
+      if (url.includes('tab=2') || url.includes('tab=5')) {
+        if (fails) throw new Error('timeout');
+        return '<html>Access denied</html>';
+      }
+      return goodHtml(url);
+    });
+    const { funds: [fund] } = await service.startRefresh();
+    assert.equal(fund.isStale, true);
+    assert.deepEqual(fund.updateErrors, ['sharpe', 'volatility', 'ter']);
+  }
+});

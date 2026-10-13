@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parsePerformanceNumber, parseAccumulatedRentOnly, parseRatio } from "../src/parsers.js";
+import { parsePerformanceNumber, parseAccumulatedRentOnly, parseRatio, parseRatioResult, parseTer, parseTerResult } from "../src/parsers.js";
 import { parseConfigYaml } from "../src/config.js";
 import { readFile } from "node:fs/promises";
 
@@ -44,4 +44,34 @@ test("the existing user configuration loads unchanged with the standard reader",
   const data = parseConfigYaml(text);
   assert(data.funds.length > 0);
   assert(data.plans.length > 0);
+});
+
+
+test("ongoing expenses use the adjacent KID value, never management or neighboring fees", () => {
+  const html = '<table><tr><td>Comisión de gestión</td><td>1,2%</td></tr><tr><td>KID Gastos Corrientes</td><td>0,83%</td><td>Comisión de éxito</td><td>9%</td></tr></table>';
+  assert.equal(parseTer(html), "0,83%");
+  assert.equal(parseTer(html.replace('0,83%', '0%')), "0%");
+  assert.equal(parseTer(html.replace('0,83%', '0.75%')), "0.75%");
+  assert.equal(parseTer('<table><tr><td>Comisión de gestión</td><td>1,2%</td></tr></table>'), "-");
+});
+
+test("explicit ongoing costs take priority over TER without replacing unpublished KID expenses", () => {
+  const html = '<table><tr><td>TER</td><td>1,5%</td></tr><tr><td>KID Gastos Corrientes</td><td>0,62%</td><td></td><td></td></tr></table>';
+  assert.equal(parseTer(html), "0,62%");
+  assert.deepEqual(parseTerResult(html.replace('0,62%', '-%')), { value: "-", status: "unavailable" });
+  for (const label of ['TER', 'Ratio de gastos', 'Gastos Corrientes', 'Ongoing Charges', 'Total Expense Ratio']) {
+    assert.equal(parseTer(`<table><tr><td>${label}</td><td>0,75%</td></tr></table>`), "0,75%");
+  }
+});
+
+test("unpublished placeholders differ from malformed or absent metric sections", () => {
+  const unavailableRisk = ratiosHtml.replace(/(?:0,8|1,1|12,2|15,3)/g, '-');
+  assert.deepEqual(parseRatioResult(unavailableRisk, ['sharpe']), { values: {}, status: "unavailable" });
+  assert.equal(parseAccumulatedRentOnly(performanceHtml([['1 mes', '-']])).debug.status, "unavailable");
+  assert.equal(parseAccumulatedRentOnly('<html>Access denied</html>').debug.status, "error");
+  assert.equal(parseRatioResult('<html>Access denied</html>', ['sharpe']).status, "error");
+  assert.equal(parseRatioResult(ratiosHtml.replace('0,8', 'invalid'), ['sharpe']).status, "error");
+  for (const html of ['<html>Access denied</html>', '<table><tr><td>KID Gastos Corrientes</td></tr></table>', '<table><tr><td>KID Gastos Corrientes</td><td>invalid</td></tr></table>']) {
+    assert.equal(parseTerResult(html).status, "error");
+  }
 });
