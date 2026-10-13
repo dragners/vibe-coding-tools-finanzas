@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App, { type ApiPayload, type FundRow } from "../src/App";
 
@@ -157,5 +157,58 @@ describe("sorting regression", () => {
       await user.click(screen.getByRole("button", { name: `Orden ${direction} por ISIN`, exact: true }));
       expect(fundNames()).toEqual(["Alfa", "Beta", "Sin datos"]);
     }
+  });
+});
+
+describe("data loading and mobile controls", () => {
+  it("retains real products after a background connection failure instead of replacing them with examples", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    let refresh: (() => void) | undefined;
+    const originalTimeout = window.setTimeout;
+    vi.spyOn(window, "setTimeout").mockImplementation((handler, delay, ...args) => {
+      if (delay === 5000 && typeof handler === "function") refresh = () => handler(...args);
+      return originalTimeout.call(window, handler, delay, ...args);
+    });
+    const user = await load({ isUpdating: true });
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    // Run the application's pending 5-second refresh without sleeping in the test.
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    // Language switches must not fetch again or replace the loaded list.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // A real refresh is scheduled by the initial isUpdating response.
+    expect(refresh).toBeDefined();
+    await act(async () => { refresh!(); });
+    expect(screen.getByText("Fondo 1", { exact: true })).not.toBeNull();
+    expect(screen.queryByText("Fondo Ejemplo Global")).toBeNull();
+    expect(screen.getByRole("button", { name: "Retry" })).not.toBeNull();
+  }, 10000);
+
+  it("rejects an invalid response visibly and lets the user retry", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const payload = { lastUpdated: "bad-date", funds, plans };
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, headers: { get: () => "application/json" }, text: async () => JSON.stringify(payload) })));
+    render(<App />);
+    await screen.findByRole("alert");
+    expect(screen.queryByText("Fondo 1", { exact: true })).toBeNull();
+    expect(screen.queryByText("Fondo Ejemplo Global")).toBeNull();
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, headers: { get: () => "application/json" }, text: async () => JSON.stringify({ ...payload, lastUpdated: "2026-10-13T08:00:00Z" }) } as Response);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Reintentar" }));
+    await screen.findByText("Fondo 1", { exact: true });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(vi.mocked(fetch).mock.calls.every(([, options]) => options?.cache === "no-store")).toBe(true);
+  });
+
+  it("marks preserved older metrics and exposes selectable column groups", async () => {
+    const user = await load({ funds: [{ ...funds[0], isStale: true, dataUpdatedAt: "2026-10-12T08:00:00Z" }] });
+    expect(screen.getByText("Datos pendientes de actualizar")).not.toBeNull();
+    expect(screen.getByText(/Conservamos las últimas cifras disponibles/)).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Riesgo", exact: true }));
+    expect(document.querySelector(".fund-table-scroll")?.getAttribute("data-view")).toBe("risk");
+    await user.click(screen.getByRole("button", { name: "Costes y detalles", exact: true }));
+    expect(document.querySelector(".fund-table-scroll")?.getAttribute("data-view")).toBe("costs");
+    await user.click(screen.getByRole("button", { name: "Riesgo", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Ratio Sharpe", exact: true }));
+    expect(screen.getByText(/Indica cuánta rentabilidad adicional/).textContent).toContain("referencia sin riesgo");
   });
 });

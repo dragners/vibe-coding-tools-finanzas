@@ -10,6 +10,7 @@ import React, {
 import { createPortal } from "react-dom";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
+import { validatePayload } from "./payload";
 import { findDuplicateIdentifiers, getFinectCompareUrl, getFinectProductId, getFundComparisonKey, getMorningstarCompareUrl, MAX_COMPARISON_FUNDS } from "./fundComparison";
 
 type Lang = "es" | "en";
@@ -82,6 +83,8 @@ export type FundRow = {
   sharpe: MetricRecord<RatioPeriod>;
   volatility: MetricRecord<RatioPeriod>;
   ter: MetricValue;
+  isStale?: boolean;
+  dataUpdatedAt?: string | null;
 };
 
 export type ApiPayload = {
@@ -89,6 +92,7 @@ export type ApiPayload = {
   funds: FundRow[];
   plans: FundRow[];
   isUpdating?: boolean;
+  updateFailed?: boolean;
 };
 
 type ApiStatus = "idle" | "loading" | "ready" | "refreshing" | "error";
@@ -116,7 +120,7 @@ const TEXTS = {
       "Estos son mis fondos favoritos y planes de pensiones, que sigo e invierto en ellos desde hace años.",
     refresh: "Refrescar datos",
     refreshing: "Actualizando...",
-    lastUpdated: "Última actualización",
+    lastUpdated: "Última comprobación",
     name: "Nombre",
     isin: "ISIN",
     category: "Categoría",
@@ -126,7 +130,7 @@ const TEXTS = {
       "Las rentabilidades a 3Y, 5Y y 10Y están anualizadas.",
     sharpe: "Ratio Sharpe",
     sharpeInfo:
-      "Mide la rentabilidad obtenida por unidad de riesgo asumido; cuanto mayor, mejor.",
+      "Indica cuánta rentabilidad adicional sobre una referencia sin riesgo ha obtenido el fondo por cada unidad de volatilidad. Entre valores positivos, uno mayor indica una mejor relación histórica entre rentabilidad y riesgo. Un valor negativo significa que no superó esa referencia, aunque no necesariamente perdió dinero. Compáralo para el mismo periodo y moneda: describe el pasado, no garantiza resultados futuros.",
     volatility: "Volatilidad",
     volatilityInfo:
       "Indica cuánto fluctúa el valor del fondo en el tiempo; un valor menor implica menos oscilaciones.",
@@ -154,6 +158,14 @@ const TEXTS = {
     comparisonMissingFinectVisible: "Finect no está disponible: falta el ISIN o código de plan en algún producto seleccionado.",
     duplicateWarning: "Hay identificadores duplicados. Corrige el ISIN o MorningstarId de los siguientes fondos o planes:",
     clearComparison: "Limpiar selección",
+    staleData: "Algunos datos no se han podido actualizar. Conservamos las últimas cifras disponibles, si las hay; los productos afectados están marcados.",
+    staleProduct: "Datos pendientes de actualizar",
+    retry: "Reintentar",
+    allColumns: "Todas",
+    riskView: "Riesgo",
+    costsView: "Costes y detalles",
+    tableView: "Columnas visibles",
+    scrollHint: "Desliza la tabla para ver más columnas. El nombre del producto permanece visible.",
     dataNote: "",
     langES: "ES",
     langEN: "EN",
@@ -170,7 +182,7 @@ const TEXTS = {
       "Review performance, Sharpe ratios, volatility and TER for each fund or pension plan.",
     refresh: "Refresh data",
     refreshing: "Refreshing...",
-    lastUpdated: "Last update",
+    lastUpdated: "Last checked",
     name: "Name",
     isin: "ISIN",
     category: "Category",
@@ -180,7 +192,7 @@ const TEXTS = {
       "3Y, 5Y and 10Y returns are annualized.",
     sharpe: "Sharpe ratio",
     sharpeInfo:
-      "Measures the return earned per unit of risk taken; higher values are better.",
+      "Shows how much excess return over a risk-free reference the fund earned per unit of volatility. Among positive values, a higher ratio indicates better historical risk-adjusted performance. A negative ratio means the fund underperformed that reference, even if it did not lose money. Compare the same period and currency: this describes past performance and does not guarantee future results.",
     volatility: "Volatility",
     volatilityInfo:
       "Shows how much the fund value fluctuates over time; lower values mean less variability.",
@@ -208,6 +220,14 @@ const TEXTS = {
     comparisonMissingFinectVisible: "Finect is unavailable: a selected product is missing its ISIN or pension plan code.",
     duplicateWarning: "Duplicate identifiers found. Correct the ISIN or MorningstarId of these funds or pension plans:",
     clearComparison: "Clear selection",
+    staleData: "Some data could not be updated. We keep previous figures when available; affected products are marked.",
+    staleProduct: "Data awaiting an update",
+    retry: "Retry",
+    allColumns: "All",
+    riskView: "Risk",
+    costsView: "Costs and details",
+    tableView: "Visible columns",
+    scrollHint: "Swipe the table to see more columns. Product names stay visible.",
     dataNote: "",
     langES: "ES",
     langEN: "EN",
@@ -343,7 +363,7 @@ function InfoTip({
         ref={buttonRef}
         type="button"
         aria-label={label}
-        aria-haspopup="dialog"
+        aria-describedby={open ? id : undefined}
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((prev) => !prev)}
@@ -365,7 +385,7 @@ function InfoTip({
                 left: popoverPosition?.left ?? -9999,
                 opacity: popoverPosition ? 1 : 0,
               }}
-              className="z-50 max-w-[260px] rounded-lg border bg-white p-2 text-xs text-gray-700 shadow-lg"
+              className="z-50 w-[320px] max-w-[calc(100vw-32px)] rounded-lg border bg-white p-3 text-xs leading-relaxed text-gray-700 shadow-lg"
             >
               {content}
             </div>,
@@ -784,6 +804,7 @@ function renderMetricCells<T extends string>(
       ? getMetricBackground(options.metric, numericValue, columnStats)
       : undefined;
     const classes = [
+      options.metric === "performance" ? "fund-performance-column" : "fund-risk-column",
       "px-1 py-1.5 text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle",
       METRIC_COLUMN_WIDTH_CLASS,
     ];
@@ -913,12 +934,12 @@ function SortControl({
       : `Sort descending by ${label}`;
 
   return (
-    <span className="ml-1 flex flex-col items-center justify-center gap-0.5">
+    <span className="ml-1 flex flex-col items-center justify-center">
       <button
         type="button"
         aria-label={ascLabel}
         aria-pressed={ascActive}
-        className={`group inline-flex h-3 w-3 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
+        className={`group inline-flex h-6 w-7 sm:h-5 sm:w-6 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
           ascActive ? "text-cyan-600" : "text-gray-300 hover:text-gray-500"
         }`}
         onClick={() => onChange(ascActive ? null : "asc")}
@@ -940,7 +961,7 @@ function SortControl({
         type="button"
         aria-label={descLabel}
         aria-pressed={descActive}
-        className={`group inline-flex h-3 w-3 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
+        className={`group inline-flex h-6 w-7 sm:h-5 sm:w-6 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${
           descActive ? "text-cyan-600" : "text-gray-300 hover:text-gray-500"
         }`}
         onClick={() => onChange(descActive ? null : "desc")}
@@ -1048,6 +1069,11 @@ function CombinedTable({
   showSearchInput?: boolean;
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+  const [tableView, setTableView] = useState<"all" | "performance" | "risk" | "costs">("all");
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (tableScrollRef.current) tableScrollRef.current.scrollLeft = 0;
+  }, [tableView]);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedItems, setSelectedItems] = useState<{ section: TableSection; key: string }[]>([]);
   const comparisonSection = selectedItems[0]?.section ?? "funds";
@@ -1147,8 +1173,10 @@ function CombinedTable({
     [sections],
   );
 
-  const totalColumns =
-    2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
+  const totalColumns = tableView === "performance" ? 1 + PERFORMANCE_LABELS.length
+    : tableView === "risk" ? 1 + RATIO_LABELS.length * 2
+    : tableView === "costs" ? 4
+    : 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 2 + 2;
   const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
 
   const handleToggleTooltip = useCallback((id: string) => {
@@ -1253,13 +1281,27 @@ function CombinedTable({
         <div id={comparisonHelpId} role="status" aria-live="polite" className="mb-4 space-y-1 text-xs text-slate-600">
           {comparisonMessages.map((message) => <p key={message}>{message}</p>)}
         </div>
-        <div className="overflow-x-auto pb-4">
+        <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label={texts.tableView}>
+          {([
+            ["all", texts.allColumns], ["performance", texts.performance],
+            ["risk", texts.riskView], ["costs", texts.costsView],
+          ] as const).map(([view, label]) => (
+            <button type="button" key={view} aria-pressed={tableView === view}
+              onClick={() => setTableView(view)}
+              className={`rounded-xl border px-3 py-2 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${tableView === view ? "border-cyan-400 bg-cyan-50 text-cyan-600" : "border-slate-200 bg-white/90 text-slate-600"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="mb-2 text-xs text-slate-500 md:hidden">{texts.scrollHint}</p>
+        <div ref={tableScrollRef} className="fund-table-scroll overflow-auto max-h-[75dvh] pb-4" data-view={tableView}>
+
           <table className="w-full border-separate border-spacing-y-1 border-spacing-x-[1px] text-sm text-gray-800">
             <thead className="bg-white/95 backdrop-blur-sm shadow-sm">
               <tr className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 <th
                   rowSpan={2}
-                  className="px-3 py-2 max-w-[320px] bg-white/90 backdrop-blur text-center rounded-tl-2xl"
+                  className="fund-name-column px-3 py-2 max-w-[320px] bg-white/90 backdrop-blur text-center rounded-tl-2xl"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.name}</span>
@@ -1273,7 +1315,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className="px-2.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
+                  className="fund-cost-column px-2.5 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.isin}</span>
@@ -1287,7 +1329,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className={`px-1 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center ${TER_COLUMN_WIDTH_CLASS}`}
+                  className={`fund-cost-column px-1 py-2 whitespace-nowrap bg-white/90 backdrop-blur text-center ${TER_COLUMN_WIDTH_CLASS}`}
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.ter}</span>
@@ -1301,7 +1343,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={PERFORMANCE_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="fund-performance-column relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.performance}</span>
@@ -1310,7 +1352,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="fund-risk-column relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.sharpe}</span>
@@ -1319,7 +1361,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="fund-risk-column relative px-1.5 py-2 bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.volatility}</span>
@@ -1328,7 +1370,7 @@ function CombinedTable({
                 </th>
                 <th
                   rowSpan={2}
-                  className={`px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
+                  className={`fund-cost-column px-3 py-2 bg-white/90 backdrop-blur text-center rounded-tr-2xl ${commentColumnWidthClass}`}
                 >
                   {texts.comment}
                 </th>
@@ -1337,7 +1379,7 @@ function CombinedTable({
                 {PERFORMANCE_LABELS.map((label, index) => (
                   <th
                     key={`perf-${label}`}
-                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`fund-performance-column px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
@@ -1361,7 +1403,7 @@ function CombinedTable({
                 {RATIO_LABELS.map((label, index) => (
                   <th
                     key={`sharpe-${label}`}
-                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`fund-risk-column px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
@@ -1385,7 +1427,7 @@ function CombinedTable({
                 {RATIO_LABELS.map((label, index) => (
                   <th
                     key={`vol-${label}`}
-                    className={`px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
+                    className={`fund-risk-column px-1 py-1.5 bg-white/90 backdrop-blur text-center ${
                       index === 0 ? "border-l border-gray-400" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
@@ -1454,7 +1496,7 @@ function CombinedTable({
                       categoryValue !== "-" ? categoryValue : texts.noData;
                     const link =
                       getMorningstarUrl(row.morningstarId, lang) ??
-                      row.url ??
+                      (row.url || undefined) ??
                       undefined;
                     const tooltipLabel =
                       categoryDisplay && categoryDisplay !== texts.noData
@@ -1463,7 +1505,7 @@ function CombinedTable({
                     return (
                       <tr key={tooltipId} className="align-middle">
                         <td
-                          className={`relative px-3 py-2 bg-white/95 backdrop-blur max-w-[320px] overflow-visible align-top ${
+                          className={`fund-name-column relative px-3 py-2 bg-white/95 backdrop-blur max-w-[320px] overflow-visible align-top ${
                             tooltipOpen ? "z-20" : ""
                           }`}
                         >
@@ -1522,6 +1564,7 @@ function CombinedTable({
                                 />
                               </label>
                             </div>
+                            {row.isStale ? <p className="text-[11px] text-amber-700">{texts.staleProduct}</p> : null}
                             {!comparisonId ? (
                               <p className="text-[11px] text-slate-600">{texts.comparisonUnavailable}</p>
                             ) : null}
@@ -1543,7 +1586,7 @@ function CombinedTable({
                                   >
                                     <button
                                       type="button"
-                                      className="inline-flex flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
+                                      className="inline-flex flex-wrap sm:flex-nowrap items-center gap-1 rounded-md bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60"
                                       onClick={() => handleToggleTooltip(tooltipId)}
                                       onBlur={() => handleCloseTooltip(tooltipId)}
                                       onFocus={() => handleOpenTooltip(tooltipId)}
@@ -1589,12 +1632,12 @@ function CombinedTable({
                           </div>
                         </td>
                         <td
-                          className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
+                          className="fund-cost-column px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
                         >
                           {formatValue(row.isin, lang)}
                         </td>
                         <td
-                          className={`px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}
+                          className={`fund-cost-column px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}
                         >
                           {formatValue(row.ter, lang)}
                         </td>
@@ -1623,7 +1666,7 @@ function CombinedTable({
                           lang,
                         )}
                         <td
-                          className={`px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-[11px] sm:text-xs leading-snug align-middle ${commentColumnWidthClass}`}
+                          className={`fund-cost-column px-3 py-2 bg-white/95 backdrop-blur text-gray-600 text-[11px] sm:text-xs leading-snug align-middle ${commentColumnWidthClass}`}
                         >
                           {formatValue(row.comment, lang) || texts.commentPlaceholder}
                         </td>
@@ -1770,6 +1813,7 @@ export default function App() {
     try {
       const endpoint = force ? `${API_BASE}/refresh` : `${API_BASE}/data`;
       const response = await fetch(endpoint, {
+        cache: "no-store",
         method: force ? "POST" : "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -1781,16 +1825,18 @@ export default function App() {
       }
       let payload: ApiPayload;
       try {
-        payload = JSON.parse(rawText) as ApiPayload;
+        payload = JSON.parse(rawText);
       } catch (jsonErr) {
         throw new SyntaxError(
           (jsonErr as Error).message || "Invalid JSON response",
         );
       }
+      payload = validatePayload(payload);
       setData(payload);
       dataRef.current = payload;
       setUsingMockData(false);
       setStatus(payload.isUpdating ? "refreshing" : "ready");
+      if (payload.updateFailed) setError("load-failed");
 
       if (typeof window !== "undefined") {
         if (pendingRefreshTimeoutRef.current !== null) {
@@ -1813,14 +1859,15 @@ export default function App() {
         window.clearTimeout(pendingRefreshTimeoutRef.current);
         pendingRefreshTimeoutRef.current = null;
       }
-      if (shouldUseMockData(err)) {
+      // Never replace a previously loaded real list with fictitious sample funds.
+      if (!hasExistingData && import.meta.env.DEV && shouldUseMockData(err)) {
         setData(MOCK_PAYLOAD);
         dataRef.current = MOCK_PAYLOAD;
         setStatus("ready");
         setUsingMockData(true);
         return;
       }
-      setError((err as Error).message);
+      setError("load-failed");
       setStatus(hasExistingData ? "ready" : "error");
     }
   }, []);
@@ -1977,10 +2024,13 @@ export default function App() {
             {status === "refreshing" ? texts.refreshing : texts.loading}
           </div>
         )}
+        {data && [...data.funds, ...data.plans].some((product) => product.isStale) && (
+          <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">{texts.staleData}</div>
+        )}
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
             {texts.error}
-            {error ? ` (${error})` : null}
+            <button type="button" onClick={() => void fetchData(Boolean(dataRef.current))} className="ml-3 rounded-lg border border-red-300 px-3 py-2 font-semibold focus-visible:ring-2 focus-visible:ring-red-400">{texts.retry}</button>
           </div>
         )}
 

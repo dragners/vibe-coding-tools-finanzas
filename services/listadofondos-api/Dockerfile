@@ -1,7 +1,8 @@
 FROM node:20-alpine
 WORKDIR /app
+COPY services/listadofondos-api/package.json services/listadofondos-api/package-lock.json ./
+RUN npm ci --omit=dev
 COPY services/listadofondos-api/src ./src
-COPY services/listadofondos-api/package.json ./
 COPY apps/listadofondos/config ./config
 RUN mkdir -p /app/cache
 ENV NODE_ENV=production

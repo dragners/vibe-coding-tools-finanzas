@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+.fund-table-scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.fund-name-column {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  box-shadow: 2px 0 0 #cbd5e1;
+}
+thead .fund-name-column { z-index: 40; }
+.fund-table-scroll[data-view="performance"] .fund-risk-column,
+.fund-table-scroll[data-view="performance"] .fund-cost-column,
+.fund-table-scroll[data-view="risk"] .fund-performance-column,
+.fund-table-scroll[data-view="risk"] .fund-cost-column,
+.fund-table-scroll[data-view="costs"] .fund-performance-column,
+.fund-table-scroll[data-view="costs"] .fund-risk-column { display: none; }
+@media (max-width: 639px) {
+  .fund-name-column { width: 180px; min-width: 180px; max-width: 180px; }
+  .fund-name-column a { overflow-wrap: anywhere; }
+}
+
 :root {
   color-scheme: light;
 }
