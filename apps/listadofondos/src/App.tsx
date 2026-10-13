@@ -792,6 +792,7 @@ function getMetricBackground(
 type CellRenderOptions = {
   metric: MetricAccessor;
   addLeftBoundary?: boolean;
+  addRightBoundary?: boolean;
 };
 
 function renderMetricCells<T extends string>(
@@ -813,7 +814,10 @@ function renderMetricCells<T extends string>(
       METRIC_COLUMN_WIDTH_CLASS,
     ];
     if (options.addLeftBoundary && columns[0] === label) {
-      classes.push("border-l", "border-gray-400");
+      classes.push("metric-group-start");
+    }
+    if (options.addRightBoundary && columns[columns.length - 1] === label) {
+      classes.push("metric-group-end");
     }
     return (
       <td
@@ -1399,7 +1403,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={PERFORMANCE_LABELS.length}
-                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center metric-group-start overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.performance}</span>
@@ -1408,7 +1412,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center metric-group-start overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.sharpe}</span>
@@ -1417,7 +1421,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center metric-group-start overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.sortino}</span>
@@ -1426,7 +1430,7 @@ function CombinedTable({
                 </th>
                 <th
                   colSpan={RATIO_LABELS.length}
-                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center border-l border-gray-400 overflow-visible"
+                  className="relative px-1.5 pt-1 pb-0 align-bottom bg-white/90 backdrop-blur text-center metric-group-start metric-group-end overflow-visible"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{texts.volatility}</span>
@@ -1445,7 +1449,7 @@ function CombinedTable({
                   <th
                     key={`perf-${label}`}
                     className={`px-1 pt-0 pb-1 bg-white/90 backdrop-blur text-center ${
-                      index === 0 ? "border-l border-gray-400" : ""
+                      index === 0 ? "metric-group-start" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -1469,7 +1473,7 @@ function CombinedTable({
                   <th
                     key={`sharpe-${label}`}
                     className={`px-1 pt-0 pb-1 bg-white/90 backdrop-blur text-center ${
-                      index === 0 ? "border-l border-gray-400" : ""
+                      index === 0 ? "metric-group-start" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -1493,7 +1497,7 @@ function CombinedTable({
                   <th
                     key={`sortino-${label}`}
                     className={`px-1 pt-0 pb-1 bg-white/90 backdrop-blur text-center ${
-                      index === 0 ? "border-l border-gray-400" : ""
+                      index === 0 ? "metric-group-start" : ""
                     } ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -1517,8 +1521,8 @@ function CombinedTable({
                   <th
                     key={`vol-${label}`}
                     className={`px-1 pt-0 pb-1 bg-white/90 backdrop-blur text-center ${
-                      index === 0 ? "border-l border-gray-400" : ""
-                    } ${METRIC_COLUMN_WIDTH_CLASS}`}
+                      index === 0 ? "metric-group-start" : ""
+                    } ${index === RATIO_LABELS.length - 1 ? "metric-group-end" : ""} ${METRIC_COLUMN_WIDTH_CLASS}`}
                   >
                     <div className="flex items-center justify-center gap-1">
                       <span>{displayMetricLabel(label)}</span>
@@ -1715,7 +1719,7 @@ function CombinedTable({
                           row.volatility,
                           "vol",
                           volatilityStats,
-                          { metric: "volatility", addLeftBoundary: true },
+                          { metric: "volatility", addLeftBoundary: true, addRightBoundary: true },
                           lang,
                         )}
                         <td
