@@ -337,7 +337,7 @@ function parseRatioFromTables(html, keywords) {
  */
 function parseRatiosFromText(html) {
   const text = htmlToPlainText(html);
-  const out = { sharpe: {}, volatility: {} };
+  const out = { sharpe: {}, sortino: {}, volatility: {} };
   if (!text) return out;
 
   // Normalize spaces and accents to ease matching
@@ -406,6 +406,9 @@ function parseRatiosFromText(html) {
   const sharpe = parseLine(/^Ratio\s+de\s+Sharpe\b/i);
   if (sharpe) out.sharpe = sharpe;
 
+  const sortino = parseLine(/^Ratio\s+de\s+Sortino\b/i);
+  if (sortino) out.sortino = sortino;
+
   return out;
 }
 
@@ -436,8 +439,9 @@ function parseRatio(html, keywords) {
   // Return exactly the requested metric from the text-extracted object
   const isSharpe = keywords.some((k) => /sharpe/i.test(k));
   if (isSharpe) return byText.sharpe || {};
-  // Otherwise treat as volatility
-  return byText.volatility || {};
+  if (keywords.some((k) => /sortino/i.test(k))) return byText.sortino || {};
+  if (keywords.some((k) => /volat/i.test(k))) return byText.volatility || {};
+  return {};
 }
 
 function normalizeForMatching(text) {

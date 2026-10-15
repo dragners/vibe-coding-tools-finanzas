@@ -28,18 +28,20 @@ export function createDataService({ configPath, cacheFile, fetchHtml, now = () =
     const html = (index) => results[index].status === "fulfilled" ? results[index].value : "";
     const performance = parseAccumulatedRentOnly(html(0));
     const sharpe = parseRatioResult(html(1), ["sharpe"]);
+    const sortino = parseRatioResult(html(1), ["sortino"]);
     const volatility = parseRatioResult(html(1), ["volat"]);
     const ter = parseTerResult(html(2));
-    const status = { performance: performance.debug.status, sharpe: sharpe.status, volatility: volatility.status, ter: ter.status };
+    const status = { performance: performance.debug.status, sharpe: sharpe.status, sortino: sortino.status, volatility: volatility.status, ter: ter.status };
     const fresh = {
       performance: performance.values,
       sharpe: sharpe.values,
+      sortino: sortino.values,
       volatility: volatility.values,
       ter: ter.value,
       morningstarRating: parseMorningstarRating(html(2)),
     };
     const product = { ...entry, url: entry.morningstarId ? urls[0] : "", metricUpdatedAt: { ...previous?.metricUpdatedAt }, updateErrors: [] };
-    for (const metric of ["performance", "sharpe", "volatility"]) {
+    for (const metric of ["performance", "sharpe", "sortino", "volatility"]) {
       const values = Object.fromEntries(Object.entries(fresh[metric]).filter(([, value]) => validValue(value)));
       product[metric] = { ...previous?.[metric], ...values };
       product.metricUpdatedAt[metric] = {
@@ -112,7 +114,9 @@ export function createDataService({ configPath, cacheFile, fetchHtml, now = () =
       return { ...cache, isUpdating: false, updateFailed: true };
     }
     const age = now().getTime() - Date.parse(cache.lastUpdated);
-    if (age >= 0 && age < 4 * 60 * 60 * 1000) return { ...cache, isUpdating: Boolean(refreshPromise) };
+    // Older caches predate Sortino; populate it without discarding existing figures.
+    const missingSortino = [...cache.funds, ...cache.plans].some((product) => product?.sortino == null);
+    if (!missingSortino && age >= 0 && age < 4 * 60 * 60 * 1000) return { ...cache, isUpdating: Boolean(refreshPromise) };
     startRefresh().catch((error) => console.error("Background refresh failed:", error.message));
     return { ...cache, isUpdating: true };
   }

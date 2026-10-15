@@ -30,6 +30,7 @@ export const MOCK_PAYLOAD: ApiPayload = {
         "3Y": "0.91",
         "5Y": "0.95",
       },
+      sortino: { "1Y": "1.24", "3Y": "1.46", "5Y": "1.55" },
       volatility: {
         "1Y": "13.4",
         "3Y": "12.6",
@@ -61,6 +62,7 @@ export const MOCK_PAYLOAD: ApiPayload = {
         "3Y": "1.02",
         "5Y": "1.08",
       },
+      sortino: { "1Y": "1.50", "3Y": "1.62", "5Y": "1.76" },
       volatility: {
         "1Y": "12.1",
         "3Y": "11.7",
@@ -93,6 +95,7 @@ export const MOCK_PAYLOAD: ApiPayload = {
         "3Y": "0.62",
         "5Y": "0.68",
       },
+      sortino: { "1Y": "0.84", "3Y": "0.93", "5Y": "1.08" },
       volatility: {
         "1Y": "8.7",
         "3Y": "8.4",

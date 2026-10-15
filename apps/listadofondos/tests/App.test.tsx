@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import App, { type ApiPayload, type FundRow } from "../src/App";
 
 function product(name: string, isin: string, morningstarId: string, ter: FundRow["ter"] = "0,2"): FundRow {
-  return { name, isin, morningstarId, ter, category: "Equity Global", comment: "", url: "", performance: {}, sharpe: {}, volatility: {} };
+  return { name, isin, morningstarId, ter, category: "Equity Global", comment: "", url: "", performance: {}, sharpe: {}, sortino: {}, volatility: {} };
 }
 const funds = Array.from({ length: 6 }, (_, index) => product(`Fondo ${index + 1}`, `LU000000000${index}`, `F00${index}`));
 const plans = ["N5396", "N5263", "N5116", "N5138", "N5270", "N5219"].map((id, index) => product(`Plan ${index + 1}`, id, `P00${index}`));
@@ -122,14 +122,14 @@ describe("header data warnings", () => {
 
 describe("sorting regression", () => {
   const rows = [
-    { ...product("Alfa", "LU001", "F001", "0,4"), performance: { "1Y": "20,1" }, sharpe: { "1Y": "1,4" }, volatility: { "1Y": "15,2" } },
-    { ...product("Beta", "LU002", "F002", "0,2"), performance: { "1Y": "-5,2" }, sharpe: { "1Y": "-0,1" }, volatility: { "1Y": "5,8" } },
+    { ...product("Alfa", "LU001", "F001", "0,4"), performance: { "1Y": "20,1" }, sharpe: { "1Y": "1,4" }, sortino: { "1Y": "2,4" }, volatility: { "1Y": "15,2" } },
+    { ...product("Beta", "LU002", "F002", "0,2"), performance: { "1Y": "-5,2" }, sharpe: { "1Y": "-0,1" }, sortino: { "1Y": "-0,5" }, volatility: { "1Y": "5,8" } },
     product("Sin datos", "LU003", "F003", "-"),
   ];
 
   it("leaves absent values last in both directions across TER, returns, Sharpe and volatility", async () => {
     const user = await load({ funds: rows, plans: [] });
-    for (const label of ["TER", "Rentabilidades (%) 1Y", "Ratio Sharpe 1Y", "Volatilidad 1Y"]) {
+    for (const label of ["TER", "Rentabilidades (%) 1Y", "Ratio Sharpe 1Y", "Ratio Sortino 1Y", "Volatilidad 1Y"]) {
       for (const direction of ["ascendente", "descendente"]) {
         await user.click(screen.getByRole("button", { name: `Orden ${direction} por ${label}`, exact: true }));
         expect(fundNames()).toEqual(direction === "ascendente" ? ["Beta", "Alfa", "Sin datos"] : ["Alfa", "Beta", "Sin datos"]);
@@ -271,4 +271,20 @@ describe("category labels", () => {
     await user.click(screen.getByRole("button", { name: "ES", exact: true }));
     expect(fundNames()).toEqual(["Fondo 1", "Fondo 3", "Plan 1"]);
   });
+});
+
+it("places Sortino between Sharpe and volatility for funds and plans and explains its interpretation", async () => {
+  const user = await load({ funds: [{ ...funds[0], sortino: { '1Y': '1,23', '3Y': '0', '5Y': '-1,4' } }], plans: [{ ...plans[0], sortino: { '1Y': '2,34', '3Y': '3,45', '5Y': '4,56' } }] });
+  const headings = [...document.querySelectorAll('thead tr:first-child th')].map(el => el.textContent);
+  expect(headings.findIndex(text => text?.includes('Ratio Sortino'))).toBe(headings.findIndex(text => text?.includes('Ratio Sharpe')) + 1);
+  expect(headings.findIndex(text => text?.includes('Volatilidad'))).toBe(headings.findIndex(text => text?.includes('Ratio Sortino')) + 1);
+  for (const period of ['1Y', '3Y', '5Y']) expect(screen.getByRole('button', { name: `Orden ascendente por Ratio Sortino ${period}`, exact: true })).not.toBeNull();
+  expect(screen.getByText('1,23', { exact: true })).not.toBeNull();
+  expect(screen.getByText('2,34', { exact: true })).not.toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Ratio Sortino', exact: true }));
+  expect(screen.getByRole('tooltip').textContent).toContain('solo penaliza las desviaciones a la baja');
+  expect(screen.getByRole('tooltip').textContent).toContain('Un valor negativo');
+  await user.click(screen.getByRole('button', { name: 'EN', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Sortino ratio', exact: true }));
+  expect(screen.getByText(/Unlike Sharpe/)).not.toBeNull();
 });

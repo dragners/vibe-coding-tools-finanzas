@@ -11,7 +11,7 @@
   position: sticky;
   left: 0;
   z-index: 10;
-  box-shadow: 2px 0 0 #cbd5e1;
+  box-shadow: 2px 0 0 var(--fund-table-divider);
 }
 thead .fund-name-column { z-index: 40; }
 @media (max-width: 639px) {
@@ -19,7 +19,11 @@ thead .fund-name-column { z-index: 40; }
   .fund-name-column a { overflow-wrap: anywhere; }
 }
 
+.metric-group-start { border-left: 2px solid var(--fund-table-divider); }
+.metric-group-end { border-right: 2px solid var(--fund-table-divider); }
+
 :root {
+  --fund-table-divider: #94a3b8;
   color-scheme: light;
 }
 

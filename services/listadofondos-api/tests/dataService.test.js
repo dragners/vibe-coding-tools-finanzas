@@ -31,11 +31,13 @@ test("one failed source preserves older risk metrics while updating returns and 
   service.setTime('2026-10-13T09:00:00Z');
   const next = await service.startRefresh();
   assert.deepEqual(next.funds[0].sharpe, first.funds[0].sharpe);
+  assert.deepEqual(next.funds[0].sortino, first.funds[0].sortino);
+  assert.equal(next.funds[0].metricUpdatedAt.sortino['3Y'], '2026-10-13T08:00:00.000Z');
   assert.deepEqual(next.funds[0].volatility, first.funds[0].volatility);
   assert.equal(next.funds[0].metricUpdatedAt.sharpe['3Y'], '2026-10-13T08:00:00.000Z');
   assert.equal(next.funds[0].metricUpdatedAt.performance['1M'], '2026-10-13T09:00:00.000Z');
   assert.equal(next.funds[0].isStale, true);
-  assert.deepEqual(next.funds[0].updateErrors, ['sharpe', 'volatility']);
+  assert.deepEqual(next.funds[0].updateErrors, ['sharpe', 'sortino', 'volatility']);
 });
 
 test("a total fetch failure retains all previous figures and their actual date", async (t) => {
@@ -44,7 +46,7 @@ test("a total fetch failure retains all previous figures and their actual date",
   const old = await service.startRefresh(); fail = true;
   service.setTime('2026-10-13T13:00:00Z');
   const next = await service.startRefresh();
-  for (const key of ['performance', 'sharpe', 'volatility', 'ter']) assert.deepEqual(next.funds[0][key], old.funds[0][key]);
+  for (const key of ['performance', 'sharpe', 'sortino', 'volatility', 'ter']) assert.deepEqual(next.funds[0][key], old.funds[0][key]);
   assert.equal(next.funds[0].dataUpdatedAt, old.funds[0].dataUpdatedAt);
   assert.equal(next.funds[0].isStale, true);
 });
@@ -144,9 +146,10 @@ test("pension plans with unpublished costs do not show an update error", async (
 });
 
 test("a recent fund without enough history has unpublished risk metrics, not an update failure", async (t) => {
-  const service = await setup(t, (url) => url.includes('tab=2') ? ratiosHtml.replace(/(?:0,8|1,1|12,2|15,3)/g, '-') : goodHtml(url));
+  const service = await setup(t, (url) => url.includes('tab=2') ? ratiosHtml.replace(/(?:0,8|1,1|1,4|1,8|12,2|15,3)/g, '-') : goodHtml(url));
   const { funds: [fund] } = await service.startRefresh();
   assert.deepEqual(fund.sharpe, {});
+  assert.deepEqual(fund.sortino, {});
   assert.deepEqual(fund.volatility, {});
   assert.equal(fund.ter, '0,3%');
   assert.equal(fund.isStale, false);
@@ -181,6 +184,45 @@ test("HTTP failures and unrecognizable successful pages remain failures without 
     });
     const { funds: [fund] } = await service.startRefresh();
     assert.equal(fund.isStale, true);
-    assert.deepEqual(fund.updateErrors, ['sharpe', 'volatility', 'ter']);
+    assert.deepEqual(fund.updateErrors, ['sharpe', 'sortino', 'volatility', 'ter']);
   }
+});
+
+test("Sortino shares the Sharpe request and preserves a missing period with its original date", async (t) => {
+  let partial = false;
+  const requests = [];
+  const service = await setup(t, async url => {
+    requests.push(url);
+    if (partial && url.includes('tab=2')) return ratiosHtml.replace('<td>1,4</td><td>1,8</td>', '<td>0</td><td>-</td>');
+    return goodHtml(url);
+  });
+  const initial = await service.startRefresh();
+  assert.deepEqual(initial.funds[0].sortino, { '3Y': '1,4', '5Y': '1,8' });
+  assert.equal(requests.length, 3);
+  assert.equal(requests.filter(url => url.includes('tab=2')).length, 1);
+  partial = true;
+  service.setTime('2026-10-13T09:00:00Z');
+  const { funds: [fund] } = await service.startRefresh();
+  assert.deepEqual(fund.sortino, { '3Y': '0', '5Y': '1,8' });
+  assert.deepEqual(fund.metricUpdatedAt.sortino, { '3Y': '2026-10-13T09:00:00.000Z', '5Y': '2026-10-13T08:00:00.000Z' });
+  assert.deepEqual(fund.updateErrors, ['sortino']);
+});
+
+test("a recent cache without Sortino refreshes automatically and retains its existing figures", async (t) => {
+  let release; let delay = false;
+  const barrier = new Promise(resolve => { release = resolve; });
+  const service = await setup(t, async url => { if (delay) await barrier; return goodHtml(url); });
+  const initial = await service.startRefresh();
+  delete initial.funds[0].sortino;
+  delete initial.funds[0].metricUpdatedAt.sortino;
+  await writeFile(service.cacheFile, JSON.stringify(initial));
+  delay = true;
+  const cached = await service.getData();
+  assert.equal(cached.isUpdating, true);
+  assert.deepEqual(cached.funds[0].performance, initial.funds[0].performance);
+  const refresh = service.startRefresh();
+  release(); await refresh;
+  const updated = await service.getData();
+  assert.equal(updated.isUpdating, false);
+  assert.deepEqual(updated.funds[0].sortino, { '3Y': '1,4', '5Y': '1,8' });
 });

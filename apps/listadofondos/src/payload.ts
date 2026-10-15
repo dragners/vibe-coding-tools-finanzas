@@ -35,7 +35,7 @@ export function validatePayload(value: unknown): ApiPayload {
       return {
         name: item.name, isin: text("isin"), morningstarId: text("morningstarId"),
         category: text("category"), comment: text("comment"), url: text("url"),
-        performance: metrics("performance"), sharpe: metrics("sharpe"), volatility: metrics("volatility"),
+        performance: metrics("performance"), sharpe: metrics("sharpe"), sortino: metrics("sortino"), volatility: metrics("volatility"),
         ter: item.ter ?? "-", morningstarRating: item.morningstarRating as number | null,
         indexed: item.indexed as boolean | undefined, inPortfolio: item.inPortfolio as boolean | undefined,
         isStale: item.isStale as boolean | undefined, dataUpdatedAt: item.dataUpdatedAt as string | null | undefined,
