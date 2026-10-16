@@ -288,3 +288,28 @@ it("places Sortino between Sharpe and volatility for funds and plans and explain
   await user.click(screen.getByRole('button', { name: 'Sortino ratio', exact: true }));
   expect(screen.getByText(/Unlike Sharpe/)).not.toBeNull();
 });
+
+it("clears typed searches and label filters with X, restores rows and keeps comparison selection", async () => {
+  const user = await load({ funds: [{ ...funds[0], indexed: true }, funds[1]], plans: [plans[0]] });
+  const input = screen.getByRole('textbox') as HTMLInputElement;
+  expect(screen.queryByRole('button', { name: 'Borrar búsqueda', exact: true })).toBeNull();
+  await user.click(checkbox('Fondo 1'));
+  await user.type(input, 'Fondo 2');
+  expect(fundNames()).toEqual(['Fondo 2']);
+  await user.click(screen.getByRole('button', { name: 'Borrar búsqueda', exact: true }));
+  expect(input.value).toBe('');
+  expect(document.activeElement).toBe(input);
+  expect(fundNames()).toEqual(['Fondo 1', 'Fondo 2', 'Plan 1']);
+  expect(checkbox('Fondo 1').checked).toBe(true);
+  await user.click(screen.getByRole('button', { name: 'Filtrar por Index: Fondo 1', exact: true }));
+  expect(fundNames()).toEqual(['Fondo 1']);
+  await user.click(screen.getByRole('button', { name: 'Borrar búsqueda', exact: true }));
+  expect(fundNames()).toHaveLength(3);
+  expect(screen.queryByRole('button', { name: 'Borrar búsqueda', exact: true })).toBeNull();
+  await user.type(input, 'Plan 1');
+  await user.click(screen.getByRole('button', { name: 'EN', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Clear search', exact: true }));
+  expect(input.value).toBe('');
+  expect(document.activeElement).toBe(input);
+  expect(fundNames()).toHaveLength(3);
+});

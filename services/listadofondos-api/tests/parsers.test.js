@@ -90,3 +90,13 @@ test("text fallback extracts Sortino independently from the other risk measures"
   assert.deepEqual(parseRatioResult(html, ['sortino']), { values: { '1Y': '0', '3Y': '1,4', '5Y': '-1,8' }, status: 'available' });
   assert.equal(parseRatioResult(html.replace(/<p>Ratio de Sortino.*?<\/p>/, ''), ['sortino']).status, 'error');
 });
+
+test("Horos Internacional PP keeps its own MorningstarId, distinct from the investment fund", async () => {
+  const text = await readFile(new URL('../../../apps/listadofondos/config/fondos.yaml', import.meta.url), 'utf8');
+  const config = parseConfigYaml(text);
+  const plan = config.plans.find(product => product.isin === 'N5263');
+  const fund = config.funds.find(product => product.isin === 'ES0146309002');
+  assert.equal(plan?.morningstarId, 'F000010RWV');
+  assert.equal(fund?.morningstarId, 'F000010KY6');
+  assert.notEqual(plan.morningstarId, fund.morningstarId);
+});
