@@ -148,6 +148,7 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Buscar...",
     searchAriaLabel: "Buscar en la tabla",
+    clearSearch: "Borrar búsqueda",
     compare: "Comparar en Morningstar",
     compareFinect: "Comparar en Finect",
     compareFinectHint: "Selecciona entre 2 y 5 fondos o planes para comparar en Finect",
@@ -209,6 +210,7 @@ const TEXTS = {
     sectionDescription: "",
     searchPlaceholder: "Search...",
     searchAriaLabel: "Search within the table",
+    clearSearch: "Clear search",
     compare: "Compare on Morningstar",
     compareFinect: "Compare on Finect",
     compareFinectHint: "Select between 2 and 5 funds or pension plans to compare on Finect",
@@ -1142,6 +1144,7 @@ function CombinedTable({
   showSearchInput?: boolean;
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [badgeFilter, setBadgeFilter] = useState<CategoryBadge | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedItems, setSelectedItems] = useState<{ section: TableSection; key: string }[]>([]);
@@ -1289,6 +1292,7 @@ function CombinedTable({
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
               <input
+                ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
@@ -1296,21 +1300,39 @@ function CombinedTable({
                 aria-label={texts.searchAriaLabel}
                 className="w-full rounded-2xl border border-slate-300/80 bg-white/90 py-2.5 pl-3.5 pr-10 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm transition focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200"
               />
-              <svg
-                className="pointer-events-none absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.8}
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
-                />
-              </svg>
+              {searchQuery ? (
+                <button
+                  type="button"
+                  aria-label={texts.clearSearch}
+                  title={texts.clearSearch}
+                  onClick={() => {
+                    setBadgeFilter(null);
+                    onSearchChange?.("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:text-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                    <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" />
+                  </svg>
+                </button>
+              ) : (
+                <svg
+                  className="pointer-events-none absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.8}
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m21 21-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
+                  />
+                </svg>
+              )}
             </div>
             <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
               {selectedItems.length > 0 ? (
