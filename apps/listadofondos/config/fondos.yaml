@@ -305,7 +305,6 @@ plans:
   category: Global Small/Mid-Cap Equity
   morningstarId: F000010RWV
   comment: 'Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional pero en PP. RV internacional value para la jubilación. Busca empresas infravaloradas.'
-  inPortfolio: true
 - name: Azvalor Global Value PP
   isin: N5116
   category: Global Small-Cap Equity
