@@ -242,7 +242,8 @@ funds:
   isin: LU2951555403
   category: Global Systematic Trend
   morningstarId: 0P0001UBZT
-  comment: 'Fondo de futuros gestionados con seguimiento sistemático de tendencias. Opera posiciones largas y cortas en distintos mercados. Busca diversificación frente a RV y RF, aunque puede sufrir pérdidas y su correlación es variable.'- name: Dunas Valor Prudente 
+  comment: 'Fondo de futuros gestionados con seguimiento sistemático de tendencias. Opera posiciones largas y cortas en distintos mercados. Busca diversificación frente a RV y RF, aunque puede sufrir pérdidas y su correlación es variable.'
+- name: Dunas Valor Prudente
   isin: ES0175437005
   category: EUR Multistrategy Bond Equity
   morningstarId: F00000ZN9Q
