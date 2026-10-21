@@ -46,7 +46,7 @@ funds:
   category: Global Small-Cap Equity
   morningstarId: F000016XFO
   comment: 'RV global activa. Busca crecimiento a largo plazo, con exposición a pequeñas empresas. Gabriel Castro Lafuente y José Ramón Boluda Vicedo, gestores con poco track record.'
-- name: Gestión Boutique VI Opportunity
+- name: Gestión Boutique VI Opportun.
   isin: ES0110407063
   category: Global Flex-Cap Equity
   morningstarId: F0000107JH
@@ -111,7 +111,7 @@ funds:
   category: Global Flex-Cap Equity
   morningstarId: F00000YZS6
   comment: 'RV global value y contrarian. Busca compañías infravaloradas y mercados poco populares. Gestor David B. Iben'
-- name: Janus Henderson Global Small Cap
+- name: Janus Henderson Glb Small Cap
   isin: LU1984712320
   category: Global Small-Cap Equity
   morningstarId: F000013W45
@@ -126,7 +126,7 @@ funds:
   category: Global Large-Cap Growth Equity
   morningstarId: F000014CAN
   comment: 'RV global temática sobre cambios tecnológicos, demográficos y económicos. Gestores Philippe Vialle, Julia Kung y Alessandro Roggero.'
-- name: Incometric Nartex Equity R (Acc)
+- name: Incometric Nartex Eq R (Acc)
   isin: LU2357235576
   category: Global Large-Cap Growth Equity
   morningstarId: F00001DB42
@@ -261,7 +261,7 @@ funds:
   comment: 'MSCI World - Acumulación. RV de países desarrollados. Base diversificada de acciones globales.'
   indexed: true
   inPortfolio: true
-- name: Vanguard Glb Small-Cp Idx (Acc)
+- name: Vanguard Glb Small Idx (Acc)
   isin: IE00B42W4L06
   category: Global Small-Cap Equity
   morningstarId: F00000PA9N
@@ -288,7 +288,7 @@ funds:
   morningstarId: F00000ZY7L
   comment: 'Retorno absoluto de RF global con posiciones largas, cortas y derivados. Busca rentabilidad en distintos entornos de tipos, sin garantizar capital ni beneficios.'
   inPortfolio: true
-- name: Ninety One Global Nat. Resources
+- name: Ninety One Glb Nat. Resources
   isin: LU2358792120
   category: Sector Equity Natural Resources
   morningstarId: F00001B6YM
@@ -310,12 +310,12 @@ funds:
   morningstarId: F00000VPP7
   comment: 'Retorno absoluto, RF europea flexible. Busca ingresos y crecimiento mediante gestión activa de duración y crédito.'
   inPortfolio: true
-- name: Nordea Low Dur. EU Covered Bond
+- name: Nordea Low Dur. EU Covered Bd
   isin: LU1694212348
   category: EUR Corporate Bond - Short Term
   morningstarId: F00000ZPRU
   comment: 'Bonos garantizados europeos, principalmente respaldados por hipotecas. Busca rentabilidad estable con duración corta y elevada calidad crediticia.'
-- name: Neuberger Short Euro Bond (Acc)
+- name: Neuberger Short Euro Bd (Acc)
   isin: IE00BNG2T811
   category: EUR Diversified Bond - Short Term
   morningstarId: F000017L4O
@@ -355,7 +355,7 @@ funds:
   category: Global Flexible Bond - EUR Hedged
   morningstarId: F00000LPOD
   comment: 'Retorno absoluto de RF con posiciones largas y cortas en crédito. Aprovecha diferencias de valoración entre bonos y emisores para reducir la dependencia del mercado.'
-- name: Mandarine Credit Opportunities C
+- name: Mandarine Credit Opportun. C
   isin: FR0000971913
   category: EUR Flexible Bond
   morningstarId: F0GBR04GCY
@@ -390,7 +390,7 @@ funds:
   category: EUR High Yield Bond
   morningstarId: F00000TVL6
   comment: 'RF high yield europea de Neuberger Berman. Selecciona bonos corporativos mediante análisis fundamental, asumiendo mayor riesgo de crédito.'
-- name: Generali Euro Bond 1-3 Years EX
+- name: Generali Euro Bond 1-3Y EX
   isin: LU0396183898
   category: EUR Government Bond - Short Term
   morningstarId: F000002K1K
@@ -419,13 +419,13 @@ plans:
   morningstarId: F000016CB6
   comment: 'Plan de RV global indexada. Busca crecimiento para la jubilación con diversificación internacional y costes bajos.'
   indexed: true
-- name: Indexa Más Rentabilidad Acciones
+- name: Indexa Más Rentab. Acciones
   isin: N5138
   category: Global Equity PP
   morningstarId: F00000Y5QI
   comment: 'Plan de RV global indexada. Busca crecimiento para la jubilación con una cartera diversificada de acciones. Accesible desde MyInvestor.' 
   indexed: true
-- name: Finanbest Eficiente Bolsa Glb PP
+- name: Finanbest Efic. Bolsa Glb PP
   isin: N5270
   category: Global Equity PP
   morningstarId: F00001278R
