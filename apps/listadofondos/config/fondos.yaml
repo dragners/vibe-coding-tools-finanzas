@@ -213,8 +213,8 @@ funds:
   morningstarId: F00000VPP7
   comment: 'Retorno absoluto, RF europea flexible. Busca ingresos y crecimiento mediante gestión activa de duración y crédito.'
   inPortfolio: true
-- name: DNCA Invest Alpha Bonds B 
-  isin: LU1694789535
+- name: DNCA Invest Alpha Bonds A
+  isin: LU1694789451
   category: Global Flexible Bond
   morningstarId: F00000ZY7M
   comment: 'Fondo de Retorno absoluto de RF global (Retorno Abosuluto=Busca ganar siempre una rentabilidad aunque los tipos suban, usa derivados)'
