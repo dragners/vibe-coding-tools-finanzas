@@ -1008,6 +1008,37 @@ function getMorningstarUrl(id?: string, lang: Lang = "es") {
   )}&ClientFund=0&BaseCurrencyId=EUR&CurrencyId=EUR&LanguageId=${langId}`;
 }
 
+function CopyIsin({ isin, lang }: { isin: string; lang: Lang }) {
+  const [feedback, setFeedback] = useState<"copied" | "error" | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timeoutRef.current !== null) clearTimeout(timeoutRef.current); }, []);
+  const value = isin.trim();
+  if (!value || value === "-") return <>{formatValue(isin, lang)}</>;
+  const label = `${lang === "es" ? "Copiar ISIN" : "Copy ISIN"}: ${value}`;
+  const message = feedback === "copied" ? (lang === "es" ? "Copiado" : "Copied")
+    : feedback === "error" ? (lang === "es" ? "No se pudo copiar" : "Could not copy") : "";
+  const copy = async () => {
+    if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
+    try {
+      await navigator.clipboard.writeText(value);
+      setFeedback("copied");
+    } catch {
+      setFeedback("error");
+    }
+    timeoutRef.current = setTimeout(() => setFeedback(null), 2000);
+  };
+  return (
+    <button type="button" onClick={() => void copy()} aria-label={label} title={label}
+      className="relative block w-full rounded-sm text-left hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60">
+      {value}
+      <span aria-live="polite" aria-atomic="true"
+        className={feedback ? `absolute inset-0 flex items-center bg-white/95 text-[11px] ${feedback === "copied" ? "text-cyan-700" : "text-red-600"}` : "sr-only"}>
+        {message}
+      </span>
+    </button>
+  );
+}
+
 function CategoryLabels({ badges, category, name, lang, onSelect }: {
   badges: CategoryBadge[];
   category: string;
@@ -1653,7 +1684,7 @@ function CombinedTable({
                         <td
                           className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
                         >
-                          {formatValue(row.isin, lang)}
+                          <CopyIsin isin={row.isin} lang={lang} />
                         </td>
                         <td
                           className={`px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}

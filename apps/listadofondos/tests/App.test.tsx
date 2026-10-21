@@ -369,3 +369,43 @@ describe("Morningstar star filters", () => {
     expect(fundNames()).toEqual(["Fondo 2"]);
   });
 });
+
+
+describe("copying product identifiers", () => {
+  it("copies the exact fund ISIN or pension code and announces success without changing filters or selection", async () => {
+    const user = await load({ funds: [funds[0]], plans: [plans[0]] });
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    await user.click(checkbox("Fondo 1"));
+    await user.click(screen.getByRole("button", { name: "Copiar ISIN: LU0000000000", exact: true }));
+    expect(writeText).toHaveBeenLastCalledWith("LU0000000000");
+    expect(screen.getByText("Copiado", { exact: true })).not.toBeNull();
+    expect(checkbox("Fondo 1").checked).toBe(true);
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("");
+    await user.click(screen.getByRole("button", { name: "Copiar ISIN: N5396", exact: true }));
+    expect(writeText).toHaveBeenLastCalledWith("N5396");
+    expect(fundNames()).toEqual(["Fondo 1", "Plan 1"]);
+    writeText.mockRestore();
+  });
+
+  it("supports keyboard copying and English feedback", async () => {
+    const user = await load({ funds: [funds[0]], plans: [] });
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    act(() => screen.getByRole("button", { name: "Copy ISIN: LU0000000000", exact: true }).focus());
+    await user.keyboard("{Enter}");
+    expect(writeText).toHaveBeenCalledWith("LU0000000000");
+    expect(screen.getByText("Copied", { exact: true })).not.toBeNull();
+    writeText.mockRestore();
+  });
+
+  it("does not show false success when clipboard access fails, and missing identifiers are not copyable", async () => {
+    const user = await load({ funds: [funds[0], { ...funds[1], isin: "" }, { ...funds[2], isin: "-" }], plans: [] });
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Denied"));
+    expect(screen.getAllByRole("button", { name: /^Copiar ISIN:/ })).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Copiar ISIN: LU0000000000", exact: true }));
+    expect(screen.getByText("No se pudo copiar", { exact: true })).not.toBeNull();
+    expect(screen.queryByText("Copiado", { exact: true })).toBeNull();
+    expect(fundNames()).toHaveLength(3);
+    writeText.mockRestore();
+  });
+});
