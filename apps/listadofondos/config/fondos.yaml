@@ -51,7 +51,7 @@ funds:
   category: Global Flex-Cap Equity
   morningstarId: F0000107JH
   comment: 'Mixto flexible. Combina activos para buscar crecimiento a largo plazo. Andbank, lleva tambien BTC y otros activos alternativos.'
-- name: Renta 4 Numantia Patrimonio Global
+- name: Renta 4 Numantia Patr. Global
   isin: ES0173311103
   category: EUR Flexible Allocation
   morningstarId: F00000VYOL
@@ -76,7 +76,7 @@ funds:
   category: EUR Flexible Allocation
   morningstarId: F00000NPYO
   comment: 'Mixto conservador global. Busca preservar y aumentar el patrimonio mediante acciones de calidad, bonos, oro y liquidez. Gestores Sebastian Lyon y Charlotte Yonge.'
-- name: Assenagon Multi-Asset Conservative
+- name: Assenagon Multi-Asset Conserv.
   isin: LU1297482223
   category: EUR Cautious Allocation
   morningstarId: F00000WK22
@@ -111,7 +111,7 @@ funds:
   category: Global Flex-Cap Equity
   morningstarId: F00000YZS6
   comment: 'RV global value y contrarian. Busca compañías infravaloradas y mercados poco populares. Gestor David B. Iben'
-- name: Janus Henderson Global Smaller Companies
+- name: Janus Henderson Global Small Cap
   isin: LU1984712320
   category: Global Small-Cap Equity
   morningstarId: F000013W45
@@ -151,12 +151,12 @@ funds:
   category: Global Emerging Markets Equity
   morningstarId: F00000ZYZI
   comment: 'RV emergente activa. Busca crecimiento con selección fundamental de empresas. https://x.com/Fondos_A_Fondo/status/1950275153964724251'
-- name: Pzena Emerging Markets Focused Value
+- name: Pzena Emrg Mkts Focused Value
   isin: IE00B42PDY56
   category: Global Emerging Markets Equity
   morningstarId: F00000PGIP
   comment: 'RV emergente value de Pzena. Busca compañías infravaloradas con potencial de recuperar beneficios mediante análisis fundamental y enfoque contrarian.'
-- name: Robeco QI Emerging Markets Active Equities D EUR
+- name: Robeco QI Emrg Mkts Active Eq
   isin: LU0329355670
   category: Global Emerging Markets Equity
   morningstarId: F000000RB9
@@ -198,7 +198,7 @@ funds:
   category: Global Flex-Cap Equity
   morningstarId: F00000TISV
   comment: 'RV global value y contrarian. Busca oportunidades fuera de las grandes compañías dominantes de los índices.'
-- name: Dodge & Cox Worldwide Global Stock Acc
+- name: Dodge & Cox Global Stock Acc
   isin: IE00B55JMJ98
   category: Global Large-Cap Value Equity
   morningstarId: F00000JNOU
@@ -208,7 +208,7 @@ funds:
   category: EUR Flexible Allocation
   morningstarId: F00000X3BN
   comment: 'Fondo mixto global flexible con elevada exposición potencial a RV. Busca aprovechar oportunidades de inversión mediante asignación activa entre mercados.'
-- name: Robeco QI Emerging Conservative Equit
+- name: Robeco QI Emrg Conservative Eq
   isin: LU0582533245
   category: Global Emerging Markets Equity
   morningstarId: F00000M0QL
@@ -288,7 +288,7 @@ funds:
   morningstarId: F00000ZY7L
   comment: 'Retorno absoluto de RF global con posiciones largas, cortas y derivados. Busca rentabilidad en distintos entornos de tipos, sin garantizar capital ni beneficios.'
   inPortfolio: true
-- name: Ninety One Global Natural Resources
+- name: Ninety One Global Nat. Resources
   isin: LU2358792120
   category: Sector Equity Natural Resources
   morningstarId: F00001B6YM
@@ -310,7 +310,7 @@ funds:
   morningstarId: F00000VPP7
   comment: 'Retorno absoluto, RF europea flexible. Busca ingresos y crecimiento mediante gestión activa de duración y crédito.'
   inPortfolio: true
-- name: Nordea Low Duration EU Covered Bond 
+- name: Nordea Low Dur. EU Covered Bond
   isin: LU1694212348
   category: EUR Corporate Bond - Short Term
   morningstarId: F00000ZPRU
@@ -385,7 +385,7 @@ funds:
   category: EUR High Yield Bond
   morningstarId: F0GBR04BFK
   comment: 'RF high yield europea. Invierte en deuda corporativa europea de menor calidad crediticia buscando rentabilidad por diferenciales de crédito. Gestión activa de Candriam.'
-- name: Neuberger Berman European High Yield Bond
+- name: Neuberger Berman Euro HY Bond
   isin: IE00BNH72V92
   category: EUR High Yield Bond
   morningstarId: F00000TVL6
@@ -405,7 +405,7 @@ funds:
   category: Global Emerging Markets Bond - EUR Biased
   morningstarId: F000011XJP
   comment: 'RF de mercados frontera. Invierte en deuda soberana y corporativa de economías menos desarrolladas, con riesgos políticos, de crédito y liquidez.'
-- name: Neuberger Berman Short Duration Emerging Market Debt
+- name: Neuberger Berman Short EM Debt
   isin: IE00BDZRWZ54
   category: Global Emerging Markets Bond - EUR Biased
   morningstarId: F00000TPIL
@@ -425,7 +425,7 @@ plans:
   morningstarId: F00000Y5QI
   comment: 'Plan de RV global indexada. Busca crecimiento para la jubilación con una cartera diversificada de acciones. Accesible desde MyInvestor.' 
   indexed: true
-- name: Finanbest Eficiente Bolsa Global PP
+- name: Finanbest Eficiente Bolsa Glb PP
   isin: N5270
   category: Global Equity PP
   morningstarId: F00001278R
