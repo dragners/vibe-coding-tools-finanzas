@@ -1135,6 +1135,9 @@ function CombinedTable({
   );
 
   const matchesFilter = useCallback((row: FundRow) => {
+    if (/^★{1,5}$/.test(normalizedQuery)) {
+      return renderStars(row.morningstarRating) === normalizedQuery;
+    }
     if (badgeFilter && normalizedQuery === badgeFilter.text.toLowerCase()) {
       return getCategoryBadges(formatValue(row.category, lang), lang, row.indexed)
         .some((badge) => badge.variant === badgeFilter.variant);
@@ -1626,12 +1629,16 @@ function CombinedTable({
                             {(badges.length > 0 || stars) && (
                               <div className="fund-label-row flex w-full items-center gap-1">
                                 {stars ? (
-                                  <span
-                                    className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-500"
-                                    aria-label={`${stars.length} estrellas Morningstar`}
+                                  <button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center rounded-sm text-xs font-semibold leading-none text-amber-500 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"
+                                    aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${stars.length} ${lang === "es" ? "estrellas Morningstar" : "Morningstar stars"}: ${row.name}`}
+                                    title={`${lang === "es" ? "Filtrar por" : "Filter by"} ${stars.length} ${lang === "es" ? "estrellas Morningstar" : "Morningstar stars"}`}
+                                    aria-pressed={normalizedQuery === stars}
+                                    onClick={() => { setBadgeFilter(null); onSearchChange?.(stars); }}
                                   >
                                     {stars}
-                                  </span>
+                                  </button>
                                 ) : null}
                                 {badges.length > 0 ? (
                                   <div className={stars ? "ml-auto" : ""}>

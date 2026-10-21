@@ -326,3 +326,46 @@ it("clears typed searches and label filters with X, restores rows and keeps comp
   expect(document.activeElement).toBe(input);
   expect(fundNames()).toHaveLength(3);
 });
+
+
+describe("Morningstar star filters", () => {
+  const ratedFunds = [1, 2, 3, 4, 5].map((rating, index) => ({ ...funds[index], morningstarRating: rating }));
+  const ratedPayload = {
+    funds: [...ratedFunds, { ...funds[5], morningstarRating: null, comment: "★★★★★" }],
+    plans: [
+      { ...plans[0], morningstarRating: 5 },
+      { ...plans[1], morningstarRating: 3 },
+      { ...plans[2], morningstarRating: 0 },
+    ],
+  };
+
+  it.each([1, 2, 3, 4, 5])("clicking %i stars filters by the exact rating and X restores every row", async (rating) => {
+    const user = await load(ratedPayload);
+    await user.click(checkbox("Fondo 1"));
+    await user.click(screen.getByRole("button", { name: `Filtrar por ${rating} estrellas Morningstar: Fondo ${rating}`, exact: true }));
+    const expected = [`Fondo ${rating}`, ...(rating === 5 ? ["Plan 1"] : rating === 3 ? ["Plan 2"] : [])];
+    expect(fundNames()).toEqual(expected);
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("★".repeat(rating));
+    expect(screen.getByRole("button", { name: `Filtrar por ${rating} estrellas Morningstar: Fondo ${rating}`, exact: true }).getAttribute("aria-pressed")).toBe("true");
+    await user.click(screen.getByRole("button", { name: "Borrar búsqueda", exact: true }));
+    expect(fundNames()).toHaveLength(9);
+    expect(checkbox("Fondo 1").checked).toBe(true);
+  });
+
+  it("works with keyboard, language changes and replacing the star filter with a label or typed search", async () => {
+    const user = await load(ratedPayload);
+    const stars = screen.getByRole("button", { name: "Filtrar por 5 estrellas Morningstar: Fondo 5", exact: true });
+    act(() => stars.focus());
+    await user.keyboard("{Enter}");
+    expect(fundNames()).toEqual(["Fondo 5", "Plan 1"]);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 5", "Plan 1"]);
+    expect(screen.getByRole("button", { name: "Filter by 5 Morningstar stars: Fondo 5", exact: true }).getAttribute("aria-pressed")).toBe("true");
+    await user.click(screen.getByRole("button", { name: "Filter by Equity: Fondo 5", exact: true }));
+    expect(fundNames()).toHaveLength(9);
+    await user.click(screen.getByRole("button", { name: "Filter by 3 Morningstar stars: Fondo 3", exact: true }));
+    await user.clear(screen.getByRole("textbox"));
+    await user.type(screen.getByRole("textbox"), "Fondo 2");
+    expect(fundNames()).toEqual(["Fondo 2"]);
+  });
+});
