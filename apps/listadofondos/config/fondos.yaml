@@ -126,11 +126,6 @@ funds:
   category: Global Large-Cap Growth Equity
   morningstarId: F000014CAN
   comment: 'RV global growth temática. Invierte en compañías beneficiadas por cambios tecnológicos, demográficos y económicos. Gestores Philippe Vialle, Julia Kung y Alessandro Roggero.'
-- name: Fiera Capital Global Equity
-  isin: IE00BZ60KC09
-  category: Global Large-Cap Growth Equity
-  morningstarId: ''
-  comment: 'RV global de calidad. Busca compañías con ventajas competitivas sostenibles, elevada rentabilidad sobre el capital y capacidad de crecimiento a largo plazo.'
 - name: Incometric Nartex Equity R (Acc)
   isin: LU2357235576
   category: Global Large-Cap Growth Equity
@@ -236,7 +231,7 @@ funds:
 - name: JPM Pacific Equity
   isin: LU0217390573
   category: Asia-Pacific Equity
-  morningstarId: ''
+  morningstarId: F0GBR060JT
   comment: 'RV Asia-Pacífico. Busca crecimiento a largo plazo mediante selección activa de empresas de los mercados asiáticos y del Pacífico.'
 - name: Impassive Wealth FI
   isin: ES0147897005
@@ -247,8 +242,7 @@ funds:
   isin: LU2951555403
   category: Global Systematic Trend
   morningstarId: 0P0001UBZT
-  comment: 'Fondo que opera futuros siguiendo tendencias y suele tener correlación baja o negativa con la renta variable'
-- name: Dunas Valor Prudente 
+  comment: 'Fondo de futuros gestionados con seguimiento sistemático de tendencias. Opera posiciones largas y cortas en distintos mercados. Busca diversificación frente a RV y RF, aunque puede sufrir pérdidas y su correlación es variable.'- name: Dunas Valor Prudente 
   isin: ES0175437005
   category: EUR Multistrategy Bond Equity
   morningstarId: F00000ZN9Q
@@ -291,7 +285,7 @@ funds:
   isin: LU1694789451
   category: Global Flexible Bond
   morningstarId: F00000ZY7M
-  comment: 'Fondo de Retorno absoluto de RF global (Retorno Abosuluto=Busca ganar siempre una rentabilidad aunque los tipos suban, usa derivados)'
+  comment: 'Retorno absoluto de RF global. Busca rentabilidades positivas en distintos entornos de tipos mediante posiciones largas, cortas y derivados. No garantiza beneficios ni preservación del capital.'
   inPortfolio: true
 - name: Ninety One Global Natural Resources
   isin: LU2358792120
