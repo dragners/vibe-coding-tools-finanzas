@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { CATEGORY_BADGES, getCategoryBadges, type CategoryBadge } from "./categoryBadges";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
 import { validatePayload } from "./payload";
@@ -1007,66 +1008,6 @@ function getMorningstarUrl(id?: string, lang: Lang = "es") {
   )}&ClientFund=0&BaseCurrencyId=EUR&CurrencyId=EUR&LanguageId=${langId}`;
 }
 
-const CATEGORY_SECONDARY_LABELS = ["Global", "Europe", "India", "ESG", "China", "Tech"] as const;
-
-const BADGE_STYLES = {
-  equity: "bg-rose-100/80 text-rose-700 border border-rose-200",
-  bond: "bg-emerald-100/80 text-emerald-700 border border-emerald-200",
-  global: "bg-violet-100/80 text-violet-700 border border-violet-200",
-  europe: "bg-blue-100/80 text-blue-700 border border-blue-200",
-  india: "bg-amber-100/80 text-amber-700 border border-amber-200",
-  esg: "bg-teal-100/80 text-teal-700 border border-teal-200",
-  china: "bg-orange-100/80 text-orange-700 border border-orange-200",
-  tech: "bg-sky-100/80 text-sky-700 border border-sky-200",
-  indexed: "bg-cyan-100/80 text-cyan-700 border border-cyan-200",
-  active: "bg-slate-100/80 text-[#334155] border border-slate-200",
-  default: "bg-zinc-100/80 text-zinc-700 border border-zinc-200",
-} as const;
-
-type BadgeVariant = keyof typeof BADGE_STYLES;
-
-type CategoryBadge = {
-  text: string;
-  variant: BadgeVariant;
-};
-
-const SECONDARY_BADGE_VARIANTS: Record<(typeof CATEGORY_SECONDARY_LABELS)[number], BadgeVariant> = {
-  Global: "global",
-  Europe: "europe",
-  India: "india",
-  ESG: "esg",
-  China: "china",
-  Tech: "tech",
-};
-
-function getCategoryBadges(category: string, lang: Lang, indexed?: boolean): CategoryBadge[] {
-  const labels: CategoryBadge[] = [];
-  const normalized = category.toLowerCase();
-  if (normalized.includes("equity")) {
-    labels.push({ text: lang === "es" ? "Acciones" : "Equity", variant: "equity" });
-  } else if (normalized.includes("bond")) {
-    labels.push({ text: lang === "es" ? "Bonos" : "Bonds", variant: "bond" });
-  }
-
-  const secondary = CATEGORY_SECONDARY_LABELS.find((label) =>
-    normalized.includes(label.toLowerCase()),
-  );
-  if (secondary) {
-    labels.push({
-      text: secondary,
-      variant: SECONDARY_BADGE_VARIANTS[secondary] ?? "default",
-    });
-  }
-
-  const strategyBadge: CategoryBadge = indexed
-    ? { text: "Index", variant: "indexed" }
-    : { text: lang === "es" ? "Activa" : "Active", variant: "active" };
-  labels.push(strategyBadge);
-
-  return labels;
-}
-
-
 function CategoryLabels({ badges, category, name, lang, onSelect }: {
   badges: CategoryBadge[];
   category: string;
@@ -1100,14 +1041,14 @@ function CategoryLabels({ badges, category, name, lang, onSelect }: {
   }, [open, category]);
 
   return (
-    <div ref={anchorRef} className="inline-flex flex-wrap sm:flex-nowrap items-center gap-1"
+    <div ref={anchorRef} className="category-labels"
       onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
       onFocus={() => setOpen(true)}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
       onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
       {badges.map((badge) => (
         <button key={badge.variant} type="button"
-          className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${BADGE_STYLES[badge.variant]}`}
+          className={`category-label font-semibold uppercase rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${CATEGORY_BADGES[badge.variant].style}`}
           aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${badge.text}: ${name}`}
           aria-describedby={open ? tooltipId : undefined}
           onClick={() => { setOpen(false); onSelect(badge); }}>
@@ -1683,7 +1624,7 @@ function CombinedTable({
                               <p className="text-[11px] text-slate-600">{texts.comparisonUnavailable}</p>
                             ) : null}
                             {(badges.length > 0 || stars) && (
-                              <div className="flex w-full items-center gap-1">
+                              <div className="fund-label-row flex w-full items-center gap-1">
                                 {stars ? (
                                   <span
                                     className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-500"

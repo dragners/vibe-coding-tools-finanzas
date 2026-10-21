@@ -231,7 +231,7 @@ describe("category labels", () => {
     ["Acciones", "Fondo 1", ["Fondo 1", "Fondo 3", "Plan 1"]],
     ["Bonos", "Fondo 2", ["Fondo 2", "Plan 2"]],
     ["Global", "Fondo 1", ["Fondo 1", "Fondo 2", "Plan 1"]],
-    ["Europe", "Fondo 3", ["Fondo 3", "Plan 2"]],
+    ["Europa", "Fondo 3", ["Fondo 3", "Plan 2"]],
     ["Index", "Fondo 1", ["Fondo 1", "Plan 2"]],
     ["Activa", "Fondo 2", ["Fondo 2", "Fondo 3", "Plan 1"]],
   ])("clicking %s includes every matching fund and plan and clearing restores the list", async (label, name, expected) => {
@@ -243,6 +243,19 @@ describe("category labels", () => {
     expect(fundNames()).toHaveLength(5);
     await user.type(screen.getByRole("textbox"), "Fondo 3");
     expect(fundNames()).toEqual(["Fondo 3"]);
+  });
+
+  it("filters corrected categories across funds and plans and preserves the filter in English", async () => {
+    const user = await load({ funds: [
+      { ...funds[0], category: "Global Emerging Markets Equity" },
+      { ...funds[1], category: "Global Emerging Markets Bond - EUR Biased" },
+      { ...funds[2], category: "Global Frontier Markets Equity", comment: "Emergentes" },
+    ], plans: [{ ...plans[0], category: "Global Emerging Markets Equity" }] });
+    await user.click(screen.getByRole("button", { name: "Filtrar por Emergentes: Fondo 1", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 2", "Plan 1"]);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 2", "Plan 1"]);
+    expect(screen.getByRole("button", { name: "Filter by Emerging: Fondo 1", exact: true })).not.toBeNull();
   });
 
   it("renders the hover description outside the scrollable table and closes it on scroll or Escape", async () => {

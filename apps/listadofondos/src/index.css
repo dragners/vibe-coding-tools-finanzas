@@ -19,6 +19,34 @@ thead .fund-name-column { z-index: 40; }
   .fund-name-column a { overflow-wrap: anywhere; }
 }
 
+/* All products reserve the same three slots, without growing the name column. */
+.category-labels {
+  display: inline-grid;
+  grid-template-columns: 55px 77px 43px;
+  gap: 3px;
+  width: 181px;
+  white-space: nowrap;
+}
+.category-label {
+  min-width: 0;
+  height: 19px;
+  padding: 1px 2px;
+  font-size: 9px;
+  line-height: 15px;
+  text-align: center;
+  white-space: nowrap;
+}
+@media (max-width: 639px) {
+  .category-labels {
+    grid-template-columns: 44px 68px 36px;
+    gap: 2px;
+    width: 152px;
+  }
+  .category-label { font-size: 8px; height: 18px; line-height: 14px; }
+  .fund-label-row { flex-wrap: wrap; }
+  .fund-label-row > div { margin-left: 0; }
+}
+
 .metric-group-start { border-left: 2px solid var(--fund-table-divider); }
 .metric-group-end { border-right: 2px solid var(--fund-table-divider); }
 
