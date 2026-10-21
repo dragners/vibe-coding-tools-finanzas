@@ -36,6 +36,11 @@ funds:
   category: Global Small/Mid-Cap Equity
   morningstarId: F000010KY6
   comment: 'RV internacional value. Busca negocios infravalorados. Javier Ruiz Miguel Rodríguez y Alejandro Martín (ex Fondo Metagestión). ~12 años de resultados con +11,6% anual.'
+- name: Artisan Global Value
+  isin: IE00B4M6YD48
+  category: Global Large-Cap Value Equity
+  morningstarId: F00000WOMZ
+  comment: 'RV global value. Busca compañías infravaloradas con negocios sólidos y potencial de revalorización a largo plazo. Gestores Daniel O’Keefe y Michael McKinnon.'
 - name: Sigma Internacional A
   isin: ES0175902008
   category: Global Small Equity
@@ -51,11 +56,31 @@ funds:
   category: Global Flexible Allocation
   morningstarId: F00000VYOL
   comment: 'Mixto global flexible con enfoque value. Busca crecimiento a largo plazo. Emerito Quintana, escuela austriaca y value investing. Gestora Renta4.'
+- name: JPMorgan Global Focus
+  isin: LU0210534227
+  category: Global Large-Cap Blend Equity
+  morningstarId: F0GBR05VVW
+  comment: 'RV global de gestión activa y cartera concentrada. Busca compañías con buenas perspectivas de crecimiento y valoración atractiva mediante análisis fundamental.'
 - name: Avantage Fund A
   isin: ES0112231016
   category: Global Flexible Allocation
   morningstarId: F00001B0AP
   comment: 'Fondo mixto, si te mantienes 5 años te cambian a la clase B con menos comisiones. Gestora Renta4. Busca crecimiento con asignación flexible entre acciones y bonos.'
+- name: Cartesio Y
+  isin: ES0182527038
+  category: EUR Flexible Allocation
+  morningstarId: F0GBR04VSJ
+  comment: 'Mixto flexible global. Combina RV, RF y liquidez mediante gestión activa para buscar crecimiento del capital y controlar las pérdidas. Equipo gestor de Cartesio Inversiones.'
+- name: Trojan Fund
+  isin: IE00B6T42S66
+  category: GBP Cautious Allocation
+  morningstarId: F00000NPYO
+  comment: 'Mixto conservador global. Busca preservar y aumentar el patrimonio mediante acciones de calidad, bonos, oro y liquidez. Gestores Sebastian Lyon y Charlotte Yonge.'
+- name: Assenagon Multi-Asset Conservative
+  isin: LU1297482223
+  category: EUR Cautious Allocation - Global
+  morningstarId: 0P000171EX
+  comment: 'Mixto conservador global. Combina renta fija, renta variable y otros activos mediante asignación flexible buscando rentabilidad moderada y control de volatilidad.'
 - name: Fundsmith Equity T 
   isin: LU0690375422
   category: Global Large-Cap Growth Equity
@@ -71,16 +96,46 @@ funds:
   category: Sector Equity Technology
   morningstarId: F00000VKNA
   comment: 'RV tecnológica global. Busca crecimiento a largo plazo mediante empresas tecnológicas.'
+- name: DNB Technology A
+  isin: LU0302296495
+  category: Sector Equity Technology
+  morningstarId: F000000JQ3
+  comment: 'RV tecnológica global. Busca compañías tecnológicas infravaloradas con crecimiento sostenible. Gestor Anders Tandberg-Johansen, responsable de la estrategia desde 2002.'
+- name: Invesco Global Equity Income
+  isin: LU0607513586
+  category: Global Equity Income
+  morningstarId: 0P0000UUW2
+  comment: 'RV global de dividendos con enfoque value. Busca empresas infravaloradas con capacidad de generar ingresos y crecimiento del capital a largo plazo.'
 - name: Heptagon Kopernik Glb AllCp
   isin: IE00BH6XSF26
   category: Global Flex-Cap Equity
   morningstarId: F00000YZS6
   comment: 'RV global value y contrarian. Busca compañías infravaloradas y mercados poco populares. Gestor David B. Iben'
+- name: Janus Henderson Global Smaller Companies
+  isin: LU1984712320
+  category: Global Small/Mid-Cap Equity
+  morningstarId: 0P0001I1JP
+  comment: 'RV global de pequeñas y medianas empresas. Busca compañías con potencial de crecimiento superior al mercado mediante análisis fundamental y selección activa.'
 - name: GQG Partners Global Equity A
   isin: IE00BH481053
   category: Global Large-Cap Growth Equity
   morningstarId: F000011K3W
   comment: 'Gestor Rajiv Jain (ex-Vontobel). RV global de empresas de calidad. Busca crecimiento con atención al riesgo.'
+- name: Groupama Global Disruption
+  isin: LU1897556517
+  category: Global Large-Cap Growth Equity
+  morningstarId: F000014CAN
+  comment: 'RV global growth temática. Invierte en compañías beneficiadas por cambios tecnológicos, demográficos y económicos. Gestores Philippe Vialle, Julia Kung y Alessandro Roggero.'
+- name: Fiera Capital Global Equity
+  isin: IE00BZ60KC09
+  category: Global Large-Cap Growth Equity
+  morningstarId: ''
+  comment: 'RV global de calidad. Busca compañías con ventajas competitivas sostenibles, elevada rentabilidad sobre el capital y capacidad de crecimiento a largo plazo.'
+- name: Incometric Nartex Equity R (Acc)
+  isin: LU2357235576
+  category: Global Large-Cap Growth Equity
+  morningstarId: F00001DB42
+  comment: 'RV global de calidad. Busca negocios con ventajas competitivas y crecimiento. Gestor Tomás Maraver - Poco track record.'
 - name: JPM Euroland Dynamic D (Acc)
   isin: LU0661986348
   category: Europe Large-Cap Equity
@@ -101,11 +156,16 @@ funds:
   category: Global Emerging Markets Equity
   morningstarId: F00000ZYZI
   comment: 'RV emergente activa. Busca crecimiento con selección fundamental de empresas. https://x.com/Fondos_A_Fondo/status/1950275153964724251'
-- name: Incometric Nartex Equity R (Acc)
-  isin: LU2357235576
-  category: Global Large-Cap Growth Equity
-  morningstarId: F00001DB42
-  comment: 'RV global de calidad. Busca negocios con ventajas competitivas y crecimiento. Gestor Tomás Maraver - Poco track record.'
+- name: Pzena Emerging Markets Focused Value
+  isin: IE00B42PDY56
+  category: Global Emerging Markets Equity
+  morningstarId: F00000PGIP
+  comment: 'RV emergente value. Busca compañías infravaloradas con potencial de recuperación de beneficios. Gestión fundamental y contrarian del equipo de Pzena Investment Management.'
+- name: Robeco QI Emerging Markets Active Equities D EUR
+  isin: LU0329355670
+  category: Global Emerging Markets Equity
+  morningstarId: F000000RB9
+  comment: 'RV emergente cuantitativa. Selecciona empresas mediante factores como valoración, calidad y momentum. Gestión sistemática de Robeco Quantitative Investments.'
 - name: Pictet-China Index P 
   isin: LU0625737910
   category: China Equity
@@ -123,6 +183,11 @@ funds:
   category: India Equity
   morningstarId: F00000JQCY
   comment: 'RV de India. Busca crecimiento con selección activa y análisis fundamental.'
+- name: Ahsoka White Oak India
+  isin: IE00BDR0R800
+  category: India Equity
+  morningstarId: F000015UJL
+  comment: 'RV india de gestión activa. Busca compañías con negocios sólidos, elevada rentabilidad sobre el capital y valoraciones razonables. Estrategia de WhiteOak Capital, fundada por Prashant Khemka.'
 - name: Robeco BP Global Premium Eqs D 
   isin: LU0203975437
   category: Global Large-Cap Value Equity
@@ -153,11 +218,26 @@ funds:
   category: Global Emerging Markets Equity
   morningstarId: F00000M0QL
   comment: 'RV emergente de baja volatilidad. Estrategia cuantitativa que selecciona compañías con perfil defensivo.'
+- name: HSBC Frontier Markets
+  isin: LU0666199749
+  category: Global Frontier Markets Equity
+  morningstarId: 0P0000UU8F
+  comment: 'RV de mercados frontera. Invierte en compañías de economías menos desarrolladas y mercados poco representados en índices globales. Busca crecimiento a largo plazo asumiendo elevada volatilidad.'
+- name: Evli Emerging Frontier B
+  isin: FI4000066915
+  category: Global Frontier Markets Equity
+  morningstarId: F00000QIUY
+  comment: 'RV de mercados frontera. Busca compañías infravaloradas y de calidad en economías emergentes pequeñas. Equipo liderado por Antti Sivonen y Mathias Althoff.'
 - name: Allianz Oriental Income AT
   isin: LU0348784041
   category: Asia-Pacific Equity
   morningstarId: F000005JON
   comment: 'RV Asia-Pacífico con enfoque en ingresos y crecimiento.'
+- name: JPM Pacific Equity
+  isin: LU0217390573
+  category: Asia-Pacific Equity
+  morningstarId: ''
+  comment: 'RV Asia-Pacífico. Busca crecimiento a largo plazo mediante selección activa de empresas de los mercados asiáticos y del Pacífico.'
 - name: Impassive Wealth FI
   isin: ES0147897005
   category: Global Flexible Allocation
@@ -207,23 +287,34 @@ funds:
   comment: 'RF global indexada. Aporta diversificación con bonos públicos y corporativos, con cobertura de divisa EUR.'
   indexed: true
   inPortfolio: true
-- name: AXAWF Euro Credit Total Ret A
-  isin: LU1164219682
-  category: EUR Flexible Bond
-  morningstarId: F00000VPP7
-  comment: 'Retorno absoluto, RF europea flexible. Busca ingresos y crecimiento mediante gestión activa de duración y crédito.'
-  inPortfolio: true
 - name: DNCA Invest Alpha Bonds A
   isin: LU1694789451
   category: Global Flexible Bond
   morningstarId: F00000ZY7M
   comment: 'Fondo de Retorno absoluto de RF global (Retorno Abosuluto=Busca ganar siempre una rentabilidad aunque los tipos suban, usa derivados)'
   inPortfolio: true
+- name: Ninety One Global Natural Resources
+  isin: LU2358792120
+  category: Sector Equity Natural Resources
+  morningstarId: F00001B6YM
+  comment: 'RV global de recursos naturales. Invierte en empresas de energía, minería y materias primas. Busca aprovechar ciclos de oferta, demanda y valoración de los recursos naturales.'
+- name: Baker Steel Precious Metals
+  isin: LU1128910137
+  category: Sector Equity Precious Metals
+  morningstarId: F00000VI1X
+  comment: 'RV global de mineras de metales preciosos. Invierte principalmente en compañías productoras de oro y plata. Busca beneficiarse del crecimiento del valor de sus reservas y operaciones.'
+#Renta Fija
 - name: Horos Patrimonio 
   isin: ES0146296001
   category: Global Flexible Bond
   morningstarId: F00001SWA4
   comment: 'Nuevo fondo de Horos de RF, objetivo de superar inflación, 4-5% de rentabilidad, € cubierto'
+- name: AXAWF Euro Credit Total Ret A
+  isin: LU1164219682
+  category: EUR Flexible Bond
+  morningstarId: F00000VPP7
+  comment: 'Retorno absoluto, RF europea flexible. Busca ingresos y crecimiento mediante gestión activa de duración y crédito.'
+  inPortfolio: true
 - name: Nordea Low Duration EU Covered Bond 
   isin: LU1694212348
   category: EUR Diversified Bond - Short Term
@@ -234,6 +325,11 @@ funds:
   category: EUR Diversified Bond - Short Term
   morningstarId: F000017L4O
   comment: 'Renta fija europea de corta duración. Busca superar al monetario asumiendo un riesgo moderado de crédito y tipos.'
+- name: R-co Conviction Credit Euro
+  isin: FR0007008750
+  category: EUR Corporate Bond
+  morningstarId: F0GBR04MPD
+  comment: 'RF corporativa europea. Invierte en bonos de empresas de la zona euro mediante selección activa de emisores y gestión del riesgo crediticio.'
 - name: B&H Deuda FI
   isin: ES0112618006
   category: EUR Flexible Bond
@@ -244,7 +340,6 @@ funds:
   category: EUR Flexible Bond
   morningstarId: F00000ZL6G
   comment: 'RF corporativa flexible con mayor riesgo de crédito que B&H Deuda. Busca aumentar la rentabilidad de la RF'
-
 - name: Groupama Alpha Fixed Income RC
   isin: LU1622557624
   category: EUR Flexible Bond
@@ -260,11 +355,21 @@ funds:
   category: Global Flexible Bond - EUR Hedged
   morningstarId: F00001DZCX
   comment: 'Crédito global flexible. Busca rentabilidad adicional mediante selección activa de bonos corporativos, titulizaciones y otros instrumentos de crédito.'
+- name: Candriam Long Short Credit
+  isin: FR0010760694
+  category: EUR Flexible Bond
+  morningstarId: F00000LPOD
+  comment: 'Retorno absoluto de RF mediante estrategias long/short de crédito. Busca generar rentabilidad aprovechando diferencias de valoración entre bonos y emisores, reduciendo la dependencia de los movimientos generales del mercado.'
 - name: Mandarine Credit Opportunities C
   isin: FR0000971913
   category: EUR Flexible Bond
   morningstarId: F0GBR04GCY
   comment: 'Renta fija corporativa flexible. Busca oportunidades en crédito mediante gestión activa.'
+- name: Lazard Credit Opportunities
+  isin: FR0010230490
+  category: EUR Flexible Bond
+  morningstarId: F0GBR063X1
+  comment: 'RF europea flexible. Busca rentabilidad mediante oportunidades en crédito corporativo y gestión activa de duración, emisores y diferenciales de crédito.'
 - name: Storm Bond RC
   isin: LU0840158819
   category: Other Bond
@@ -280,7 +385,38 @@ funds:
   category: EUR Diversified Bond - Short Term
   morningstarId: F0GBR04F94
   comment: 'Renta fija europea defensiva con gestión flexible de duración y crédito. Busca preservar capital y obtener rentabilidad moderada.'
-  
+- name: Candriam Bonds Euro High Yield
+  isin: LU0012119607
+  category: EUR High Yield Bond
+  morningstarId: F0GBR04BFK
+  comment: 'RF high yield europea. Invierte en deuda corporativa europea de menor calidad crediticia buscando rentabilidad por diferenciales de crédito. Gestión activa de Candriam.'
+- name: Neuberger Berman European High Yield Bond
+  isin: IE00BNH72V92
+  category: EUR High Yield Bond
+  morningstarId: 0P00013MJH
+  comment: 'RF high yield europea. Busca rentabilidad mediante selección fundamental de bonos corporativos europeos con mayor riesgo de crédito. Equipo especializado de Neuberger Berman.'
+- name: Generali Euro Bond 1-3 Years EX
+  isin: LU0396183898
+  category: EUR Government Bond - Short Term
+  morningstarId: F000002K1K
+  comment: 'RF gubernamental EUR de corta duración. Invierte principalmente en deuda pública europea con vencimientos de 1 a 3 años. Busca estabilidad y limitar el riesgo de tipos.'
+- name: BayernInvest Renten Europa
+  isin: DE000A2PSYA4
+  category: EUR Government Bond
+  morningstarId: F0GBR06U5M
+  comment: 'RF gubernamental europea. Invierte en deuda pública europea con gestión activa de la duración. Busca rentabilidad mediante cupones y movimientos de los tipos de interés.'
+- name: Aberdeen Frontier Markets Bond
+  isin: LU1919971074
+  category: Global Emerging Markets Bond
+  morningstarId: F00000ZXQN
+  comment: 'RF de mercados frontera. Invierte en deuda soberana y corporativa de economías menos desarrolladas. Busca rentabilidad elevada asumiendo riesgo político, de crédito y liquidez.'
+- name: Neuberger Berman Short Duration Emerging Market Debt
+  isin: IE00BDZRWZ54
+  category: Global Emerging Markets Bond - Short Term
+  morningstarId: F00000TPIL
+  comment: 'RF emergente de corta duración. Invierte en deuda de países emergentes limitando la sensibilidad a los tipos de interés. Busca rentabilidad mediante selección de emisores.'
+
+ 
 plans:
 - name: Myinvestor Indexado Global PP
   isin: N5396
