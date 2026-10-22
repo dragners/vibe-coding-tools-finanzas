@@ -1689,7 +1689,7 @@ function CombinedTable({
                           className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
                         >
                           <CopyIsin isin={row.isin} lang={lang} />
-                          <span className="mt-1 block text-[11px] text-slate-500" aria-label={`${texts.inceptionYear}: ${row.inceptionYear ?? texts.noData}`} title={texts.inceptionYear}>{row.inceptionYear ?? "—"}</span>
+                          <span className="mt-1 block text-center text-[11px] text-slate-500" aria-label={`${texts.inceptionYear}: ${row.inceptionYear ?? texts.noData}`} title={texts.inceptionYear}>{row.inceptionYear ?? "—"}</span>
                         </td>
                         <td
                           className={`px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}
