@@ -26,3 +26,14 @@ it("accepts older responses without Sortino and validates new Sortino values", (
   expect(validatePayload({ ...MOCK_PAYLOAD, funds: [fund] }).funds[0].sortino).toEqual(fund.sortino);
   expect(() => validatePayload({ ...MOCK_PAYLOAD, funds: [{ ...fund, sortino: [] }] })).toThrow('Invalid sortino metrics');
 });
+
+
+it("accepts inception years and older payloads without them, while rejecting malformed years", () => {
+  expect(validatePayload(MOCK_PAYLOAD).funds[0].inceptionYear).toBeUndefined();
+  for (const inceptionYear of [1995, 2026, null]) {
+    expect(validatePayload({ ...MOCK_PAYLOAD, funds: [{ ...MOCK_PAYLOAD.funds[0], inceptionYear }] }).funds[0].inceptionYear).toBe(inceptionYear);
+  }
+  for (const inceptionYear of ['2015', 0, 2020.5, {}, NaN, Infinity, 10000]) {
+    expect(() => validatePayload({ ...MOCK_PAYLOAD, funds: [{ ...MOCK_PAYLOAD.funds[0], inceptionYear }] })).toThrow('Invalid inception year');
+  }
+});

@@ -153,12 +153,25 @@ describe("sorting regression", () => {
     }
   });
 
-  it("treats empty and placeholder identifiers as missing in text sorting too", async () => {
-    const user = await load({ funds: [rows[0], { ...rows[1], isin: " " }, { ...rows[2], isin: "-" }], plans: [] });
-    for (const direction of ["ascendente", "descendente"]) {
-      await user.click(screen.getByRole("button", { name: `Orden ${direction} por ISIN`, exact: true }));
-      expect(fundNames()).toEqual(["Alfa", "Beta", "Sin datos"]);
-    }
+  it("sorts the ISIN column by inception year only, leaves missing years last and keeps tied years in source order", async () => {
+    const user = await load({ funds: [
+      { ...product("Nuevo", "AA001", "F001"), inceptionYear: 2020 },
+      { ...product("Antiguo Z", "ZZ001", "F002"), inceptionYear: 1995 },
+      { ...product("Antiguo A", "AA002", "F003"), inceptionYear: 1995 },
+      product("Sin fecha", "AA000", "F004"),
+    ], plans: [
+      { ...plans[0], inceptionYear: 2017 },
+      { ...plans[1], inceptionYear: 2008 },
+      { ...plans[2], inceptionYear: null },
+    ] });
+    expect(screen.getByLabelText("Año de creación: 2020").previousElementSibling?.getAttribute("aria-label")).toBe("Copiar ISIN: AA001");
+    expect(screen.getAllByLabelText("Año de creación: Sin datos")[0].textContent).toBe("—");
+    await user.click(screen.getByRole("button", { name: "Orden ascendente por Año de creación", exact: true }));
+    expect(fundNames()).toEqual(["Antiguo Z", "Antiguo A", "Nuevo", "Sin fecha", "Plan 2", "Plan 1", "Plan 3"]);
+    await user.click(screen.getByRole("button", { name: "Orden descendente por Año de creación", exact: true }));
+    expect(fundNames()).toEqual(["Nuevo", "Antiguo Z", "Antiguo A", "Sin fecha", "Plan 1", "Plan 2", "Plan 3"]);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    expect(screen.getByRole("button", { name: "Sort ascending by Inception year", exact: true })).not.toBeNull();
   });
 });
 
@@ -231,7 +244,7 @@ describe("category labels", () => {
     ["Acciones", "Fondo 1", ["Fondo 1", "Fondo 3", "Plan 1"]],
     ["Bonos", "Fondo 2", ["Fondo 2", "Plan 2"]],
     ["Global", "Fondo 1", ["Fondo 1", "Fondo 2", "Plan 1"]],
-    ["Europe", "Fondo 3", ["Fondo 3", "Plan 2"]],
+    ["Europa", "Fondo 3", ["Fondo 3", "Plan 2"]],
     ["Index", "Fondo 1", ["Fondo 1", "Plan 2"]],
     ["Activa", "Fondo 2", ["Fondo 2", "Fondo 3", "Plan 1"]],
   ])("clicking %s includes every matching fund and plan and clearing restores the list", async (label, name, expected) => {
@@ -243,6 +256,19 @@ describe("category labels", () => {
     expect(fundNames()).toHaveLength(5);
     await user.type(screen.getByRole("textbox"), "Fondo 3");
     expect(fundNames()).toEqual(["Fondo 3"]);
+  });
+
+  it("filters corrected categories across funds and plans and preserves the filter in English", async () => {
+    const user = await load({ funds: [
+      { ...funds[0], category: "Global Emerging Markets Equity" },
+      { ...funds[1], category: "Global Emerging Markets Bond - EUR Biased" },
+      { ...funds[2], category: "Global Frontier Markets Equity", comment: "Emergentes" },
+    ], plans: [{ ...plans[0], category: "Global Emerging Markets Equity" }] });
+    await user.click(screen.getByRole("button", { name: "Filtrar por Emergentes: Fondo 1", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 2", "Plan 1"]);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 2", "Plan 1"]);
+    expect(screen.getByRole("button", { name: "Filter by Emerging: Fondo 1", exact: true })).not.toBeNull();
   });
 
   it("renders the hover description outside the scrollable table and closes it on scroll or Escape", async () => {
@@ -312,4 +338,87 @@ it("clears typed searches and label filters with X, restores rows and keeps comp
   expect(input.value).toBe('');
   expect(document.activeElement).toBe(input);
   expect(fundNames()).toHaveLength(3);
+});
+
+
+describe("Morningstar star filters", () => {
+  const ratedFunds = [1, 2, 3, 4, 5].map((rating, index) => ({ ...funds[index], morningstarRating: rating }));
+  const ratedPayload = {
+    funds: [...ratedFunds, { ...funds[5], morningstarRating: null, comment: "★★★★★" }],
+    plans: [
+      { ...plans[0], morningstarRating: 5 },
+      { ...plans[1], morningstarRating: 3 },
+      { ...plans[2], morningstarRating: 0 },
+    ],
+  };
+
+  it.each([1, 2, 3, 4, 5])("clicking %i stars filters by the exact rating and X restores every row", async (rating) => {
+    const user = await load(ratedPayload);
+    await user.click(checkbox("Fondo 1"));
+    await user.click(screen.getByRole("button", { name: `Filtrar por ${rating} estrellas Morningstar: Fondo ${rating}`, exact: true }));
+    const expected = [`Fondo ${rating}`, ...(rating === 5 ? ["Plan 1"] : rating === 3 ? ["Plan 2"] : [])];
+    expect(fundNames()).toEqual(expected);
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("★".repeat(rating));
+    expect(screen.getByRole("button", { name: `Filtrar por ${rating} estrellas Morningstar: Fondo ${rating}`, exact: true }).getAttribute("aria-pressed")).toBe("true");
+    await user.click(screen.getByRole("button", { name: "Borrar búsqueda", exact: true }));
+    expect(fundNames()).toHaveLength(9);
+    expect(checkbox("Fondo 1").checked).toBe(true);
+  });
+
+  it("works with keyboard, language changes and replacing the star filter with a label or typed search", async () => {
+    const user = await load(ratedPayload);
+    const stars = screen.getByRole("button", { name: "Filtrar por 5 estrellas Morningstar: Fondo 5", exact: true });
+    act(() => stars.focus());
+    await user.keyboard("{Enter}");
+    expect(fundNames()).toEqual(["Fondo 5", "Plan 1"]);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 5", "Plan 1"]);
+    expect(screen.getByRole("button", { name: "Filter by 5 Morningstar stars: Fondo 5", exact: true }).getAttribute("aria-pressed")).toBe("true");
+    await user.click(screen.getByRole("button", { name: "Filter by Equity: Fondo 5", exact: true }));
+    expect(fundNames()).toHaveLength(9);
+    await user.click(screen.getByRole("button", { name: "Filter by 3 Morningstar stars: Fondo 3", exact: true }));
+    await user.clear(screen.getByRole("textbox"));
+    await user.type(screen.getByRole("textbox"), "Fondo 2");
+    expect(fundNames()).toEqual(["Fondo 2"]);
+  });
+});
+
+
+describe("copying product identifiers", () => {
+  it("copies the exact fund ISIN or pension code and announces success without changing filters or selection", async () => {
+    const user = await load({ funds: [funds[0]], plans: [plans[0]] });
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    await user.click(checkbox("Fondo 1"));
+    await user.click(screen.getByRole("button", { name: "Copiar ISIN: LU0000000000", exact: true }));
+    expect(writeText).toHaveBeenLastCalledWith("LU0000000000");
+    expect(screen.getByText("Copiado", { exact: true })).not.toBeNull();
+    expect(checkbox("Fondo 1").checked).toBe(true);
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("");
+    await user.click(screen.getByRole("button", { name: "Copiar ISIN: N5396", exact: true }));
+    expect(writeText).toHaveBeenLastCalledWith("N5396");
+    expect(fundNames()).toEqual(["Fondo 1", "Plan 1"]);
+    writeText.mockRestore();
+  });
+
+  it("supports keyboard copying and English feedback", async () => {
+    const user = await load({ funds: [funds[0]], plans: [] });
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    act(() => screen.getByRole("button", { name: "Copy ISIN: LU0000000000", exact: true }).focus());
+    await user.keyboard("{Enter}");
+    expect(writeText).toHaveBeenCalledWith("LU0000000000");
+    expect(screen.getByText("Copied", { exact: true })).not.toBeNull();
+    writeText.mockRestore();
+  });
+
+  it("does not show false success when clipboard access fails, and missing identifiers are not copyable", async () => {
+    const user = await load({ funds: [funds[0], { ...funds[1], isin: "" }, { ...funds[2], isin: "-" }], plans: [] });
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Denied"));
+    expect(screen.getAllByRole("button", { name: /^Copiar ISIN:/ })).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Copiar ISIN: LU0000000000", exact: true }));
+    expect(screen.getByText("No se pudo copiar", { exact: true })).not.toBeNull();
+    expect(screen.queryByText("Copiado", { exact: true })).toBeNull();
+    expect(fundNames()).toHaveLength(3);
+    writeText.mockRestore();
+  });
 });

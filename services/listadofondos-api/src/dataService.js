@@ -1,7 +1,7 @@
 import path from "node:path";
 import { mkdir, readFile, writeFile, rename } from "node:fs/promises";
 import { parseConfigYaml } from "./config.js";
-import { parseAccumulatedRentOnly, parseRatioResult, parseTerResult, parseMorningstarRating } from "./parsers.js";
+import { parseAccumulatedRentOnly, parseRatioResult, parseTerResult, parseMorningstarRating, parseInceptionYear } from "./parsers.js";
 
 const validValue = (value) => value != null && value !== "" && value !== "-";
 const identity = (entry) => entry.isin || entry.morningstarId || entry.name;
@@ -63,6 +63,7 @@ export function createDataService({ configPath, cacheFile, fetchHtml, now = () =
         if (status[metric] === "error" || validValue(previous?.[metric])) product.updateErrors.push(metric);
       }
     }
+    product.inceptionYear = [html(0), html(1), html(2)].map(parseInceptionYear).find((year) => year !== null) ?? previous?.inceptionYear ?? null;
     product.isStale = product.updateErrors.length > 0;
     const dates = Object.values(product.metricUpdatedAt).flatMap((value) => typeof value === "string" ? [value] : Object.values(value ?? {}));
     product.dataUpdatedAt = dates.filter((date) => Number.isFinite(Date.parse(date))).sort().at(-1) ?? previous?.dataUpdatedAt ?? previous?.lastUpdated ?? null;
@@ -114,9 +115,10 @@ export function createDataService({ configPath, cacheFile, fetchHtml, now = () =
       return { ...cache, isUpdating: false, updateFailed: true };
     }
     const age = now().getTime() - Date.parse(cache.lastUpdated);
-    // Older caches predate Sortino; populate it without discarding existing figures.
+    // Populate fields added after older caches were written, without discarding data.
     const missingSortino = [...cache.funds, ...cache.plans].some((product) => product?.sortino == null);
-    if (!missingSortino && age >= 0 && age < 4 * 60 * 60 * 1000) return { ...cache, isUpdating: Boolean(refreshPromise) };
+    const missingInceptionYear = [...cache.funds, ...cache.plans].some((product) => product?.inceptionYear === undefined);
+    if (!missingSortino && !missingInceptionYear && age >= 0 && age < 4 * 60 * 60 * 1000) return { ...cache, isUpdating: Boolean(refreshPromise) };
     startRefresh().catch((error) => console.error("Background refresh failed:", error.message));
     return { ...cache, isUpdating: true };
   }

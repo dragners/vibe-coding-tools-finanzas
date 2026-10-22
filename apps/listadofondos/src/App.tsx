@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { CATEGORY_BADGES, getCategoryBadges, type CategoryBadge } from "./categoryBadges";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
 import { validatePayload } from "./payload";
@@ -75,6 +76,7 @@ export type FundRow = {
   category: string;
   morningstarId: string;
   morningstarRating?: number | null;
+  inceptionYear?: number | null;
   comment: string;
   url: string;
   indexed?: boolean;
@@ -106,7 +108,7 @@ type SortOrder = "asc" | "desc";
 
 type SortKey =
   | "name"
-  | "isin"
+  | "inceptionYear"
   | "ter"
   | `performance:${PerformanceKey}`
   | `sharpe:${RatioPeriod}`
@@ -125,6 +127,7 @@ const TEXTS = {
     lastUpdated: "Última actualización",
     name: "Nombre",
     isin: "ISIN",
+    inceptionYear: "Año de creación",
     category: "Categoría",
     comment: "Comentarios",
     performance: "Rentabilidades (%)",
@@ -187,6 +190,7 @@ const TEXTS = {
     lastUpdated: "Last updated",
     name: "Name",
     isin: "ISIN",
+    inceptionYear: "Inception year",
     category: "Category",
     comment: "Notes",
     performance: "Performance (%)",
@@ -626,6 +630,7 @@ function getSearchIndex(row: FundRow): string {
   const baseValues: (MetricValue | undefined)[] = [
     row.name,
     row.isin,
+    row.inceptionYear,
     row.category,
     row.comment,
     row.morningstarId,
@@ -841,8 +846,8 @@ function getSortValue(row: FundRow, key: SortKey): SortValue {
   if (key === "name") {
     return { type: "text", value: getFinectProductId(row.name) || null };
   }
-  if (key === "isin") {
-    return { type: "text", value: getFinectProductId(row.isin) || null };
+  if (key === "inceptionYear") {
+    return { type: "number", value: row.inceptionYear ?? null };
   }
   if (key === "ter") {
     return { type: "number", value: getMetricNumber(row.ter) };
@@ -1007,65 +1012,36 @@ function getMorningstarUrl(id?: string, lang: Lang = "es") {
   )}&ClientFund=0&BaseCurrencyId=EUR&CurrencyId=EUR&LanguageId=${langId}`;
 }
 
-const CATEGORY_SECONDARY_LABELS = ["Global", "Europe", "India", "ESG", "China", "Tech"] as const;
-
-const BADGE_STYLES = {
-  equity: "bg-rose-100/80 text-rose-700 border border-rose-200",
-  bond: "bg-emerald-100/80 text-emerald-700 border border-emerald-200",
-  global: "bg-violet-100/80 text-violet-700 border border-violet-200",
-  europe: "bg-blue-100/80 text-blue-700 border border-blue-200",
-  india: "bg-amber-100/80 text-amber-700 border border-amber-200",
-  esg: "bg-teal-100/80 text-teal-700 border border-teal-200",
-  china: "bg-orange-100/80 text-orange-700 border border-orange-200",
-  tech: "bg-sky-100/80 text-sky-700 border border-sky-200",
-  indexed: "bg-cyan-100/80 text-cyan-700 border border-cyan-200",
-  active: "bg-slate-100/80 text-[#334155] border border-slate-200",
-  default: "bg-zinc-100/80 text-zinc-700 border border-zinc-200",
-} as const;
-
-type BadgeVariant = keyof typeof BADGE_STYLES;
-
-type CategoryBadge = {
-  text: string;
-  variant: BadgeVariant;
-};
-
-const SECONDARY_BADGE_VARIANTS: Record<(typeof CATEGORY_SECONDARY_LABELS)[number], BadgeVariant> = {
-  Global: "global",
-  Europe: "europe",
-  India: "india",
-  ESG: "esg",
-  China: "china",
-  Tech: "tech",
-};
-
-function getCategoryBadges(category: string, lang: Lang, indexed?: boolean): CategoryBadge[] {
-  const labels: CategoryBadge[] = [];
-  const normalized = category.toLowerCase();
-  if (normalized.includes("equity")) {
-    labels.push({ text: lang === "es" ? "Acciones" : "Equity", variant: "equity" });
-  } else if (normalized.includes("bond")) {
-    labels.push({ text: lang === "es" ? "Bonos" : "Bonds", variant: "bond" });
-  }
-
-  const secondary = CATEGORY_SECONDARY_LABELS.find((label) =>
-    normalized.includes(label.toLowerCase()),
+function CopyIsin({ isin, lang }: { isin: string; lang: Lang }) {
+  const [feedback, setFeedback] = useState<"copied" | "error" | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timeoutRef.current !== null) clearTimeout(timeoutRef.current); }, []);
+  const value = isin.trim();
+  if (!value || value === "-") return <>{formatValue(isin, lang)}</>;
+  const label = `${lang === "es" ? "Copiar ISIN" : "Copy ISIN"}: ${value}`;
+  const message = feedback === "copied" ? (lang === "es" ? "Copiado" : "Copied")
+    : feedback === "error" ? (lang === "es" ? "No se pudo copiar" : "Could not copy") : "";
+  const copy = async () => {
+    if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
+    try {
+      await navigator.clipboard.writeText(value);
+      setFeedback("copied");
+    } catch {
+      setFeedback("error");
+    }
+    timeoutRef.current = setTimeout(() => setFeedback(null), 2000);
+  };
+  return (
+    <button type="button" onClick={() => void copy()} aria-label={label} title={label}
+      className="relative block w-full rounded-sm text-center hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60">
+      {value}
+      <span aria-live="polite" aria-atomic="true"
+        className={feedback ? `absolute inset-0 flex items-center justify-center bg-white/95 text-[11px] ${feedback === "copied" ? "text-cyan-700" : "text-red-600"}` : "sr-only"}>
+        {message}
+      </span>
+    </button>
   );
-  if (secondary) {
-    labels.push({
-      text: secondary,
-      variant: SECONDARY_BADGE_VARIANTS[secondary] ?? "default",
-    });
-  }
-
-  const strategyBadge: CategoryBadge = indexed
-    ? { text: "Index", variant: "indexed" }
-    : { text: lang === "es" ? "Activa" : "Active", variant: "active" };
-  labels.push(strategyBadge);
-
-  return labels;
 }
-
 
 function CategoryLabels({ badges, category, name, lang, onSelect }: {
   badges: CategoryBadge[];
@@ -1100,14 +1076,14 @@ function CategoryLabels({ badges, category, name, lang, onSelect }: {
   }, [open, category]);
 
   return (
-    <div ref={anchorRef} className="inline-flex flex-wrap sm:flex-nowrap items-center gap-1"
+    <div ref={anchorRef} className="category-labels"
       onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
       onFocus={() => setOpen(true)}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
       onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
       {badges.map((badge) => (
         <button key={badge.variant} type="button"
-          className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide rounded-lg px-2 py-0.5 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${BADGE_STYLES[badge.variant]}`}
+          className={`category-label font-semibold uppercase rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${CATEGORY_BADGES[badge.variant].style}`}
           aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${badge.text}: ${name}`}
           aria-describedby={open ? tooltipId : undefined}
           onClick={() => { setOpen(false); onSelect(badge); }}>
@@ -1194,6 +1170,9 @@ function CombinedTable({
   );
 
   const matchesFilter = useCallback((row: FundRow) => {
+    if (/^★{1,5}$/.test(normalizedQuery)) {
+      return renderStars(row.morningstarRating) === normalizedQuery;
+    }
     if (badgeFilter && normalizedQuery === badgeFilter.text.toLowerCase()) {
       return getCategoryBadges(formatValue(row.category, lang), lang, row.indexed)
         .some((badge) => badge.variant === badgeFilter.variant);
@@ -1251,7 +1230,7 @@ function CombinedTable({
   );
 
   const totalColumns = 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 3 + 2;
-  const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
+  const commentColumnWidthClass = "min-w-[312px] sm:min-w-[416px]";
 
   const handleToggleTooltip = useCallback((id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
@@ -1400,12 +1379,12 @@ function CombinedTable({
                   className="px-2.5 py-1 whitespace-nowrap bg-white/90 backdrop-blur text-center"
                 >
                   <div className="flex items-center justify-center gap-1">
-                    <span>{texts.isin}</span>
+                    <span className="inline-flex flex-col"><span>{texts.isin}</span><span className="text-[9px] font-normal normal-case">{texts.inceptionYear}</span></span>
                     <SortControl
                       lang={lang}
-                      label={texts.isin}
-                      activeOrder={sortConfig?.key === "isin" ? sortConfig.order : null}
-                      onChange={(order) => handleSortChange("isin", order)}
+                      label={texts.inceptionYear}
+                      activeOrder={sortConfig?.key === "inceptionYear" ? sortConfig.order : null}
+                      onChange={(order) => handleSortChange("inceptionYear", order)}
                     />
                   </div>
                 </th>
@@ -1683,14 +1662,18 @@ function CombinedTable({
                               <p className="text-[11px] text-slate-600">{texts.comparisonUnavailable}</p>
                             ) : null}
                             {(badges.length > 0 || stars) && (
-                              <div className="flex w-full items-center gap-1">
+                              <div className="fund-label-row flex w-full items-center gap-1">
                                 {stars ? (
-                                  <span
-                                    className="inline-flex shrink-0 items-center text-xs font-semibold leading-none text-amber-500"
-                                    aria-label={`${stars.length} estrellas Morningstar`}
+                                  <button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center rounded-sm text-xs font-semibold leading-none text-amber-500 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"
+                                    aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${stars.length} ${lang === "es" ? "estrellas Morningstar" : "Morningstar stars"}: ${row.name}`}
+                                    title={`${lang === "es" ? "Filtrar por" : "Filter by"} ${stars.length} ${lang === "es" ? "estrellas Morningstar" : "Morningstar stars"}`}
+                                    aria-pressed={normalizedQuery === stars}
+                                    onClick={() => { setBadgeFilter(null); onSearchChange?.(stars); }}
                                   >
                                     {stars}
-                                  </span>
+                                  </button>
                                 ) : null}
                                 {badges.length > 0 ? (
                                   <div className={stars ? "ml-auto" : ""}>
@@ -1705,7 +1688,8 @@ function CombinedTable({
                         <td
                           className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
                         >
-                          {formatValue(row.isin, lang)}
+                          <CopyIsin isin={row.isin} lang={lang} />
+                          <span className="mt-1 block text-center text-[11px] text-slate-500" aria-label={`${texts.inceptionYear}: ${row.inceptionYear ?? texts.noData}`} title={texts.inceptionYear}>{row.inceptionYear ?? "—"}</span>
                         </td>
                         <td
                           className={`px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}
