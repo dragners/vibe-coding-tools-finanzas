@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parsePerformanceNumber, parseAccumulatedRentOnly, parseRatio, parseRatioResult, parseTer, parseTerResult } from "../src/parsers.js";
+import { parsePerformanceNumber, parseAccumulatedRentOnly, parseRatio, parseRatioResult, parseTer, parseTerResult, parseInceptionYear } from "../src/parsers.js";
 import { parseConfigYaml } from "../src/config.js";
 import { readFile } from "node:fs/promises";
 
@@ -99,4 +99,15 @@ test("Horos Internacional PP keeps its own MorningstarId, distinct from the inve
   assert.equal(plan?.morningstarId, 'F000010RWV');
   assert.equal(fund?.morningstarId, 'F000010KY6');
   assert.notEqual(plan.morningstarId, fund.morningstarId);
+});
+
+
+test("inception year comes from the adjacent labelled date, ignoring other dates and scripts", () => {
+  assert.equal(parseInceptionYear('<table><tr><td>Fecha valor</td><td>01/01/2026</td><td><span>Fecha Creación</span></td><td><span>23/10/2015</span></td></tr></table>'), 2015);
+  assert.equal(parseInceptionYear('<table><tr><th>Inception Date</th><td>1998-02-28</td></tr></table>'), 1998);
+  assert.equal(parseInceptionYear('<table><tr><td>Fecha de Creaci&#243;n</td><td>29.02.2024</td></tr></table>'), 2024);
+  for (const value of ['-', '', 'N/A', '31/02/2020', '29/02/2023', '01/13/2005', '2005', '01/01/0000']) {
+    assert.equal(parseInceptionYear(`<table><tr><td>Fecha Creación</td><td>${value}</td><td>01/01/1999</td></tr></table>`), null);
+  }
+  assert.equal(parseInceptionYear('<script><table><tr><td>Fecha Creación</td><td>01/01/1999</td></tr></table></script><table><tr><td>Fecha valor</td><td>01/01/2026</td></tr></table>'), null);
 });

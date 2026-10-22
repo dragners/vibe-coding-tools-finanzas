@@ -25,3 +25,9 @@ comprobación, no la fecha de todas las cifras. El guardado de caché es atómic
 
 La configuración se lee con YAML estándar y se valida antes de sobrescribir la
 caché. No se modifica `apps/listadofondos/config/fondos.yaml`.
+
+El año de creación (`inceptionYear`) se obtiene de «Fecha Creación» en las mismas
+fichas ya consultadas, sin peticiones adicionales. Se devuelve como entero o
+`null` si Morningstar no publica una fecha válida, conservando el año previo ante
+un fallo de lectura del mismo producto. Las cachés anteriores se renuevan una vez
+para incorporar el campo; un valor `null` no provoca reintentos continuos.

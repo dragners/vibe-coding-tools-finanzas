@@ -499,6 +499,30 @@ function parseTer(html) {
   return parseTerResult(html).value;
 }
 
+// Read the product inception field, never a portfolio, NAV or performance date.
+function parseInceptionYear(html) {
+  if (!html) return null;
+  const clean = html.replace(/<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>/gi, "");
+  const values = [];
+  for (const table of extractTables(clean)) {
+    for (const row of extractRows(table)) {
+      const cells = extractCells(row).map((cell) => stripHtml(cell).replace(/\s+/g, " ").trim());
+      const index = cells.findIndex((cell) => /^(?:fecha(?: de)? creaci[oó]n|inception date)\s*:?$/i.test(cell));
+      if (index >= 0) values.push(cells[index + 1] ?? "");
+    }
+  }
+  for (const value of values) {
+    const date = value.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/);
+    const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!date && !iso) continue;
+    const [year, month, day] = date ? [Number(date[3]), Number(date[2]), Number(date[1])]
+      : [Number(iso[1]), Number(iso[2]), Number(iso[3])];
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    if (year >= 1800 && parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day) return year;
+  }
+  return null;
+}
+
 function parseMorningstarRating(html) {
   if (!html) return null;
 
@@ -530,4 +554,4 @@ function parseMorningstarRating(html) {
   return Math.max(0, Math.min(5, rating));
 }
 
-export { parsePerformanceNumber, parseAccumulatedRentOnly, parseRatio, parseRatioResult, parseTer, parseTerResult, parseMorningstarRating };
+export { parsePerformanceNumber, parseAccumulatedRentOnly, parseRatio, parseRatioResult, parseTer, parseTerResult, parseMorningstarRating, parseInceptionYear };

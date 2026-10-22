@@ -76,6 +76,7 @@ export type FundRow = {
   category: string;
   morningstarId: string;
   morningstarRating?: number | null;
+  inceptionYear?: number | null;
   comment: string;
   url: string;
   indexed?: boolean;
@@ -107,7 +108,7 @@ type SortOrder = "asc" | "desc";
 
 type SortKey =
   | "name"
-  | "isin"
+  | "inceptionYear"
   | "ter"
   | `performance:${PerformanceKey}`
   | `sharpe:${RatioPeriod}`
@@ -126,6 +127,7 @@ const TEXTS = {
     lastUpdated: "Última actualización",
     name: "Nombre",
     isin: "ISIN",
+    inceptionYear: "Año de creación",
     category: "Categoría",
     comment: "Comentarios",
     performance: "Rentabilidades (%)",
@@ -188,6 +190,7 @@ const TEXTS = {
     lastUpdated: "Last updated",
     name: "Name",
     isin: "ISIN",
+    inceptionYear: "Inception year",
     category: "Category",
     comment: "Notes",
     performance: "Performance (%)",
@@ -627,6 +630,7 @@ function getSearchIndex(row: FundRow): string {
   const baseValues: (MetricValue | undefined)[] = [
     row.name,
     row.isin,
+    row.inceptionYear,
     row.category,
     row.comment,
     row.morningstarId,
@@ -842,8 +846,8 @@ function getSortValue(row: FundRow, key: SortKey): SortValue {
   if (key === "name") {
     return { type: "text", value: getFinectProductId(row.name) || null };
   }
-  if (key === "isin") {
-    return { type: "text", value: getFinectProductId(row.isin) || null };
+  if (key === "inceptionYear") {
+    return { type: "number", value: row.inceptionYear ?? null };
   }
   if (key === "ter") {
     return { type: "number", value: getMetricNumber(row.ter) };
@@ -1375,12 +1379,12 @@ function CombinedTable({
                   className="px-2.5 py-1 whitespace-nowrap bg-white/90 backdrop-blur text-center"
                 >
                   <div className="flex items-center justify-center gap-1">
-                    <span>{texts.isin}</span>
+                    <span className="inline-flex flex-col"><span>{texts.isin}</span><span className="text-[9px] font-normal normal-case">{texts.inceptionYear}</span></span>
                     <SortControl
                       lang={lang}
-                      label={texts.isin}
-                      activeOrder={sortConfig?.key === "isin" ? sortConfig.order : null}
-                      onChange={(order) => handleSortChange("isin", order)}
+                      label={texts.inceptionYear}
+                      activeOrder={sortConfig?.key === "inceptionYear" ? sortConfig.order : null}
+                      onChange={(order) => handleSortChange("inceptionYear", order)}
                     />
                   </div>
                 </th>
@@ -1685,6 +1689,7 @@ function CombinedTable({
                           className="px-3 py-2 bg-white/95 backdrop-blur whitespace-nowrap text-gray-600 text-xs sm:text-[13px] align-middle"
                         >
                           <CopyIsin isin={row.isin} lang={lang} />
+                          <span className="mt-1 block text-[11px] text-slate-500" aria-label={`${texts.inceptionYear}: ${row.inceptionYear ?? texts.noData}`} title={texts.inceptionYear}>{row.inceptionYear ?? "—"}</span>
                         </td>
                         <td
                           className={`px-1 py-1.5 bg-white/95 backdrop-blur whitespace-nowrap text-[11px] sm:text-xs font-semibold text-gray-700 text-center align-middle ${TER_COLUMN_WIDTH_CLASS}`}

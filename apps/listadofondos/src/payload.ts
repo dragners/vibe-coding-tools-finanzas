@@ -28,6 +28,7 @@ export function validatePayload(value: unknown): ApiPayload {
       };
       if (!validMetric(item.ter)) throw new Error("Invalid TER");
       if (item.morningstarRating != null && (typeof item.morningstarRating !== "number" || !Number.isFinite(item.morningstarRating))) throw new Error("Invalid rating");
+      if (item.inceptionYear != null && (!Number.isInteger(item.inceptionYear) || (item.inceptionYear as number) < 1800 || (item.inceptionYear as number) > 9999)) throw new Error("Invalid inception year");
       for (const key of ["indexed", "inPortfolio", "isStale"]) {
         if (item[key] !== undefined && typeof item[key] !== "boolean") throw new Error(`Invalid ${key}`);
       }
@@ -36,6 +37,7 @@ export function validatePayload(value: unknown): ApiPayload {
         name: item.name, isin: text("isin"), morningstarId: text("morningstarId"),
         category: text("category"), comment: text("comment"), url: text("url"),
         performance: metrics("performance"), sharpe: metrics("sharpe"), sortino: metrics("sortino"), volatility: metrics("volatility"),
+        inceptionYear: item.inceptionYear as number | null | undefined,
         ter: item.ter ?? "-", morningstarRating: item.morningstarRating as number | null,
         indexed: item.indexed as boolean | undefined, inPortfolio: item.inPortfolio as boolean | undefined,
         isStale: item.isStale as boolean | undefined, dataUpdatedAt: item.dataUpdatedAt as string | null | undefined,

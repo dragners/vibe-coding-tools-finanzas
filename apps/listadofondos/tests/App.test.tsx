@@ -153,12 +153,25 @@ describe("sorting regression", () => {
     }
   });
 
-  it("treats empty and placeholder identifiers as missing in text sorting too", async () => {
-    const user = await load({ funds: [rows[0], { ...rows[1], isin: " " }, { ...rows[2], isin: "-" }], plans: [] });
-    for (const direction of ["ascendente", "descendente"]) {
-      await user.click(screen.getByRole("button", { name: `Orden ${direction} por ISIN`, exact: true }));
-      expect(fundNames()).toEqual(["Alfa", "Beta", "Sin datos"]);
-    }
+  it("sorts the ISIN column by inception year only, leaves missing years last and keeps tied years in source order", async () => {
+    const user = await load({ funds: [
+      { ...product("Nuevo", "AA001", "F001"), inceptionYear: 2020 },
+      { ...product("Antiguo Z", "ZZ001", "F002"), inceptionYear: 1995 },
+      { ...product("Antiguo A", "AA002", "F003"), inceptionYear: 1995 },
+      product("Sin fecha", "AA000", "F004"),
+    ], plans: [
+      { ...plans[0], inceptionYear: 2017 },
+      { ...plans[1], inceptionYear: 2008 },
+      { ...plans[2], inceptionYear: null },
+    ] });
+    expect(screen.getByLabelText("Año de creación: 2020").previousElementSibling?.getAttribute("aria-label")).toBe("Copiar ISIN: AA001");
+    expect(screen.getAllByLabelText("Año de creación: Sin datos")[0].textContent).toBe("—");
+    await user.click(screen.getByRole("button", { name: "Orden ascendente por Año de creación", exact: true }));
+    expect(fundNames()).toEqual(["Antiguo Z", "Antiguo A", "Nuevo", "Sin fecha", "Plan 2", "Plan 1", "Plan 3"]);
+    await user.click(screen.getByRole("button", { name: "Orden descendente por Año de creación", exact: true }));
+    expect(fundNames()).toEqual(["Nuevo", "Antiguo Z", "Antiguo A", "Sin fecha", "Plan 1", "Plan 2", "Plan 3"]);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    expect(screen.getByRole("button", { name: "Sort ascending by Inception year", exact: true })).not.toBeNull();
   });
 });
 

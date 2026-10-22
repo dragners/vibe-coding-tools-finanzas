@@ -226,3 +226,39 @@ test("a recent cache without Sortino refreshes automatically and retains its exi
   assert.equal(updated.isUpdating, false);
   assert.deepEqual(updated.funds[0].sortino, { '3Y': '1,4', '5Y': '1,8' });
 });
+
+
+test("inception year shares existing requests, falls back to another page, and preserves the previous year on failure", async (t) => {
+  let fail = false; let requests = 0;
+  const service = await setup(t, async (url) => {
+    requests++;
+    if (fail) throw new Error('offline');
+    return (await goodHtml(url)) + (url.includes('tab=2') ? '<table><tr><td>Fecha Creación</td><td>23/10/2015</td></tr></table>' : '');
+  });
+  const first = await service.startRefresh();
+  assert.equal(requests, 3);
+  assert.equal(first.funds[0].inceptionYear, 2015);
+  fail = true;
+  const stale = await service.startRefresh();
+  assert.equal(stale.funds[0].inceptionYear, 2015);
+  await writeFile(service.configPath, 'funds:\n- name: Fondo\n  isin: ES001\n  morningstarId: CORRECTED\nplans: []');
+  const corrected = await service.startRefresh();
+  assert.equal(corrected.funds[0].inceptionYear, null);
+});
+
+test("an older cache gains inception year once; unpublished dates do not repeatedly refresh or mark products stale", async (t) => {
+  let requests = 0;
+  const service = await setup(t, async url => { requests++; return goodHtml(url); });
+  const initial = await service.startRefresh();
+  delete initial.funds[0].inceptionYear;
+  await writeFile(service.cacheFile, JSON.stringify(initial));
+  const cached = await service.getData();
+  assert.equal(cached.isUpdating, true);
+  await service.startRefresh();
+  assert.equal(requests, 6);
+  const updated = await service.getData();
+  assert.equal(updated.isUpdating, false);
+  assert.equal(updated.funds[0].inceptionYear, null);
+  assert.equal(updated.funds[0].isStale, false);
+  assert.equal(requests, 6);
+});
