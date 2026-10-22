@@ -1230,7 +1230,7 @@ function CombinedTable({
   );
 
   const totalColumns = 2 + PERFORMANCE_LABELS.length + RATIO_LABELS.length * 3 + 2;
-  const commentColumnWidthClass = "min-w-[272px] sm:min-w-[323px]";
+  const commentColumnWidthClass = "min-w-[312px] sm:min-w-[416px]";
 
   const handleToggleTooltip = useCallback((id: string) => {
     setOpenTooltipId((prev) => (prev === id ? null : id));
