@@ -1033,10 +1033,10 @@ function CopyIsin({ isin, lang }: { isin: string; lang: Lang }) {
   };
   return (
     <button type="button" onClick={() => void copy()} aria-label={label} title={label}
-      className="relative block w-full rounded-sm text-left hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60">
+      className="relative block w-full rounded-sm text-center hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60">
       {value}
       <span aria-live="polite" aria-atomic="true"
-        className={feedback ? `absolute inset-0 flex items-center bg-white/95 text-[11px] ${feedback === "copied" ? "text-cyan-700" : "text-red-600"}` : "sr-only"}>
+        className={feedback ? `absolute inset-0 flex items-center justify-center bg-white/95 text-[11px] ${feedback === "copied" ? "text-cyan-700" : "text-red-600"}` : "sr-only"}>
         {message}
       </span>
     </button>
