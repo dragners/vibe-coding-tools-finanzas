@@ -251,8 +251,16 @@ describe("category labels", () => {
     const user = await load(categorized);
     await user.click(screen.getByRole("button", { name: `Filtrar por ${label}: ${name}`, exact: true }));
     expect(fundNames()).toEqual(expected);
-    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe(label);
-    await user.clear(screen.getByRole("textbox"));
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("");
+    if (label === "Activa" || label === "Index") {
+      expect((screen.getByRole("combobox", { name: "Gestión" }) as HTMLSelectElement).value).toBe(label === "Index" ? "indexed" : "active");
+    } else {
+      const selector = screen.getByRole("button", { name: ["Acciones", "Bonos"].includes(label) ? "Tipo de activo" : "Enfoque", exact: true });
+      await user.click(selector);
+      expect((screen.getByRole("checkbox", { name: label, exact: true }) as HTMLInputElement).checked).toBe(true);
+      await user.click(selector);
+    }
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros", exact: true }));
     expect(fundNames()).toHaveLength(5);
     await user.type(screen.getByRole("textbox"), "Fondo 3");
     expect(fundNames()).toEqual(["Fondo 3"]);
@@ -269,7 +277,7 @@ describe("category labels", () => {
     await user.click(screen.getByRole("button", { name: "EN", exact: true }));
     expect(fundNames()).toEqual(["Fondo 1", "Fondo 2"]);
     expect(screen.getByRole("button", { name: "Filter by Cash: Fondo 1", exact: true })).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: "Clear search", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Clear filters", exact: true }));
     expect(fundNames()).toHaveLength(3);
     for (const query of ["monetario", "monetarios", "cash", "money market"]) {
       await user.clear(screen.getByRole("textbox"));
@@ -335,7 +343,7 @@ it("places Sortino between Sharpe and volatility for funds and plans and explain
   expect(screen.getByText(/Unlike Sharpe/)).not.toBeNull();
 });
 
-it("clears typed searches and label filters with X, restores rows and keeps comparison selection", async () => {
+it("clears text with X and label filters independently, keeping comparison selection", async () => {
   const user = await load({ funds: [{ ...funds[0], indexed: true }, funds[1]], plans: [plans[0]] });
   const input = screen.getByRole('textbox') as HTMLInputElement;
   expect(screen.queryByRole('button', { name: 'Borrar búsqueda', exact: true })).toBeNull();
@@ -349,7 +357,8 @@ it("clears typed searches and label filters with X, restores rows and keeps comp
   expect(checkbox('Fondo 1').checked).toBe(true);
   await user.click(screen.getByRole('button', { name: 'Filtrar por Index: Fondo 1', exact: true }));
   expect(fundNames()).toEqual(['Fondo 1']);
-  await user.click(screen.getByRole('button', { name: 'Borrar búsqueda', exact: true }));
+  expect(input.value).toBe('');
+  await user.click(screen.getByRole('button', { name: 'Limpiar filtros', exact: true }));
   expect(fundNames()).toHaveLength(3);
   expect(screen.queryByRole('button', { name: 'Borrar búsqueda', exact: true })).toBeNull();
   await user.type(input, 'Plan 1');
@@ -385,7 +394,7 @@ describe("Morningstar star filters", () => {
     expect(checkbox("Fondo 1").checked).toBe(true);
   });
 
-  it("works with keyboard, language changes and replacing the star filter with a label or typed search", async () => {
+  it("works with keyboard and language changes, combines labels and clears text independently", async () => {
     const user = await load(ratedPayload);
     const stars = screen.getByRole("button", { name: "Filtrar por 5 estrellas Morningstar: Fondo 5", exact: true });
     act(() => stars.focus());
@@ -395,6 +404,8 @@ describe("Morningstar star filters", () => {
     expect(fundNames()).toEqual(["Fondo 5", "Plan 1"]);
     expect(screen.getByRole("button", { name: "Filter by 5 Morningstar stars: Fondo 5", exact: true }).getAttribute("aria-pressed")).toBe("true");
     await user.click(screen.getByRole("button", { name: "Filter by Equity: Fondo 5", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 5", "Plan 1"]);
+    await user.click(screen.getByRole("button", { name: "Clear search", exact: true }));
     expect(fundNames()).toHaveLength(9);
     await user.click(screen.getByRole("button", { name: "Filter by 3 Morningstar stars: Fondo 3", exact: true }));
     await user.clear(screen.getByRole("textbox"));
@@ -440,5 +451,78 @@ describe("copying product identifiers", () => {
     expect(screen.queryByText("Copiado", { exact: true })).toBeNull();
     expect(fundNames()).toHaveLength(3);
     writeText.mockRestore();
+  });
+});
+
+
+describe("independent multi-select label controls", () => {
+  const data = {
+    funds: [
+      { ...funds[0], category: "Global Large-Cap Value Equity" },
+      { ...funds[1], category: "EUR Flexible Allocation", indexed: true },
+      { ...funds[2], category: "EUR Flexible Bond" },
+      { ...funds[3], category: "Global Large-Cap Growth Equity", indexed: true },
+      { ...funds[4], category: "EUR Cautious Allocation" },
+      { ...funds[5], category: "Global Large-Cap Value Equity", indexed: true },
+    ], plans: [{ ...plans[0], category: "Global Large-Cap Value Equity" }],
+  };
+
+  it("unions options within each list and intersects lists, management and text without losing comparison selection", async () => {
+    const user = await load(data);
+    await user.click(checkbox("Fondo 1"));
+    await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Acciones", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Mixto", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Flexible", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Value", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 2", "Fondo 6", "Plan 1"]);
+    await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Gestión" }), "active");
+    expect(fundNames()).toEqual(["Fondo 1", "Plan 1"]);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Gestión" }), "indexed");
+    expect(fundNames()).toEqual(["Fondo 2", "Fondo 6"]);
+    await user.type(screen.getByRole("textbox"), "Fondo 6");
+    expect(fundNames()).toEqual(["Fondo 6"]);
+    await user.click(screen.getByRole("button", { name: "Borrar búsqueda", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 2", "Fondo 6"]);
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros", exact: true }));
+    expect(fundNames()).toHaveLength(7);
+    expect(checkbox("Fondo 1").checked).toBe(true);
+  });
+
+  it("selects labels in the lists without replacing the text search and retains selections when changing language", async () => {
+    const user = await load(data);
+    await user.type(screen.getByRole("textbox"), "Fondo");
+    await user.click(screen.getByRole("button", { name: "Filtrar por Value: Fondo 1", exact: true }));
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("Fondo");
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 6"]);
+    await user.click(screen.getByRole("button", { name: "Filtrar por Value: Fondo 1", exact: true }));
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Focus", exact: true }));
+    expect((screen.getByRole("checkbox", { name: "Value", exact: true }) as HTMLInputElement).checked).toBe(true);
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 6"]);
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("group", { name: "Focus", exact: true })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Focus", exact: true }));
+  });
+
+  it("keeps options available with no matching rows and clears a single list without clearing text", async () => {
+    const user = await load(data);
+    await user.type(screen.getByRole("textbox"), "Fondo");
+    await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Bonos", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Value", exact: true }));
+    expect(fundNames()).toHaveLength(0);
+    expect(screen.getByRole("checkbox", { name: "Flexible", exact: true })).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Limpiar: Enfoque", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 3"]);
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Enfoque", exact: true }));
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("Fondo");
+    await user.click(screen.getByRole("textbox"));
+    expect(screen.queryByRole("group", { name: "Enfoque", exact: true })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros", exact: true }));
+    expect(fundNames()).toHaveLength(6);
   });
 });

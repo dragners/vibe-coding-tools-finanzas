@@ -137,3 +137,9 @@ html[data-theme="dark"] .shadow-lg,
 html[data-theme="dark"] .shadow-xl {
   box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55) !important;
 }
+
+.fund-filter-controls > .relative { width: 132px; }
+@media (max-width: 639px) {
+  .fund-filter-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .fund-filter-controls > .relative { width: auto; }
+}

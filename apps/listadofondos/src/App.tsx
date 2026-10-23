@@ -8,7 +8,8 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { CATEGORY_BADGES, getCategoryBadges, type CategoryBadge } from "./categoryBadges";
+import { CATEGORY_BADGES, getCategoryBadges, type CategoryBadge, type BadgeVariant } from "./categoryBadges";
+import { MultiSelectFilter } from "./MultiSelectFilter";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
 import { validatePayload } from "./payload";
@@ -1043,12 +1044,13 @@ function CopyIsin({ isin, lang }: { isin: string; lang: Lang }) {
   );
 }
 
-function CategoryLabels({ badges, category, name, lang, onSelect }: {
+function CategoryLabels({ badges, category, name, lang, selected, onSelect }: {
   badges: CategoryBadge[];
   category: string;
   name: string;
   lang: Lang;
-  onSelect: (badge: CategoryBadge) => void;
+  selected: ReadonlySet<BadgeVariant>;
+  onSelect: (badge: CategoryBadge, group: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: -9999, left: -9999 });
@@ -1081,12 +1083,13 @@ function CategoryLabels({ badges, category, name, lang, onSelect }: {
       onFocus={() => setOpen(true)}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
       onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
-      {badges.map((badge) => (
+      {badges.map((badge, group) => (
         <button key={badge.variant} type="button"
           className={`category-label font-semibold uppercase rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${CATEGORY_BADGES[badge.variant].style}`}
           aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${badge.text}: ${name}`}
           aria-describedby={open ? tooltipId : undefined}
-          onClick={() => { setOpen(false); onSelect(badge); }}>
+          aria-pressed={selected.has(badge.variant)}
+          onClick={() => { setOpen(false); onSelect(badge, group); }}>
           {badge.text}
         </button>
       ))}
@@ -1121,7 +1124,30 @@ function CombinedTable({
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [badgeFilter, setBadgeFilter] = useState<CategoryBadge | null>(null);
+  const [assetFilters, setAssetFilters] = useState<BadgeVariant[]>([]);
+  const [focusFilters, setFocusFilters] = useState<BadgeVariant[]>([]);
+  const [managementFilter, setManagementFilter] = useState<"all" | "active" | "indexed">("all");
+  const hasLabelFilters = assetFilters.length > 0 || focusFilters.length > 0 || managementFilter !== "all";
+  const selectedBadges = new Set<BadgeVariant>([...assetFilters, ...focusFilters, ...(managementFilter === "all" ? [] : [managementFilter])]);
+  const filterOptions = useMemo(() => {
+    const available = [new Map<BadgeVariant, CategoryBadge>(), new Map<BadgeVariant, CategoryBadge>()];
+    for (const row of [...funds, ...plans]) {
+      const badges = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed);
+      for (const group of [0, 1]) available[group].set(badges[group].variant, badges[group]);
+    }
+    // Keep selected options available even if a refresh removes their last row.
+    for (const [group, values] of [[0, assetFilters], [1, focusFilters]] as const) {
+      for (const variant of values) available[group].set(variant, { variant, text: CATEGORY_BADGES[variant][lang] });
+    }
+    return available.map(options => [...options.values()].sort((a, b) => a.text.localeCompare(b.text, lang)));
+  }, [funds, plans, lang, assetFilters, focusFilters]);
+  const selectLabel = (badge: CategoryBadge, group: number) => {
+    if (group === 2) setManagementFilter(badge.variant === "indexed" ? "indexed" : "active");
+    else {
+      const update = group === 0 ? setAssetFilters : setFocusFilters;
+      update(previous => previous.includes(badge.variant) ? previous : [...previous, badge.variant]);
+    }
+  };
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedItems, setSelectedItems] = useState<{ section: TableSection; key: string }[]>([]);
   const comparisonSection = selectedItems[0]?.section ?? "funds";
@@ -1170,15 +1196,14 @@ function CombinedTable({
   );
 
   const matchesFilter = useCallback((row: FundRow) => {
-    if (/^★{1,5}$/.test(normalizedQuery)) {
-      return renderStars(row.morningstarRating) === normalizedQuery;
-    }
-    if (badgeFilter && normalizedQuery === badgeFilter.text.toLowerCase()) {
-      return getCategoryBadges(formatValue(row.category, lang), lang, row.indexed)
-        .some((badge) => badge.variant === badgeFilter.variant);
-    }
-    return rowMatchesQuery(row, normalizedQuery);
-  }, [badgeFilter, normalizedQuery, lang]);
+    const matchesSearch = /^★{1,5}$/.test(normalizedQuery)
+      ? renderStars(row.morningstarRating) === normalizedQuery : rowMatchesQuery(row, normalizedQuery);
+    if (!matchesSearch) return false;
+    const [asset, focus, management] = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed);
+    return (assetFilters.length === 0 || assetFilters.includes(asset.variant))
+      && (focusFilters.length === 0 || focusFilters.includes(focus.variant))
+      && (managementFilter === "all" || management.variant === managementFilter);
+  }, [assetFilters, focusFilters, managementFilter, normalizedQuery, lang]);
 
   const filteredFunds = useMemo(() => funds.filter(matchesFilter), [funds, matchesFilter]);
 
@@ -1258,7 +1283,6 @@ function CombinedTable({
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setBadgeFilter(null);
       onSearchChange?.(event.target.value);
     },
     [onSearchChange],
@@ -1269,7 +1293,7 @@ function CombinedTable({
       <div className="rounded-3xl border border-slate-200/70 bg-white/85 p-4 sm:p-6 lg:p-8 shadow-xl backdrop-blur">
         {showSearchInput ? (
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
+            <div className="relative min-w-[160px] max-w-[280px] flex-1 basis-[200px]">
               <input
                 ref={searchInputRef}
                 type="text"
@@ -1285,7 +1309,6 @@ function CombinedTable({
                   aria-label={texts.clearSearch}
                   title={texts.clearSearch}
                   onClick={() => {
-                    setBadgeFilter(null);
                     onSearchChange?.("");
                     searchInputRef.current?.focus();
                   }}
@@ -1312,6 +1335,25 @@ function CombinedTable({
                   />
                 </svg>
               )}
+            </div>
+            <div className="fund-filter-controls flex flex-wrap items-center gap-2">
+              <MultiSelectFilter label={lang === "es" ? "Tipo de activo" : "Asset type"} caption={lang === "es" ? "Tipo" : "Asset"}
+                allLabel={lang === "es" ? "Todos" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
+                options={filterOptions[0]} selected={assetFilters} onChange={setAssetFilters} />
+              <MultiSelectFilter label={lang === "es" ? "Enfoque" : "Focus"} caption={lang === "es" ? "Enfoque" : "Focus"}
+                allLabel={lang === "es" ? "Todos" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
+                options={filterOptions[1]} selected={focusFilters} onChange={setFocusFilters} align="right" />
+              <select aria-label={lang === "es" ? "Gestión" : "Management"} value={managementFilter}
+                onChange={event => setManagementFilter(event.target.value as "all" | "active" | "indexed")}
+                className="h-[42px] min-w-0 rounded-xl border border-slate-300/80 bg-white/90 px-2 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                <option value="all">{lang === "es" ? "Gestión: Todas" : "Management: All"}</option>
+                <option value="active">{lang === "es" ? "Activa" : "Active"}</option>
+                <option value="indexed">{lang === "es" ? "Pasiva" : "Passive"}</option>
+              </select>
+              {hasLabelFilters ? <button type="button" onClick={() => { setAssetFilters([]); setFocusFilters([]); setManagementFilter("all"); }}
+                className="rounded-lg text-xs text-slate-500 hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
+                {lang === "es" ? "Limpiar filtros" : "Clear filters"}
+              </button> : null}
             </div>
             <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
               {selectedItems.length > 0 ? (
@@ -1670,7 +1712,7 @@ function CombinedTable({
                                     aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${stars.length} ${lang === "es" ? "estrellas Morningstar" : "Morningstar stars"}: ${row.name}`}
                                     title={`${lang === "es" ? "Filtrar por" : "Filter by"} ${stars.length} ${lang === "es" ? "estrellas Morningstar" : "Morningstar stars"}`}
                                     aria-pressed={normalizedQuery === stars}
-                                    onClick={() => { setBadgeFilter(null); onSearchChange?.(stars); }}
+                                    onClick={() => onSearchChange?.(stars)}
                                   >
                                     {stars}
                                   </button>
@@ -1678,7 +1720,7 @@ function CombinedTable({
                                 {badges.length > 0 ? (
                                   <div className={stars ? "ml-auto" : ""}>
                                     <CategoryLabels badges={badges} category={tooltipLabel} name={row.name} lang={lang}
-                                      onSelect={(badge) => { setBadgeFilter(badge); onSearchChange?.(badge.text); }} />
+                                      selected={selectedBadges} onSelect={selectLabel} />
                                   </div>
                                 ) : null}
                               </div>
