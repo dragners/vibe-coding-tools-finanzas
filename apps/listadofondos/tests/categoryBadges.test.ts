@@ -76,4 +76,12 @@ it("uses varied, readable colours for focus labels", () => {
   const strategies = ["smallCap", "value", "growth", "dividend", "flexCap"] as const;
   expect(new Set(geographic.map(variant => CATEGORY_BADGES[variant].style)).size).toBeGreaterThanOrEqual(6);
   expect(new Set(strategies.map(variant => CATEGORY_BADGES[variant].style)).size).toBe(strategies.length);
+  // Equities keep their rose identity; their focus must not repeat red or pink.
+  for (const variant of [...geographic, ...strategies, "tech", "ecology", "resources", "metals"] as const) {
+    expect(CATEGORY_BADGES[variant].style).not.toMatch(/bg-(?:rose|red|pink)-/);
+  }
+  // Common bond focuses remain distinct from the green asset badge.
+  for (const variant of ["shortTerm", "government", "corporate", "highYield", "flexible", "global", "emerging"] as const) {
+    expect(CATEGORY_BADGES[variant].style).not.toMatch(/bg-(?:green|emerald|teal|lime)-/);
+  }
 });
