@@ -1,5 +1,5 @@
 funds:
-- name: Vanguard Global Stock Index
+- name: Vanguard Global Stock Idx
   isin: IE00B03HD191
   category: Global Large-Cap Blend Equity
   morningstarId: F0GBR052TN
@@ -12,14 +12,14 @@ funds:
   morningstarId: F00001QFKV
   comment: 'RV global indexada. Aporta exposición diversificada a bolsas internacionales mediante gestión pasiva.'
   indexed: true
-- name: Vanguard Global Small Stock Index
+- name: Vanguard Global Small Stk Idx
   isin: IE00B42W4L06
   category: Global Small-Cap Equity
   morningstarId: F00000PA9N
   comment: 'MSCI Small Cap - Acumulación. RV de pequeñas empresas de países desarrollados. Complementa las grandes compañías globales.'
   indexed: true
   inPortfolio: true
-- name: Vanguard Emerg Mkts Stock Index
+- name: Vanguard Emerg Mkts Stck Idx
   isin: IE0031786696
   category: Global Emerging Markets Equity
   morningstarId: F00000T1HU
