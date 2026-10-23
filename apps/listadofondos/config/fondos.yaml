@@ -193,6 +193,16 @@ funds:
   category: Global Frontier Markets Equity
   morningstarId: F00000NG7A
   comment: 'RV de mercados frontera, poco representados en índices globales. Busca crecimiento a largo plazo en economías menos desarrolladas, con elevada volatilidad.'
+- name: Allianz Oriental Income AT
+  isin: LU0348784041
+  category: Asia-Pacific inc. Japan Equity
+  morningstarId: F000005JON
+  comment: 'RV Asia-Pacífico con enfoque en ingresos y crecimiento.'
+- name: JPM Pacific Equity
+  isin: LU0217390573
+  category: Asia-Pacific inc. Japan Equity
+  morningstarId: F0GBR060JT
+  comment: 'RV Asia-Pacífico. Busca crecimiento a largo plazo mediante selección activa de empresas de los mercados asiáticos y del Pacífico.'
 - name: Pictet-China Index P 
   isin: LU0625737910
   category: China Equity
@@ -220,16 +230,6 @@ funds:
   category: Sector Equity Ecology
   morningstarId: F000014SSQ
   comment: 'RV temática global ESG. Busca crecimiento en empresas de uso eficiente y reutilización de recursos.'
-- name: Allianz Oriental Income AT
-  isin: LU0348784041
-  category: Asia-Pacific inc. Japan Equity
-  morningstarId: F000005JON
-  comment: 'RV Asia-Pacífico con enfoque en ingresos y crecimiento.'
-- name: JPM Pacific Equity
-  isin: LU0217390573
-  category: Asia-Pacific inc. Japan Equity
-  morningstarId: F0GBR060JT
-  comment: 'RV Asia-Pacífico. Busca crecimiento a largo plazo mediante selección activa de empresas de los mercados asiáticos y del Pacífico.'
 - name: Ninety One Glb Nat. Resources
   isin: LU2358792120
   category: Sector Equity Natural Resources
