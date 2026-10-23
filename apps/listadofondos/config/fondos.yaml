@@ -78,11 +78,11 @@ funds:
   category: Global Flex-Cap Equity
   morningstarId: F0000107JH
   comment: 'Mixto flexible. Combina activos para buscar crecimiento a largo plazo. Andbank, lleva tambien BTC y otros activos alternativos.'
-- name: Renta 4 Numantia Patr. Global
-  isin: ES0173311103
-  category: EUR Flexible Allocation
-  morningstarId: F00000VYOL
-  comment: 'Mixto global flexible con enfoque value. Busca crecimiento a largo plazo. Emerito Quintana, escuela austriaca y value investing. Gestora Renta4.'
+- name: Robeco BP Global Premium Eqs D 
+  isin: LU0203975437
+  category: Global Large-Cap Value Equity
+  morningstarId: F0GBR05VCE
+  comment: 'RV global value. Busca crecimiento mediante empresas infravaloradas con potencial de mejora.'
 - name: JPMorgan Global Focus
   isin: LU0210534227
   category: Global Large-Cap Blend Equity
@@ -118,6 +118,11 @@ funds:
   category: Global Small-Cap Equity
   morningstarId: F000013W45
   comment: 'RV global de pequeñas y medianas empresas. Busca compañías con potencial de crecimiento superior al mercado mediante análisis fundamental y selección activa.'
+- name: Groupama Global Disruption
+  isin: LU1897556517
+  category: Global Large-Cap Growth Equity
+  morningstarId: F000014CAN
+  comment: 'RV global temática sobre cambios tecnológicos, demográficos y económicos. Gestores Philippe Vialle, Julia Kung y Alessandro Roggero.'
 - name: Fundsmith Equity T 
   isin: LU0690375422
   category: Global Large-Cap Growth Equity
@@ -128,11 +133,11 @@ funds:
   category: Global Large-Cap Growth Equity
   morningstarId: F000011K3W
   comment: 'Gestor Rajiv Jain (ex-Vontobel). RV global de empresas de calidad. Busca crecimiento con atención al riesgo.'
-- name: Groupama Global Disruption
-  isin: LU1897556517
+- name: Incometric Nartex Equity R 
+  isin: LU2357235576
   category: Global Large-Cap Growth Equity
-  morningstarId: F000014CAN
-  comment: 'RV global temática sobre cambios tecnológicos, demográficos y económicos. Gestores Philippe Vialle, Julia Kung y Alessandro Roggero.'
+  morningstarId: F00001DB42
+  comment: 'RV global de calidad. Busca negocios con ventajas competitivas y crecimiento. Gestor Tomás Maraver - Poco track record.'
 - name: Ranmore Global Equity 
   isin: IE00B6ZCS539
   category: Global Flex-Cap Equity
@@ -143,11 +148,6 @@ funds:
   category: Global Large-Cap Value Equity
   morningstarId: F00000JNOU
   comment: 'RV global value. Invierte en compañías infravaloradas con horizonte largo.'
-- name: Incometric Nartex Equity R 
-  isin: LU2357235576
-  category: Global Large-Cap Growth Equity
-  morningstarId: F00001DB42
-  comment: 'RV global de calidad. Busca negocios con ventajas competitivas y crecimiento. Gestor Tomás Maraver - Poco track record.'
 - name: JPM Euroland Dynamic D
   isin: LU0661986348
   category: Eurozone Large-Cap Equity
@@ -215,11 +215,6 @@ funds:
   category: India Equity
   morningstarId: F000015UJL
   comment: 'RV india activa. Busca negocios sólidos, rentables y a valoraciones razonables. Estrategia de WhiteOak Capital, fundada por Prashant Khemka.'
-- name: Robeco BP Global Premium Eqs D 
-  isin: LU0203975437
-  category: Global Large-Cap Value Equity
-  morningstarId: F0GBR05VCE
-  comment: 'RV global value. Busca crecimiento mediante empresas infravaloradas con potencial de mejora.'
 - name: Robeco Circular Economy D 
   isin: LU2092758726
   category: Sector Equity Ecology
@@ -262,6 +257,11 @@ funds:
   category: EUR Flexible Allocation
   morningstarId: F0GBR04VSJ
   comment: 'Mixto flexible global de Cartesio Inversiones. Combina RV, RF y liquidez para buscar crecimiento del capital y controlar las pérdidas.'
+- name: Renta 4 Numantia Patr. Global
+  isin: ES0173311103
+  category: EUR Flexible Allocation
+  morningstarId: F00000VYOL
+  comment: 'Mixto global flexible con enfoque value. Busca crecimiento a largo plazo. Emerito Quintana, escuela austriaca y value investing. Gestora Renta4.'
 - name: Trojan Fund
   isin: IE00B6T42S66
   category: EUR Flexible Allocation
