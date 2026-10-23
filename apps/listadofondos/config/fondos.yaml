@@ -78,6 +78,16 @@ funds:
   category: Global Flex-Cap Equity
   morningstarId: F0000107JH
   comment: 'Mixto flexible. Combina activos para buscar crecimiento a largo plazo. Andbank, lleva tambien BTC y otros activos alternativos.'
+- name: Heptagon Kopernik Glb AllCp
+  isin: IE00BH6XSF26
+  category: Global Flex-Cap Equity
+  morningstarId: F00000YZS6
+  comment: 'RV global value y contrarian. Busca compañías infravaloradas y mercados poco populares. Gestor David B. Iben'
+- name: Janus Henderson Glb Small Cap
+  isin: LU1984712320
+  category: Global Small-Cap Equity
+  morningstarId: F000013W45
+  comment: 'RV global de pequeñas y medianas empresas. Busca compañías con potencial de crecimiento superior al mercado mediante análisis fundamental y selección activa.'
 - name: Robeco BP Global Premium Eqs D 
   isin: LU0203975437
   category: Global Large-Cap Value Equity
@@ -108,16 +118,6 @@ funds:
   category: Global Equity Income
   morningstarId: F00000NGSH
   comment: 'RV global de dividendos con enfoque value. Busca empresas infravaloradas con capacidad de generar ingresos y crecimiento del capital a largo plazo.'
-- name: Heptagon Kopernik Glb AllCp
-  isin: IE00BH6XSF26
-  category: Global Flex-Cap Equity
-  morningstarId: F00000YZS6
-  comment: 'RV global value y contrarian. Busca compañías infravaloradas y mercados poco populares. Gestor David B. Iben'
-- name: Janus Henderson Glb Small Cap
-  isin: LU1984712320
-  category: Global Small-Cap Equity
-  morningstarId: F000013W45
-  comment: 'RV global de pequeñas y medianas empresas. Busca compañías con potencial de crecimiento superior al mercado mediante análisis fundamental y selección activa.'
 - name: Groupama Global Disruption
   isin: LU1897556517
   category: Global Large-Cap Growth Equity
