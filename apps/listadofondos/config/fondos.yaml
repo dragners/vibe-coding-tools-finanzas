@@ -435,18 +435,18 @@ plans:
   morningstarId: F00001278R
   comment: 'Plan de RV global. Combina fondos y ETF de acciones y bonos para buscar crecimiento a largo plazo para la jubilación.'
   indexed: true
-- name: Horos Internacional PP
-  isin: N5263
-  category: Global Equity PP
-  morningstarId: F000010RWV
-  comment: 'Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional pero en PP. RV internacional value para la jubilación. Busca empresas infravaloradas.'
-- name: Azvalor Global Value PP
-  isin: N5116
-  category: Global Equity PP
-  morningstarId: F00000XL5T
-  comment: 'RV global value para la jubilación. Álvaro Guzmán busca negocios infravalorados. Similar a los fondos de Azvalor, aunque con inversiones diferentes.'
 - name: Cobas Global PP
   isin: N5219
   category: Global Equity PP
   morningstarId: F00000ZER5
   comment: 'Plan de RV global value. Busca crecimiento para la jubilación invirtiendo en empresas infravaloradas. Gestor Francisco García Paramés.'
+- name: Azvalor Global Value PP
+  isin: N5116
+  category: Global Equity PP
+  morningstarId: F00000XL5T
+  comment: 'RV global value para la jubilación. Álvaro Guzmán busca negocios infravalorados. Similar a los fondos de Azvalor, aunque con inversiones diferentes.'
+- name: Horos Internacional PP
+  isin: N5263
+  category: Global Equity PP
+  morningstarId: F000010RWV
+  comment: 'Plan de Pensiones de Horos - Igual que el fondo de Horos Value Internacional pero en PP. RV internacional value para la jubilación. Busca empresas infravaloradas.'
