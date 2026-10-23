@@ -11,15 +11,9 @@ type Props<T extends string> = {
   onChange: (values: T[]) => void;
   align?: "left" | "right";
   multiple?: boolean;
-  tone?: "cyan" | "violet" | "emerald";
-};
-const TONES = {
-  cyan: "bg-cyan-500",
-  violet: "bg-violet-500",
-  emerald: "bg-emerald-500",
 };
 
-export function MultiSelectFilter<T extends string>({ label, caption, allLabel, clearLabel, options, selected, onChange, align = "left", multiple = true, tone = "cyan" }: Props<T>) {
+export function MultiSelectFilter<T extends string>({ label, caption, allLabel, clearLabel, options, selected, onChange, align = "left", multiple = true }: Props<T>) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -50,8 +44,8 @@ export function MultiSelectFilter<T extends string>({ label, caption, allLabel, 
         onClick={() => setOpen(value => !value)}
         className={`flex h-[42px] w-full items-center justify-between gap-1.5 rounded-xl border px-2.5 text-xs text-slate-700 shadow-sm transition-colors hover:border-cyan-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${open || isFiltered ? "border-cyan-300 bg-cyan-50" : "border-slate-300/80 bg-white/90"}`}>
         <span className="flex min-w-0 flex-col gap-0.5 text-left leading-tight">
-          <span className="flex items-center gap-1 text-[9px] text-slate-500"><span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${TONES[tone]}`} />{caption}</span>
-          <span className="truncate font-medium">{summary}</span>
+          <span className="text-[9px] font-bold text-slate-500">{caption}</span>
+          <span className="truncate font-bold">{summary}</span>
         </span>
         <svg aria-hidden="true" className={`h-3 w-3 shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
       </button>
@@ -75,11 +69,10 @@ export function MultiSelectFilter<T extends string>({ label, caption, allLabel, 
                     listRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
                   }
                 }}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400 ${checked ? "bg-cyan-50" : "hover:bg-slate-50"}`}>
+                className={`mb-1 flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left text-xs transition-colors last:mb-0 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-600 ${option.style ?? "border-slate-200 bg-slate-100 text-slate-700"} ${checked ? "font-semibold" : ""}`}>
                 <span aria-hidden="true" className={`flex h-4 w-4 shrink-0 items-center justify-center border ${multiple ? "rounded" : "rounded-full"} ${checked ? "border-cyan-600 bg-cyan-600 text-white" : "border-slate-300 bg-white"}`}>
                   {checked ? <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 4 4L19 6" /></svg> : null}
                 </span>
-                <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${option.style ?? TONES[tone]}`} />
                 <span>{option.text}</span>
               </button>
             );

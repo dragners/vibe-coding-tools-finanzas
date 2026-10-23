@@ -457,7 +457,7 @@ describe("copying product identifiers", () => {
 });
 
 
-describe("independent multi-select label controls", () => {
+describe("cascading multi-select label controls", () => {
   const data = {
     funds: [
       { ...funds[0], category: "Global Large-Cap Value Equity" },
@@ -511,23 +511,83 @@ describe("independent multi-select label controls", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Focus", exact: true }));
   });
 
-  it("keeps options available with no matching rows and clears a single list without clearing text", async () => {
+  it("only offers compatible focuses and management, and clears a list without clearing text", async () => {
     const user = await load(data);
     await user.type(screen.getByRole("textbox"), "Fondo");
     await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
     await user.click(screen.getByRole("checkbox", { name: "Bonos", exact: true }));
     await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
-    await user.click(screen.getByRole("checkbox", { name: "Value", exact: true }));
-    expect(fundNames()).toHaveLength(0);
+    expect(screen.queryByRole("checkbox", { name: "Value", exact: true })).toBeNull();
     expect(screen.getByRole("checkbox", { name: "Flexible", exact: true })).not.toBeNull();
+    await user.click(screen.getByRole("checkbox", { name: "Flexible", exact: true }));
     await user.click(screen.getByRole("button", { name: "Limpiar: Enfoque", exact: true }));
     expect(fundNames()).toEqual(["Fondo 3"]);
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Enfoque", exact: true }));
     expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("Fondo");
     await user.click(screen.getByRole("textbox"));
     expect(screen.queryByRole("group", { name: "Enfoque", exact: true })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Gestión", exact: true }));
+    expect(screen.getByRole("radio", { name: "Activa", exact: true })).not.toBeNull();
+    expect(screen.queryByRole("radio", { name: "Pasiva", exact: true })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Limpiar filtros", exact: true }));
     expect(fundNames()).toHaveLength(6);
+  });
+
+  it("updates both other lists for passive management and restores options when clearing filters", async () => {
+    const user = await load(data);
+    await user.click(screen.getByRole("button", { name: "Gestión", exact: true }));
+    await user.click(screen.getByRole("radio", { name: "Pasiva", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
+    expect(screen.queryByRole("checkbox", { name: "Bonos", exact: true })).toBeNull();
+    expect(screen.getByRole("checkbox", { name: "Mixto", exact: true })).not.toBeNull();
+    await user.click(screen.getByRole("checkbox", { name: "Acciones", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
+    expect(screen.queryByRole("checkbox", { name: "Flexible", exact: true })).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: "Conservador", exact: true })).toBeNull();
+    expect(screen.getAllByRole("checkbox").filter(option => option.closest('[role="group"]')).map(option => option.textContent)).toEqual(["Growth", "Value"]);
+    await user.click(screen.getByRole("checkbox", { name: "Growth", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 4"]);
+    await user.click(screen.getByRole("button", { name: "Gestión", exact: true }));
+    expect(screen.queryByRole("radio", { name: "Activa", exact: true })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
+    expect(screen.getByRole("checkbox", { name: "Bonos", exact: true })).not.toBeNull();
+    expect(fundNames()).toHaveLength(7);
+  });
+
+  it("keeps checked choices removable while hiding incompatible unselected alternatives", async () => {
+    const user = await load(data);
+    await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Acciones", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Mixto", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Flexible", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Value", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Mixto", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
+    expect(screen.getByRole("checkbox", { name: "Flexible", exact: true }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("checkbox", { name: "Value", exact: true }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.queryByRole("checkbox", { name: "Conservador", exact: true })).toBeNull();
+    await user.click(screen.getByRole("checkbox", { name: "Flexible", exact: true }));
+    expect(screen.queryByRole("checkbox", { name: "Flexible", exact: true })).toBeNull();
+    expect(screen.getByRole("button", { name: "Enfoque", exact: true }).textContent).toBe("EnfoqueValue");
+    // Its own unselected alternative remains available for adding another focus.
+    await user.click(screen.getByRole("checkbox", { name: "Growth", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 4", "Fondo 6", "Plan 1"]);
+  });
+
+  it("keeps label options recoverable when the independent text search has no matches", async () => {
+    const user = await load(data);
+    await user.type(screen.getByRole("textbox"), "sin resultados");
+    await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
+    await user.click(screen.getByRole("checkbox", { name: "Acciones", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
+    expect(screen.getByRole("checkbox", { name: "Value", exact: true })).not.toBeNull();
+    expect(screen.queryByRole("checkbox", { name: "Flexible", exact: true })).toBeNull();
+    expect(fundNames()).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Borrar búsqueda", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 4", "Fondo 6", "Plan 1"]);
   });
 });
 

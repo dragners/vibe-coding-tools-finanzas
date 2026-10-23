@@ -1130,19 +1130,29 @@ function CombinedTable({
   const hasLabelFilters = assetFilters.length > 0 || focusFilters.length > 0 || managementFilter !== "all";
   const selectedBadges = new Set<BadgeVariant>([...assetFilters, ...focusFilters, ...(managementFilter === "all" ? [] : [managementFilter])]);
   const filterOptions = useMemo(() => {
-    const available = [new Map<BadgeVariant, CategoryBadge>(), new Map<BadgeVariant, CategoryBadge>()];
+    const available = [new Map<BadgeVariant, CategoryBadge>(), new Map<BadgeVariant, CategoryBadge>(), new Map<BadgeVariant, CategoryBadge>()];
     for (const row of [...funds, ...plans]) {
       const badges = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed);
-      for (const group of [0, 1]) available[group].set(badges[group].variant, badges[group]);
+      const matches = [
+        assetFilters.length === 0 || assetFilters.includes(badges[0].variant),
+        focusFilters.length === 0 || focusFilters.includes(badges[1].variant),
+        managementFilter === "all" || badges[2].variant === managementFilter,
+      ];
+      // Ignore a list's own selection so its compatible alternatives remain selectable.
+      for (const group of [0, 1, 2]) {
+        if (matches.every((match, index) => index === group || match)) {
+          available[group].set(badges[group].variant, badges[group]);
+        }
+      }
     }
-    // Keep selected options available even if a refresh removes their last row.
-    for (const [group, values] of [[0, assetFilters], [1, focusFilters]] as const) {
+    // Keep checked options removable and preserve OR combinations across lists.
+    for (const [group, values] of [[0, assetFilters], [1, focusFilters], [2, managementFilter === "all" ? [] : [managementFilter]]] as const) {
       for (const variant of values) available[group].set(variant, { variant, text: CATEGORY_BADGES[variant][lang] });
     }
     return available.map(options => [...options.values()].map(badge => ({
       value: badge.variant, text: getCategoryFilterLabel(badge.variant, lang), style: CATEGORY_BADGES[badge.variant].style,
     })).sort((a, b) => a.text.localeCompare(b.text, lang)));
-  }, [funds, plans, lang, assetFilters, focusFilters]);
+  }, [funds, plans, lang, assetFilters, focusFilters, managementFilter]);
   const selectLabel = (badge: CategoryBadge, group: number) => {
     if (group === 2) setManagementFilter(badge.variant === "indexed" ? "indexed" : "active");
     else {
@@ -1344,15 +1354,16 @@ function CombinedTable({
                 options={filterOptions[0]} selected={assetFilters} onChange={setAssetFilters} />
               <MultiSelectFilter label={lang === "es" ? "Enfoque" : "Focus"} caption={lang === "es" ? "Enfoque" : "Focus"}
                 allLabel={lang === "es" ? "Todos" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
-                options={filterOptions[1]} selected={focusFilters} onChange={setFocusFilters} align="right" tone="violet" />
+                options={filterOptions[1]} selected={focusFilters} onChange={setFocusFilters} align="right" />
               <MultiSelectFilter<"all" | "active" | "indexed"> label={lang === "es" ? "Gestión" : "Management"} caption={lang === "es" ? "Gestión" : "Management"}
                 allLabel={lang === "es" ? "Todas" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
-                options={[
+                options={([
                   { value: "all", text: lang === "es" ? "Todas" : "All" },
                   { value: "active", text: lang === "es" ? "Activa" : "Active", style: CATEGORY_BADGES.active.style },
                   { value: "indexed", text: lang === "es" ? "Pasiva" : "Passive", style: CATEGORY_BADGES.indexed.style },
-                ]} selected={[managementFilter]} onChange={values => setManagementFilter(values[0] ?? "all")}
-                multiple={false} align="right" tone="emerald" />
+                ] as const).filter(option => option.value === "all" || filterOptions[2].some(available => available.value === option.value))}
+                selected={[managementFilter]} onChange={values => setManagementFilter(values[0] ?? "all")}
+                multiple={false} align="right" />
               {hasLabelFilters ? <button type="button" onClick={() => { setAssetFilters([]); setFocusFilters([]); setManagementFilter("all"); }}
                 className="rounded-lg text-xs text-slate-500 hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
                 {lang === "es" ? "Limpiar filtros" : "Clear filters"}
