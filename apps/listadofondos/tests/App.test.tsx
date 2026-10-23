@@ -253,11 +253,13 @@ describe("category labels", () => {
     expect(fundNames()).toEqual(expected);
     expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("");
     if (label === "Activa" || label === "Index") {
-      expect((screen.getByRole("combobox", { name: "Gestión" }) as HTMLSelectElement).value).toBe(label === "Index" ? "indexed" : "active");
+      await user.click(screen.getByRole("button", { name: "Gestión", exact: true }));
+      expect(screen.getByRole("radio", { name: label === "Index" ? "Pasiva" : "Activa", exact: true }).getAttribute("aria-checked")).toBe("true");
+      await user.click(screen.getByRole("button", { name: "Gestión", exact: true }));
     } else {
       const selector = screen.getByRole("button", { name: ["Acciones", "Bonos"].includes(label) ? "Tipo de activo" : "Enfoque", exact: true });
       await user.click(selector);
-      expect((screen.getByRole("checkbox", { name: label, exact: true }) as HTMLInputElement).checked).toBe(true);
+      expect(screen.getByRole("checkbox", { name: label, exact: true }).getAttribute("aria-checked")).toBe("true");
       await user.click(selector);
     }
     await user.click(screen.getByRole("button", { name: "Limpiar filtros", exact: true }));
@@ -272,7 +274,7 @@ describe("category labels", () => {
       { ...funds[1], category: "EUR Money Market - Short Term", indexed: true },
       { ...funds[2], category: "EUR Ultra Short-Term Bond", comment: "Monet." },
     ], plans: [] });
-    await user.click(screen.getByRole("button", { name: "Filtrar por Monet.: Fondo 1", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Filtrar por Monetario: Fondo 1", exact: true }));
     expect(fundNames()).toEqual(["Fondo 1", "Fondo 2"]);
     await user.click(screen.getByRole("button", { name: "EN", exact: true }));
     expect(fundNames()).toEqual(["Fondo 1", "Fondo 2"]);
@@ -478,9 +480,11 @@ describe("independent multi-select label controls", () => {
     await user.click(screen.getByRole("checkbox", { name: "Value", exact: true }));
     expect(fundNames()).toEqual(["Fondo 1", "Fondo 2", "Fondo 6", "Plan 1"]);
     await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Gestión" }), "active");
+    await user.click(screen.getByRole("button", { name: "Gestión", exact: true }));
+    await user.click(screen.getByRole("radio", { name: "Activa", exact: true }));
     expect(fundNames()).toEqual(["Fondo 1", "Plan 1"]);
-    await user.selectOptions(screen.getByRole("combobox", { name: "Gestión" }), "indexed");
+    await user.click(screen.getByRole("radio", { name: "Pasiva", exact: true }));
+    await user.click(screen.getByRole("button", { name: "Gestión", exact: true }));
     expect(fundNames()).toEqual(["Fondo 2", "Fondo 6"]);
     await user.type(screen.getByRole("textbox"), "Fondo 6");
     expect(fundNames()).toEqual(["Fondo 6"]);
@@ -500,7 +504,7 @@ describe("independent multi-select label controls", () => {
     await user.click(screen.getByRole("button", { name: "Filtrar por Value: Fondo 1", exact: true }));
     await user.click(screen.getByRole("button", { name: "EN", exact: true }));
     await user.click(screen.getByRole("button", { name: "Focus", exact: true }));
-    expect((screen.getByRole("checkbox", { name: "Value", exact: true }) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("checkbox", { name: "Value", exact: true }).getAttribute("aria-checked")).toBe("true");
     expect(fundNames()).toEqual(["Fondo 1", "Fondo 6"]);
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("group", { name: "Focus", exact: true })).toBeNull();
@@ -525,4 +529,41 @@ describe("independent multi-select label controls", () => {
     await user.click(screen.getByRole("button", { name: "Limpiar filtros", exact: true }));
     expect(fundNames()).toHaveLength(6);
   });
+});
+
+
+it("keeps multi-select lists open when clicking option text or its indicator and uses keyboard for management", async () => {
+  const user = await load({ funds: [
+    { ...funds[0], category: "Global Large-Cap Value Equity" },
+    { ...funds[1], category: "EUR Flexible Allocation", indexed: true },
+    { ...funds[2], category: "EUR Money Market" },
+  ], plans: [] });
+  const type = screen.getByRole("button", { name: "Tipo de activo", exact: true });
+  await user.click(type);
+  await user.click(screen.getByText("Acciones", { selector: "span", exact: true }));
+  expect(type.getAttribute("aria-expanded")).toBe("true");
+  expect(screen.getByRole("checkbox", { name: "Acciones", exact: true }).getAttribute("aria-checked")).toBe("true");
+  const mixed = screen.getByRole("checkbox", { name: "Mixto", exact: true });
+  await user.click(mixed.querySelector('[aria-hidden="true"]')!);
+  expect(type.getAttribute("aria-expanded")).toBe("true");
+  expect(fundNames()).toEqual(["Fondo 1", "Fondo 2"]);
+  await user.click(screen.getByText("Monetario", { selector: "span", exact: true }));
+  expect(fundNames()).toHaveLength(3);
+  await user.click(screen.getByText("Monetario", { selector: "span", exact: true }));
+  expect(type.getAttribute("aria-expanded")).toBe("true");
+  expect(fundNames()).toEqual(["Fondo 1", "Fondo 2"]);
+  const management = screen.getByRole("button", { name: "Gestión", exact: true });
+  await user.click(management);
+  expect(screen.queryByRole("group", { name: "Tipo de activo", exact: true })).toBeNull();
+  await user.tab();
+  expect(document.activeElement).toBe(screen.getByRole("radio", { name: "Todas", exact: true }));
+  await user.keyboard("{ArrowDown}");
+  expect(screen.getByRole("radio", { name: "Activa", exact: true }).getAttribute("aria-checked")).toBe("true");
+  expect(fundNames()).toEqual(["Fondo 1"]);
+  await user.keyboard("{ArrowDown}");
+  expect(screen.getByRole("radio", { name: "Pasiva", exact: true }).getAttribute("aria-checked")).toBe("true");
+  expect(fundNames()).toEqual(["Fondo 2"]);
+  await user.keyboard("{Escape}");
+  expect(document.activeElement).toBe(management);
+  expect(management.getAttribute("aria-expanded")).toBe("false");
 });

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getCategoryBadges } from "../src/categoryBadges";
+import { getCategoryBadges, getCategoryFilterLabel } from "../src/categoryBadges";
 
 describe("Morningstar category classification", () => {
   it.each([
-    ["EUR Money Market", "Monet.", "EUR"],
-    ["EUR Money Market - Short Term", "Monet.", "Corto plazo"],
+    ["EUR Money Market", "Monetario", "EUR"],
+    ["EUR Money Market - Short Term", "Monetario", "Corto plazo"],
     ["EUR Flexible Allocation", "Mixto", "Flexible"],
     ["EUR Cautious Allocation", "Mixto", "Conservador"],
     ["Systematic Trend USD", "Alternat.", "Tendencias"],
@@ -59,4 +59,14 @@ describe("Morningstar category classification", () => {
     expect(spanish[0].searchTerms).toContain("monetarios");
     expect(getCategoryBadges("EUR Ultra Short-Term Bond", "es")[0].variant).toBe("bond");
   });
+});
+
+
+it("uses complete names in filter lists while keeping compact row labels where appropriate", () => {
+  expect(getCategoryFilterLabel("moneyMarket", "es")).toBe("Monetario");
+  expect(getCategoryFilterLabel("moneyMarket", "en")).toBe("Money market");
+  expect(getCategoryFilterLabel("alternative", "es")).toBe("Alternativos");
+  expect(getCategoryFilterLabel("asia", "es")).toBe("Asia-Pacífico");
+  expect(getCategoryFilterLabel("flexCap", "es")).toBe("Capitalización flexible");
+  expect(getCategoryFilterLabel("unknown", "es")).toBe("Sin categoría");
 });

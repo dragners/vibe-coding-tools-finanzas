@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { CATEGORY_BADGES, getCategoryBadges, type CategoryBadge, type BadgeVariant } from "./categoryBadges";
+import { CATEGORY_BADGES, getCategoryBadges, getCategoryFilterLabel, type CategoryBadge, type BadgeVariant } from "./categoryBadges";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
@@ -1084,7 +1084,7 @@ function CategoryLabels({ badges, category, name, lang, selected, onSelect }: {
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
       onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
       {badges.map((badge, group) => (
-        <button key={badge.variant} type="button"
+        <button key={badge.variant} type="button" data-category={badge.variant}
           className={`category-label font-semibold uppercase rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${CATEGORY_BADGES[badge.variant].style}`}
           aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${badge.text}: ${name}`}
           aria-describedby={open ? tooltipId : undefined}
@@ -1139,7 +1139,9 @@ function CombinedTable({
     for (const [group, values] of [[0, assetFilters], [1, focusFilters]] as const) {
       for (const variant of values) available[group].set(variant, { variant, text: CATEGORY_BADGES[variant][lang] });
     }
-    return available.map(options => [...options.values()].sort((a, b) => a.text.localeCompare(b.text, lang)));
+    return available.map(options => [...options.values()].map(badge => ({
+      value: badge.variant, text: getCategoryFilterLabel(badge.variant, lang), style: CATEGORY_BADGES[badge.variant].style,
+    })).sort((a, b) => a.text.localeCompare(b.text, lang)));
   }, [funds, plans, lang, assetFilters, focusFilters]);
   const selectLabel = (badge: CategoryBadge, group: number) => {
     if (group === 2) setManagementFilter(badge.variant === "indexed" ? "indexed" : "active");
@@ -1342,14 +1344,15 @@ function CombinedTable({
                 options={filterOptions[0]} selected={assetFilters} onChange={setAssetFilters} />
               <MultiSelectFilter label={lang === "es" ? "Enfoque" : "Focus"} caption={lang === "es" ? "Enfoque" : "Focus"}
                 allLabel={lang === "es" ? "Todos" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
-                options={filterOptions[1]} selected={focusFilters} onChange={setFocusFilters} align="right" />
-              <select aria-label={lang === "es" ? "Gestión" : "Management"} value={managementFilter}
-                onChange={event => setManagementFilter(event.target.value as "all" | "active" | "indexed")}
-                className="h-[42px] min-w-0 rounded-xl border border-slate-300/80 bg-white/90 px-2 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400">
-                <option value="all">{lang === "es" ? "Gestión: Todas" : "Management: All"}</option>
-                <option value="active">{lang === "es" ? "Activa" : "Active"}</option>
-                <option value="indexed">{lang === "es" ? "Pasiva" : "Passive"}</option>
-              </select>
+                options={filterOptions[1]} selected={focusFilters} onChange={setFocusFilters} align="right" tone="violet" />
+              <MultiSelectFilter<"all" | "active" | "indexed"> label={lang === "es" ? "Gestión" : "Management"} caption={lang === "es" ? "Gestión" : "Management"}
+                allLabel={lang === "es" ? "Todas" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
+                options={[
+                  { value: "all", text: lang === "es" ? "Todas" : "All" },
+                  { value: "active", text: lang === "es" ? "Activa" : "Active", style: CATEGORY_BADGES.active.style },
+                  { value: "indexed", text: lang === "es" ? "Pasiva" : "Passive", style: CATEGORY_BADGES.indexed.style },
+                ]} selected={[managementFilter]} onChange={values => setManagementFilter(values[0] ?? "all")}
+                multiple={false} align="right" tone="emerald" />
               {hasLabelFilters ? <button type="button" onClick={() => { setAssetFilters([]); setFocusFilters([]); setManagementFilter("all"); }}
                 className="rounded-lg text-xs text-slate-500 hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
                 {lang === "es" ? "Limpiar filtros" : "Clear filters"}

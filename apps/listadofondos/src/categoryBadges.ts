@@ -14,7 +14,7 @@ const COLORS = {
 export const CATEGORY_BADGES = {
   equity: { es: "Acciones", en: "Equity", style: COLORS.equity },
   bond: { es: "Bonos", en: "Bonds", style: COLORS.bond },
-  moneyMarket: { es: "Monet.", en: "Cash", style: COLORS.moneyMarket, searchTerms: ["monetario", "monetarios", "money market", "cash"] },
+  moneyMarket: { es: "Monetario", en: "Cash", style: COLORS.moneyMarket, searchTerms: ["monetario", "monetarios", "money market", "cash"] },
   mixed: { es: "Mixto", en: "Mixed", style: COLORS.mixed },
   alternative: { es: "Alternat.", en: "Alternat.", style: COLORS.alternative },
   otherAssets: { es: "Otros", en: "Other", style: COLORS.neutral },
@@ -51,6 +51,23 @@ export const CATEGORY_BADGES = {
 
 export type BadgeVariant = keyof typeof CATEGORY_BADGES;
 export type CategoryBadge = { text: string; variant: BadgeVariant; searchTerms?: readonly string[] };
+
+const FILTER_LABELS: Partial<Record<BadgeVariant, { es: string; en: string }>> = {
+  alternative: { es: "Alternativos", en: "Alternatives" },
+  moneyMarket: { es: "Monetario", en: "Money market" },
+  asia: { es: "Asia-Pacífico", en: "Asia-Pacific" },
+  smallCap: { es: "Pequeña capitalización", en: "Small capitalisation" },
+  flexCap: { es: "Capitalización flexible", en: "Flexible capitalisation" },
+  resources: { es: "Recursos naturales", en: "Natural resources" },
+  metals: { es: "Metales preciosos", en: "Precious metals" },
+  unknown: { es: "Sin categoría", en: "Unclassified" },
+  euro: { es: "Euro (EUR)", en: "Euro (EUR)" },
+  indexed: { es: "Pasiva", en: "Passive" },
+};
+
+export function getCategoryFilterLabel(variant: BadgeVariant, lang: "es" | "en") {
+  return FILTER_LABELS[variant]?.[lang] ?? CATEGORY_BADGES[variant][lang];
+}
 
 // The middle badge uses the most specific useful focus. For instance, emerging
 // markets take precedence over "Global", and short duration over corporate debt.
