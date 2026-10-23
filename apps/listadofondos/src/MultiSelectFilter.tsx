@@ -69,10 +69,11 @@ export function MultiSelectFilter<T extends string>({ label, caption, allLabel, 
                     listRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
                   }
                 }}
-                className={`mb-1 flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left text-xs transition-colors last:mb-0 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-600 ${option.style ?? "border-slate-200 bg-slate-100 text-slate-700"} ${checked ? "font-semibold" : ""}`}>
+                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400 ${checked ? "bg-cyan-50" : "hover:bg-slate-50"}`}>
                 <span aria-hidden="true" className={`flex h-4 w-4 shrink-0 items-center justify-center border ${multiple ? "rounded" : "rounded-full"} ${checked ? "border-cyan-600 bg-cyan-600 text-white" : "border-slate-300 bg-white"}`}>
                   {checked ? <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 4 4L19 6" /></svg> : null}
                 </span>
+                <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full border ${option.style ?? "border-slate-400 bg-slate-300"}`} />
                 <span>{option.text}</span>
               </button>
             );

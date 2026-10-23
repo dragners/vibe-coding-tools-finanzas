@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCategoryBadges, getCategoryFilterLabel } from "../src/categoryBadges";
+import { CATEGORY_BADGES, getCategoryBadges, getCategoryFilterLabel } from "../src/categoryBadges";
 
 describe("Morningstar category classification", () => {
   it.each([
@@ -69,4 +69,11 @@ it("uses complete names in filter lists while keeping compact row labels where a
   expect(getCategoryFilterLabel("asia", "es")).toBe("Asia-Pacífico");
   expect(getCategoryFilterLabel("flexCap", "es")).toBe("Capitalización flexible");
   expect(getCategoryFilterLabel("unknown", "es")).toBe("Sin categoría");
+});
+
+it("uses varied, readable colours for focus labels", () => {
+  const geographic = ["global", "europe", "eurozone", "asia", "emerging", "frontier", "india", "china"] as const;
+  const strategies = ["smallCap", "value", "growth", "dividend", "flexCap"] as const;
+  expect(new Set(geographic.map(variant => CATEGORY_BADGES[variant].style)).size).toBeGreaterThanOrEqual(6);
+  expect(new Set(strategies.map(variant => CATEGORY_BADGES[variant].style)).size).toBe(strategies.length);
 });
