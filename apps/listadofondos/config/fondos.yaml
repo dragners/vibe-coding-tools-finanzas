@@ -251,7 +251,7 @@ funds:
   isin: ES0112231016
   category: EUR Flexible Allocation
   morningstarId: F00001B0AP
-  comment: 'Fondo mixto, si te mantienes 5 años te cambian a la clase B con menos comisiones. Gestora Renta4. Busca crecimiento con asignación flexible entre acciones y bonos.'
+  comment: 'Fondo mixto, si te mantienes 5 años te cambian a la clase B con menos comisiones. Busca crecimiento con asignación flexible entre acciones y bonos.'
 - name: Cartesio Y
   isin: ES0182527038
   category: EUR Flexible Allocation
