@@ -137,3 +137,15 @@ html[data-theme="dark"] .shadow-lg,
 html[data-theme="dark"] .shadow-xl {
   box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55) !important;
 }
+
+.fund-filter-controls > .relative { width: 116px; }
+@media (max-width: 639px) {
+  .fund-filter-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .fund-filter-controls > .relative { width: auto; }
+}
+
+/* Keep the complete money-market label inside its existing fixed slot. */
+.category-label[data-category="moneyMarket"] { font-size: 8px; letter-spacing: -0.2px; }
+@media (max-width: 639px) {
+  .category-label[data-category="moneyMarket"] { font-size: 7px; letter-spacing: -0.35px; }
+}

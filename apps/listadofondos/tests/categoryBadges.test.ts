@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getCategoryBadges } from "../src/categoryBadges";
+import { CATEGORY_BADGES, getCategoryBadges, getCategoryFilterLabel } from "../src/categoryBadges";
 
 describe("Morningstar category classification", () => {
   it.each([
+    ["EUR Money Market", "Monetario", "EUR"],
+    ["EUR Money Market - Short Term", "Monetario", "Corto plazo"],
     ["EUR Flexible Allocation", "Mixto", "Flexible"],
     ["EUR Cautious Allocation", "Mixto", "Conservador"],
     ["Systematic Trend USD", "Alternat.", "Tendencias"],
@@ -49,4 +51,37 @@ describe("Morningstar category classification", () => {
     expect(getCategoryBadges(category, "en", true).map(badge => badge.text)).toEqual(["Equity", "Emerging", "Index"]);
     expect(getCategoryBadges(category, "es", false)[2].variant).toBe("active");
   });
+  it("keeps money market filters stable across languages and preserves the indexed flag", () => {
+    const spanish = getCategoryBadges("EUR Money Market", "es", true);
+    const english = getCategoryBadges("EUR Money Market", "en", true);
+    expect(spanish.map(badge => badge.variant)).toEqual(english.map(badge => badge.variant));
+    expect(english.map(badge => badge.text)).toEqual(["Cash", "EUR", "Index"]);
+    expect(spanish[0].searchTerms).toContain("monetarios");
+    expect(getCategoryBadges("EUR Ultra Short-Term Bond", "es")[0].variant).toBe("bond");
+  });
+});
+
+
+it("uses complete names in filter lists while keeping compact row labels where appropriate", () => {
+  expect(getCategoryFilterLabel("moneyMarket", "es")).toBe("Monetario");
+  expect(getCategoryFilterLabel("moneyMarket", "en")).toBe("Money market");
+  expect(getCategoryFilterLabel("alternative", "es")).toBe("Alternativos");
+  expect(getCategoryFilterLabel("asia", "es")).toBe("Asia-Pacífico");
+  expect(getCategoryFilterLabel("flexCap", "es")).toBe("Capitalización flexible");
+  expect(getCategoryFilterLabel("unknown", "es")).toBe("Sin categoría");
+});
+
+it("uses varied, readable colours for focus labels", () => {
+  const geographic = ["global", "europe", "eurozone", "asia", "emerging", "frontier", "india", "china"] as const;
+  const strategies = ["smallCap", "value", "growth", "dividend", "flexCap"] as const;
+  expect(new Set(geographic.map(variant => CATEGORY_BADGES[variant].style)).size).toBeGreaterThanOrEqual(6);
+  expect(new Set(strategies.map(variant => CATEGORY_BADGES[variant].style)).size).toBe(strategies.length);
+  // Equities keep their rose identity; their focus must not repeat red or pink.
+  for (const variant of [...geographic, ...strategies, "tech", "ecology", "resources", "metals"] as const) {
+    expect(CATEGORY_BADGES[variant].style).not.toMatch(/bg-(?:rose|red|pink)-/);
+  }
+  // Common bond focuses remain distinct from the green asset badge.
+  for (const variant of ["shortTerm", "government", "corporate", "highYield", "flexible", "global", "emerging"] as const) {
+    expect(CATEGORY_BADGES[variant].style).not.toMatch(/bg-(?:green|emerald|teal|lime)-/);
+  }
 });

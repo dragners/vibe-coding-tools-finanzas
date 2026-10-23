@@ -8,7 +8,8 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { CATEGORY_BADGES, getCategoryBadges, type CategoryBadge } from "./categoryBadges";
+import { CATEGORY_BADGES, getCategoryBadges, getCategoryFilterLabel, type CategoryBadge, type BadgeVariant } from "./categoryBadges";
+import { MultiSelectFilter } from "./MultiSelectFilter";
 import "./index.css";
 import { MOCK_PAYLOAD } from "./mockData";
 import { validatePayload } from "./payload";
@@ -648,7 +649,7 @@ function getSearchIndex(row: FundRow): string {
   }
 
   for (const lang of ["es", "en"] as const) {
-    tokens.push(...getCategoryBadges(formatValue(row.category, lang), lang, row.indexed).map((badge) => badge.text));
+    tokens.push(...getCategoryBadges(formatValue(row.category, lang), lang, row.indexed).flatMap((badge) => [badge.text, ...(badge.searchTerms ?? [])]));
   }
 
   const metricGroups = [row.performance ?? {}, row.sharpe ?? {}, row.sortino ?? {}, row.volatility ?? {}];
@@ -1043,12 +1044,13 @@ function CopyIsin({ isin, lang }: { isin: string; lang: Lang }) {
   );
 }
 
-function CategoryLabels({ badges, category, name, lang, onSelect }: {
+function CategoryLabels({ badges, category, name, lang, selected, onSelect }: {
   badges: CategoryBadge[];
   category: string;
   name: string;
   lang: Lang;
-  onSelect: (badge: CategoryBadge) => void;
+  selected: ReadonlySet<BadgeVariant>;
+  onSelect: (badge: CategoryBadge, group: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: -9999, left: -9999 });
@@ -1081,12 +1083,13 @@ function CategoryLabels({ badges, category, name, lang, onSelect }: {
       onFocus={() => setOpen(true)}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
       onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
-      {badges.map((badge) => (
-        <button key={badge.variant} type="button"
+      {badges.map((badge, group) => (
+        <button key={badge.variant} type="button" data-category={badge.variant}
           className={`category-label font-semibold uppercase rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${CATEGORY_BADGES[badge.variant].style}`}
           aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${badge.text}: ${name}`}
           aria-describedby={open ? tooltipId : undefined}
-          onClick={() => { setOpen(false); onSelect(badge); }}>
+          aria-pressed={selected.has(badge.variant)}
+          onClick={() => { setOpen(false); onSelect(badge, group); }}>
           {badge.text}
         </button>
       ))}
@@ -1121,7 +1124,39 @@ function CombinedTable({
 }) {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [badgeFilter, setBadgeFilter] = useState<CategoryBadge | null>(null);
+  const [assetFilters, setAssetFilters] = useState<BadgeVariant[]>([]);
+  const [focusFilters, setFocusFilters] = useState<BadgeVariant[]>([]);
+  const [managementFilters, setManagementFilters] = useState<BadgeVariant[]>([]);
+  const hasLabelFilters = assetFilters.length > 0 || focusFilters.length > 0 || managementFilters.length > 0;
+  const selectedBadges = new Set<BadgeVariant>([...assetFilters, ...focusFilters, ...managementFilters]);
+  const filterOptions = useMemo(() => {
+    const available = [new Map<BadgeVariant, CategoryBadge>(), new Map<BadgeVariant, CategoryBadge>(), new Map<BadgeVariant, CategoryBadge>()];
+    for (const row of [...funds, ...plans]) {
+      const badges = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed);
+      const matches = [
+        assetFilters.length === 0 || assetFilters.includes(badges[0].variant),
+        focusFilters.length === 0 || focusFilters.includes(badges[1].variant),
+        managementFilters.length === 0 || managementFilters.includes(badges[2].variant),
+      ];
+      // Ignore a list's own selection so its compatible alternatives remain selectable.
+      for (const group of [0, 1, 2]) {
+        if (matches.every((match, index) => index === group || match)) {
+          available[group].set(badges[group].variant, badges[group]);
+        }
+      }
+    }
+    // Keep checked options removable and preserve OR combinations across lists.
+    for (const [group, values] of [[0, assetFilters], [1, focusFilters], [2, managementFilters]] as const) {
+      for (const variant of values) available[group].set(variant, { variant, text: CATEGORY_BADGES[variant][lang] });
+    }
+    return available.map(options => [...options.values()].map(badge => ({
+      value: badge.variant, text: getCategoryFilterLabel(badge.variant, lang), style: CATEGORY_BADGES[badge.variant].style,
+    })).sort((a, b) => a.text.localeCompare(b.text, lang)));
+  }, [funds, plans, lang, assetFilters, focusFilters, managementFilters]);
+  const selectLabel = (badge: CategoryBadge, group: number) => {
+    const update = group === 0 ? setAssetFilters : group === 1 ? setFocusFilters : setManagementFilters;
+    update(previous => previous.includes(badge.variant) ? previous : [...previous, badge.variant]);
+  };
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedItems, setSelectedItems] = useState<{ section: TableSection; key: string }[]>([]);
   const comparisonSection = selectedItems[0]?.section ?? "funds";
@@ -1170,15 +1205,14 @@ function CombinedTable({
   );
 
   const matchesFilter = useCallback((row: FundRow) => {
-    if (/^★{1,5}$/.test(normalizedQuery)) {
-      return renderStars(row.morningstarRating) === normalizedQuery;
-    }
-    if (badgeFilter && normalizedQuery === badgeFilter.text.toLowerCase()) {
-      return getCategoryBadges(formatValue(row.category, lang), lang, row.indexed)
-        .some((badge) => badge.variant === badgeFilter.variant);
-    }
-    return rowMatchesQuery(row, normalizedQuery);
-  }, [badgeFilter, normalizedQuery, lang]);
+    const matchesSearch = /^★{1,5}$/.test(normalizedQuery)
+      ? renderStars(row.morningstarRating) === normalizedQuery : rowMatchesQuery(row, normalizedQuery);
+    if (!matchesSearch) return false;
+    const [asset, focus, management] = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed);
+    return (assetFilters.length === 0 || assetFilters.includes(asset.variant))
+      && (focusFilters.length === 0 || focusFilters.includes(focus.variant))
+      && (managementFilters.length === 0 || managementFilters.includes(management.variant));
+  }, [assetFilters, focusFilters, managementFilters, normalizedQuery, lang]);
 
   const filteredFunds = useMemo(() => funds.filter(matchesFilter), [funds, matchesFilter]);
 
@@ -1258,7 +1292,6 @@ function CombinedTable({
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setBadgeFilter(null);
       onSearchChange?.(event.target.value);
     },
     [onSearchChange],
@@ -1269,7 +1302,7 @@ function CombinedTable({
       <div className="rounded-3xl border border-slate-200/70 bg-white/85 p-4 sm:p-6 lg:p-8 shadow-xl backdrop-blur">
         {showSearchInput ? (
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
+            <div className="relative min-w-[160px] max-w-[280px] flex-1 basis-[200px]">
               <input
                 ref={searchInputRef}
                 type="text"
@@ -1285,7 +1318,6 @@ function CombinedTable({
                   aria-label={texts.clearSearch}
                   title={texts.clearSearch}
                   onClick={() => {
-                    setBadgeFilter(null);
                     onSearchChange?.("");
                     searchInputRef.current?.focus();
                   }}
@@ -1312,6 +1344,21 @@ function CombinedTable({
                   />
                 </svg>
               )}
+            </div>
+            <div className="fund-filter-controls flex flex-wrap items-center gap-2">
+              <MultiSelectFilter label={lang === "es" ? "Tipo de activo" : "Asset type"} caption={lang === "es" ? "Tipo" : "Asset"}
+                allLabel={lang === "es" ? "Todos" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
+                options={filterOptions[0]} selected={assetFilters} onChange={setAssetFilters} />
+              <MultiSelectFilter label={lang === "es" ? "Enfoque" : "Focus"} caption={lang === "es" ? "Enfoque" : "Focus"}
+                allLabel={lang === "es" ? "Todos" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
+                options={filterOptions[1]} selected={focusFilters} onChange={setFocusFilters} align="right" />
+              <MultiSelectFilter label={lang === "es" ? "Gestión" : "Management"} caption={lang === "es" ? "Gestión" : "Management"}
+                allLabel={lang === "es" ? "Todas" : "All"} clearLabel={lang === "es" ? "Limpiar" : "Clear"}
+                options={filterOptions[2]} selected={managementFilters} onChange={setManagementFilters} align="right" />
+              {hasLabelFilters ? <button type="button" onClick={() => { setAssetFilters([]); setFocusFilters([]); setManagementFilters([]); }}
+                className="rounded-lg text-xs text-slate-500 hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
+                {lang === "es" ? "Limpiar filtros" : "Clear filters"}
+              </button> : null}
             </div>
             <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
               {selectedItems.length > 0 ? (
@@ -1670,7 +1717,7 @@ function CombinedTable({
                                     aria-label={`${lang === "es" ? "Filtrar por" : "Filter by"} ${stars.length} ${lang === "es" ? "estrellas Morningstar" : "Morningstar stars"}: ${row.name}`}
                                     title={`${lang === "es" ? "Filtrar por" : "Filter by"} ${stars.length} ${lang === "es" ? "estrellas Morningstar" : "Morningstar stars"}`}
                                     aria-pressed={normalizedQuery === stars}
-                                    onClick={() => { setBadgeFilter(null); onSearchChange?.(stars); }}
+                                    onClick={() => onSearchChange?.(stars)}
                                   >
                                     {stars}
                                   </button>
@@ -1678,7 +1725,7 @@ function CombinedTable({
                                 {badges.length > 0 ? (
                                   <div className={stars ? "ml-auto" : ""}>
                                     <CategoryLabels badges={badges} category={tooltipLabel} name={row.name} lang={lang}
-                                      onSelect={(badge) => { setBadgeFilter(badge); onSearchChange?.(badge.text); }} />
+                                      selected={selectedBadges} onSelect={selectLabel} />
                                   </div>
                                 ) : null}
                               </div>
