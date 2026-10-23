@@ -258,6 +258,26 @@ describe("category labels", () => {
     expect(fundNames()).toEqual(["Fondo 3"]);
   });
 
+  it("filters money market funds by their category and supports Spanish and English search labels", async () => {
+    const user = await load({ funds: [
+      { ...funds[0], category: "EUR Money Market" },
+      { ...funds[1], category: "EUR Money Market - Short Term", indexed: true },
+      { ...funds[2], category: "EUR Ultra Short-Term Bond", comment: "Monet." },
+    ], plans: [] });
+    await user.click(screen.getByRole("button", { name: "Filtrar por Monet.: Fondo 1", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 2"]);
+    await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+    expect(fundNames()).toEqual(["Fondo 1", "Fondo 2"]);
+    expect(screen.getByRole("button", { name: "Filter by Cash: Fondo 1", exact: true })).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Clear search", exact: true }));
+    expect(fundNames()).toHaveLength(3);
+    for (const query of ["monetario", "monetarios", "cash", "money market"]) {
+      await user.clear(screen.getByRole("textbox"));
+      await user.type(screen.getByRole("textbox"), query);
+      expect(fundNames()).toEqual(["Fondo 1", "Fondo 2"]);
+    }
+  });
+
   it("filters corrected categories across funds and plans and preserves the filter in English", async () => {
     const user = await load({ funds: [
       { ...funds[0], category: "Global Emerging Markets Equity" },

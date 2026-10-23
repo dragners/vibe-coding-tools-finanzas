@@ -3,6 +3,8 @@ import { getCategoryBadges } from "../src/categoryBadges";
 
 describe("Morningstar category classification", () => {
   it.each([
+    ["EUR Money Market", "Monet.", "EUR"],
+    ["EUR Money Market - Short Term", "Monet.", "Corto plazo"],
     ["EUR Flexible Allocation", "Mixto", "Flexible"],
     ["EUR Cautious Allocation", "Mixto", "Conservador"],
     ["Systematic Trend USD", "Alternat.", "Tendencias"],
@@ -48,5 +50,13 @@ describe("Morningstar category classification", () => {
       .toEqual(getCategoryBadges(category, "es", true).map(badge => badge.variant));
     expect(getCategoryBadges(category, "en", true).map(badge => badge.text)).toEqual(["Equity", "Emerging", "Index"]);
     expect(getCategoryBadges(category, "es", false)[2].variant).toBe("active");
+  });
+  it("keeps money market filters stable across languages and preserves the indexed flag", () => {
+    const spanish = getCategoryBadges("EUR Money Market", "es", true);
+    const english = getCategoryBadges("EUR Money Market", "en", true);
+    expect(spanish.map(badge => badge.variant)).toEqual(english.map(badge => badge.variant));
+    expect(english.map(badge => badge.text)).toEqual(["Cash", "EUR", "Index"]);
+    expect(spanish[0].searchTerms).toContain("monetarios");
+    expect(getCategoryBadges("EUR Ultra Short-Term Bond", "es")[0].variant).toBe("bond");
   });
 });

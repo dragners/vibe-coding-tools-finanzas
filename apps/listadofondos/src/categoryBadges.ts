@@ -1,6 +1,7 @@
 const COLORS = {
   equity: "bg-rose-100/80 text-rose-700 border-rose-200",
   bond: "bg-emerald-100/80 text-emerald-700 border-emerald-200",
+  moneyMarket: "bg-lime-100/80 text-lime-800 border-lime-200",
   mixed: "bg-amber-100/80 text-amber-800 border-amber-200",
   alternative: "bg-purple-100/80 text-purple-700 border-purple-200",
   region: "bg-violet-100/80 text-violet-700 border-violet-200",
@@ -13,6 +14,7 @@ const COLORS = {
 export const CATEGORY_BADGES = {
   equity: { es: "Acciones", en: "Equity", style: COLORS.equity },
   bond: { es: "Bonos", en: "Bonds", style: COLORS.bond },
+  moneyMarket: { es: "Monet.", en: "Cash", style: COLORS.moneyMarket, searchTerms: ["monetario", "monetarios", "money market", "cash"] },
   mixed: { es: "Mixto", en: "Mixed", style: COLORS.mixed },
   alternative: { es: "Alternat.", en: "Alternat.", style: COLORS.alternative },
   otherAssets: { es: "Otros", en: "Other", style: COLORS.neutral },
@@ -48,7 +50,7 @@ export const CATEGORY_BADGES = {
 } as const;
 
 export type BadgeVariant = keyof typeof CATEGORY_BADGES;
-export type CategoryBadge = { text: string; variant: BadgeVariant };
+export type CategoryBadge = { text: string; variant: BadgeVariant; searchTerms?: readonly string[] };
 
 // The middle badge uses the most specific useful focus. For instance, emerging
 // markets take precedence over "Global", and short duration over corporate debt.
@@ -83,11 +85,15 @@ const FOCUS_RULES: [RegExp, BadgeVariant][] = [
 
 export function getCategoryBadges(category: string, lang: "es" | "en", indexed?: boolean): CategoryBadge[] {
   const normalized = category.trim().toLowerCase();
-  const asset: BadgeVariant = /allocation|balanced/.test(normalized) ? "mixed"
+  const asset: BadgeVariant = /\bmoney[ -]+market\b/.test(normalized) ? "moneyMarket"
+    : /allocation|balanced/.test(normalized) ? "mixed"
     : /systematic trend/.test(normalized) ? "alternative"
     : /equity/.test(normalized) ? "equity"
     : /bond/.test(normalized) ? "bond" : "otherAssets";
   const focus = FOCUS_RULES.find(([pattern]) => pattern.test(normalized))?.[1] ?? "unknown";
   const variants: BadgeVariant[] = [asset, focus, indexed ? "indexed" : "active"];
-  return variants.map((variant) => ({ variant, text: CATEGORY_BADGES[variant][lang] }));
+  return variants.map((variant) => {
+    const definition = CATEGORY_BADGES[variant];
+    return { variant, text: definition[lang], searchTerms: "searchTerms" in definition ? definition.searchTerms : [] };
+  });
 }

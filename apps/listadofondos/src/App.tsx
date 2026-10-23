@@ -648,7 +648,7 @@ function getSearchIndex(row: FundRow): string {
   }
 
   for (const lang of ["es", "en"] as const) {
-    tokens.push(...getCategoryBadges(formatValue(row.category, lang), lang, row.indexed).map((badge) => badge.text));
+    tokens.push(...getCategoryBadges(formatValue(row.category, lang), lang, row.indexed).flatMap((badge) => [badge.text, ...(badge.searchTerms ?? [])]));
   }
 
   const metricGroups = [row.performance ?? {}, row.sharpe ?? {}, row.sortino ?? {}, row.volatility ?? {}];
