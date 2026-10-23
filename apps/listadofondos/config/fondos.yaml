@@ -68,6 +68,11 @@ funds:
   category: Global Large-Cap Value Equity
   morningstarId: F00000WOMZ
   comment: 'RV global value. Busca compañías infravaloradas con negocios sólidos y potencial de revalorización a largo plazo. Gestores Daniel O’Keefe y Michael McKinnon.'
+- name: Ranmore Global Equity 
+  isin: IE00B6ZCS539
+  category: Global Flex-Cap Equity
+  morningstarId: F00000TISV
+  comment: 'RV global value y contrarian. Busca oportunidades fuera de las grandes compañías dominantes de los índices.'
 - name: Sigma Internacional A
   isin: ES0175902008
   category: Global Small-Cap Equity
@@ -93,6 +98,11 @@ funds:
   category: Global Large-Cap Value Equity
   morningstarId: F0GBR05VCE
   comment: 'RV global value. Busca crecimiento mediante empresas infravaloradas con potencial de mejora.'
+- name: Dodge & Cox Global Stock Acc
+  isin: IE00B55JMJ98
+  category: Global Large-Cap Value Equity
+  morningstarId: F00000JNOU
+  comment: 'RV global value. Invierte en compañías infravaloradas con horizonte largo.'
 - name: JPMorgan Global Focus
   isin: LU0210534227
   category: Global Large-Cap Blend Equity
@@ -138,16 +148,6 @@ funds:
   category: Global Large-Cap Growth Equity
   morningstarId: F00001DB42
   comment: 'RV global de calidad. Busca negocios con ventajas competitivas y crecimiento. Gestor Tomás Maraver - Poco track record.'
-- name: Ranmore Global Equity 
-  isin: IE00B6ZCS539
-  category: Global Flex-Cap Equity
-  morningstarId: F00000TISV
-  comment: 'RV global value y contrarian. Busca oportunidades fuera de las grandes compañías dominantes de los índices.'
-- name: Dodge & Cox Global Stock Acc
-  isin: IE00B55JMJ98
-  category: Global Large-Cap Value Equity
-  morningstarId: F00000JNOU
-  comment: 'RV global value. Invierte en compañías infravaloradas con horizonte largo.'
 - name: JPM Euroland Dynamic D
   isin: LU0661986348
   category: Eurozone Large-Cap Equity
