@@ -319,6 +319,21 @@ funds:
   category: EUR Corporate Bond - Short Term
   morningstarId: F00000ZPRU
   comment: 'Bonos garantizados europeos, principalmente respaldados por hipotecas. Busca rentabilidad estable con duración corta y elevada calidad crediticia.'
+- name: Generali Euro Bond 1-3Y EX
+  isin: LU0396183898
+  category: EUR Government Bond - Short Term
+  morningstarId: F000002K1K
+  comment: 'RF gubernamental EUR de corta duración. Invierte principalmente en deuda pública europea con vencimientos de 1 a 3 años. Busca estabilidad y limitar el riesgo de tipos.'
+- name: DWS Floating Rate Notes LC
+  isin: LU0034353002
+  category: EUR Ultra Short-Term Bond
+  morningstarId: F0GBR04NQN
+  comment: 'Renta fija ultracorta a tipo variable. Muy baja sensibilidad a movimientos de tipos. Casi un Monetario'
+- name: Carmignac Sécurité AW EUR Acc
+  isin: FR0010149120
+  category: EUR Diversified Bond - Short Term
+  morningstarId: F0GBR04F94
+  comment: 'Renta fija europea defensiva con gestión flexible de duración y crédito. Busca preservar capital y obtener rentabilidad moderada.'
 - name: Neuberger Short Euro Bond
   isin: IE00BNG2T811
   category: EUR Diversified Bond - Short Term
@@ -374,16 +389,6 @@ funds:
   category: Other Bond
   morningstarId: F00000OS8X
   comment: 'Crédito nórdico con exposición a high yield y emisiones sin rating. Busca mayor rentabilidad mediante bonos corporativos nórdicos.'
-- name: DWS Floating Rate Notes LC
-  isin: LU0034353002
-  category: EUR Ultra Short-Term Bond
-  morningstarId: F0GBR04NQN
-  comment: 'Renta fija ultracorta a tipo variable. Muy baja sensibilidad a movimientos de tipos. Casi un Monetario'
-- name: Carmignac Sécurité AW EUR Acc
-  isin: FR0010149120
-  category: EUR Diversified Bond - Short Term
-  morningstarId: F0GBR04F94
-  comment: 'Renta fija europea defensiva con gestión flexible de duración y crédito. Busca preservar capital y obtener rentabilidad moderada.'
 - name: Candriam Bonds Euro High Yield
   isin: LU0012119607
   category: EUR High Yield Bond
@@ -394,11 +399,6 @@ funds:
   category: EUR High Yield Bond
   morningstarId: F00000TVL6
   comment: 'RF high yield europea de Neuberger Berman. Selecciona bonos corporativos mediante análisis fundamental, asumiendo mayor riesgo de crédito.'
-- name: Generali Euro Bond 1-3Y EX
-  isin: LU0396183898
-  category: EUR Government Bond - Short Term
-  morningstarId: F000002K1K
-  comment: 'RF gubernamental EUR de corta duración. Invierte principalmente en deuda pública europea con vencimientos de 1 a 3 años. Busca estabilidad y limitar el riesgo de tipos.'
 - name: BayernInvest Renten Europa
   isin: DE000A2PSYA4
   category: EUR Government Bond
