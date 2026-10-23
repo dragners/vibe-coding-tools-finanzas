@@ -178,6 +178,21 @@ funds:
   category: Global Emerging Markets Equity
   morningstarId: F000000RB9
   comment: 'RV emergente cuantitativa. Selecciona empresas mediante factores como valoración, calidad y momentum. Gestión sistemática de Robeco Quantitative Investments.'
+- name: Robeco QI Emrg Conservative Eq
+  isin: LU0582533245
+  category: Global Emerging Markets Equity
+  morningstarId: F00000M0QL
+  comment: 'RV emergente de baja volatilidad. Estrategia cuantitativa que selecciona compañías con perfil defensivo.'
+- name: Evli Emerging Frontier B
+  isin: FI4000066915
+  category: Global Emerging Markets Small/Mid-Cap Equity
+  morningstarId: F00000QIUX
+  comment: 'RV de mercados frontera. Busca compañías infravaloradas y de calidad en economías emergentes pequeñas. Equipo liderado por Antti Sivonen y Mathias Althoff.'
+- name: HSBC Frontier Markets
+  isin: LU0666199749
+  category: Global Frontier Markets Equity
+  morningstarId: F00000NG7A
+  comment: 'RV de mercados frontera, poco representados en índices globales. Busca crecimiento a largo plazo en economías menos desarrolladas, con elevada volatilidad.'
 - name: Pictet-China Index P 
   isin: LU0625737910
   category: China Equity
@@ -210,21 +225,6 @@ funds:
   category: Sector Equity Ecology
   morningstarId: F000014SSQ
   comment: 'RV temática global ESG. Busca crecimiento en empresas de uso eficiente y reutilización de recursos.'
-- name: Robeco QI Emrg Conservative Eq
-  isin: LU0582533245
-  category: Global Emerging Markets Equity
-  morningstarId: F00000M0QL
-  comment: 'RV emergente de baja volatilidad. Estrategia cuantitativa que selecciona compañías con perfil defensivo.'
-- name: HSBC Frontier Markets
-  isin: LU0666199749
-  category: Global Frontier Markets Equity
-  morningstarId: F00000NG7A
-  comment: 'RV de mercados frontera, poco representados en índices globales. Busca crecimiento a largo plazo en economías menos desarrolladas, con elevada volatilidad.'
-- name: Evli Emerging Frontier B
-  isin: FI4000066915
-  category: Global Emerging Markets Small/Mid-Cap Equity
-  morningstarId: F00000QIUX
-  comment: 'RV de mercados frontera. Busca compañías infravaloradas y de calidad en economías emergentes pequeñas. Equipo liderado por Antti Sivonen y Mathias Althoff.'
 - name: Allianz Oriental Income AT
   isin: LU0348784041
   category: Asia-Pacific inc. Japan Equity
