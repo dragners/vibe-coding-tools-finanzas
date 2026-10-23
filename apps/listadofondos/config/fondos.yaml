@@ -297,6 +297,12 @@ funds:
   comment: 'RF global indexada. Aporta diversificación con bonos públicos y corporativos, con cobertura de divisa EUR.'
   indexed: true
   inPortfolio: true
+- name: Groupama Trésorerie IC
+  isin: FR0000989626
+  category: EUR Money Market
+  morningstarId: F0GBR04M6M
+  comment: 'Fondo Monetario EUR. Invierte en deuda de muy corto plazo y elevada liquidez. Busca preservar el capital y obtener una rentabilidad cercana a los tipos monetarios €STR.'
+  inPortfolio: true
 - name: DNCA Invest Alpha Bonds A
   isin: LU1694789451
   category: Global Flexible Bond
@@ -399,6 +405,16 @@ funds:
   category: EUR High Yield Bond
   morningstarId: F00000TVL6
   comment: 'RF high yield europea de Neuberger Berman. Selecciona bonos corporativos mediante análisis fundamental, asumiendo mayor riesgo de crédito.'
+- name: Candriam Bonds Global High Yield
+  isin: LU0170291933
+  category: Global High Yield Bond
+  morningstarId: F0GBR04HRR
+  comment: 'RF global high yield. Invierte en bonos corporativos de menor calidad crediticia buscando rentabilidad mediante selección de emisores. Gestor Thomas Joret.'
+- name: UBAM Global High Yield Solution
+  isin: LU0569862609
+  category: Global High Yield Bond - EUR Hedged
+  morningstarId: F00000M1KA
+  comment: 'RF global high yield. Busca rentabilidad mediante crédito corporativo de alto rendimiento y gestión activa de la exposición al mercado. Clase cubierta a EUR.'
 - name: BayernInvest Renten Europa
   isin: DE000A2PSYA4
   category: EUR Government Bond
