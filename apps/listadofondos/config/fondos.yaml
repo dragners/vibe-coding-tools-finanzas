@@ -1,4 +1,31 @@
 funds:
+- name: Vanguard Global Stock Index
+  isin: IE00B03HD191
+  category: Global Large-Cap Blend Equity
+  morningstarId: F0GBR052TN
+  comment: 'MSCI World - Acumulación. RV de países desarrollados. Base diversificada de acciones globales.'
+  indexed: true
+  inPortfolio: true
+- name: Indexa RV internacional
+  isin: ES0148019005
+  category: Global Large-Cap Blend Equity
+  morningstarId: F00001QFKV
+  comment: 'RV global indexada. Aporta exposición diversificada a bolsas internacionales mediante gestión pasiva.'
+  indexed: true
+- name: Vanguard Global Small Stock Index
+  isin: IE00B42W4L06
+  category: Global Small-Cap Equity
+  morningstarId: F00000PA9N
+  comment: 'MSCI Small Cap - Acumulación. RV de pequeñas empresas de países desarrollados. Complementa las grandes compañías globales.'
+  indexed: true
+  inPortfolio: true
+- name: Vanguard Emerg Mkts Stock Index
+  isin: IE0031786696
+  category: Global Emerging Markets Equity
+  morningstarId: F00000T1HU
+  comment: 'MSCI Emerging Markets - Acumulación. RV emergente indexada. Diversifica hacia economías en desarrollo.'
+  indexed: true
+  inPortfolio: true
 - name: Azvalor Internacional
   isin: ES0112611001
   category: Global Flex-Cap Equity
@@ -61,26 +88,6 @@ funds:
   category: Global Large-Cap Blend Equity
   morningstarId: F0GBR05VVW
   comment: 'RV global de gestión activa y cartera concentrada. Busca compañías con buenas perspectivas de crecimiento y valoración atractiva mediante análisis fundamental.'
-- name: Avantage Fund A
-  isin: ES0112231016
-  category: EUR Flexible Allocation
-  morningstarId: F00001B0AP
-  comment: 'Fondo mixto, si te mantienes 5 años te cambian a la clase B con menos comisiones. Gestora Renta4. Busca crecimiento con asignación flexible entre acciones y bonos.'
-- name: Cartesio Y
-  isin: ES0182527038
-  category: EUR Flexible Allocation
-  morningstarId: F0GBR04VSJ
-  comment: 'Mixto flexible global de Cartesio Inversiones. Combina RV, RF y liquidez para buscar crecimiento del capital y controlar las pérdidas.'
-- name: Trojan Fund
-  isin: IE00B6T42S66
-  category: EUR Flexible Allocation
-  morningstarId: F00000NPYO
-  comment: 'Mixto conservador global. Busca preservar y aumentar el patrimonio mediante acciones de calidad, bonos, oro y liquidez. Gestores Sebastian Lyon y Charlotte Yonge.'
-- name: Assenagon Multi-Asset Conserv.
-  isin: LU1297482223
-  category: EUR Cautious Allocation
-  morningstarId: F00000WK22
-  comment: 'Mixto conservador global. Combina renta fija, renta variable y otros activos mediante asignación flexible buscando rentabilidad moderada y control de volatilidad.'
 - name: Fundsmith Equity T 
   isin: LU0690375422
   category: Global Large-Cap Growth Equity
@@ -233,49 +240,55 @@ funds:
   category: Asia-Pacific inc. Japan Equity
   morningstarId: F0GBR060JT
   comment: 'RV Asia-Pacífico. Busca crecimiento a largo plazo mediante selección activa de empresas de los mercados asiáticos y del Pacífico.'
-- name: Impassive Wealth FI
-  isin: ES0147897005
-  category: EUR Flexible Allocation
-  morningstarId: F00001155A
-  comment: 'Mixto global por reglas. Busca crecimiento controlando la volatilidad. Cartera permanente + BTC, parecido a mi cartera de inversión. Gestor Juan Manuel Rodríguez.'
 - name: iMGP DBi Managed Futures Fund  
   isin: LU2951555403
   category: Systematic Trend USD
   morningstarId: 0P0001UBZT
   comment: 'Futuros gestionados con seguimiento de tendencias y posiciones largas y cortas. Busca diversificar frente a RV y RF; puede perder y su correlación varía.'
+- name: Ninety One Glb Nat. Resources
+  isin: LU2358792120
+  category: Sector Equity Natural Resources
+  morningstarId: F00001B6YM
+  comment: 'RV global de energía, minería y materias primas. Busca aprovechar los ciclos de oferta, demanda y valoración de los recursos naturales.'
+- name: Baker Steel Precious Metals
+  isin: LU1128910137
+  category: Sector Equity Precious Metals
+  morningstarId: F00000VI1X
+  comment: 'RV global de mineras de oro y plata. Busca beneficiarse del aumento del valor de sus reservas y de sus operaciones.'
+- name: Avantage Fund A
+  isin: ES0112231016
+  category: EUR Flexible Allocation
+  morningstarId: F00001B0AP
+  comment: 'Fondo mixto, si te mantienes 5 años te cambian a la clase B con menos comisiones. Gestora Renta4. Busca crecimiento con asignación flexible entre acciones y bonos.'
+- name: Cartesio Y
+  isin: ES0182527038
+  category: EUR Flexible Allocation
+  morningstarId: F0GBR04VSJ
+  comment: 'Mixto flexible global de Cartesio Inversiones. Combina RV, RF y liquidez para buscar crecimiento del capital y controlar las pérdidas.'
+- name: Trojan Fund
+  isin: IE00B6T42S66
+  category: EUR Flexible Allocation
+  morningstarId: F00000NPYO
+  comment: 'Mixto conservador global. Busca preservar y aumentar el patrimonio mediante acciones de calidad, bonos, oro y liquidez. Gestores Sebastian Lyon y Charlotte Yonge.'
+- name: Impassive Wealth FI
+  isin: ES0147897005
+  category: EUR Flexible Allocation
+  morningstarId: F00001155A
+  comment: 'Mixto global por reglas. Busca crecimiento controlando la volatilidad. Cartera permanente + BTC, parecido a mi cartera de inversión. Gestor Juan Manuel Rodríguez.'
+- name: Assenagon Multi-Asset Conserv.
+  isin: LU1297482223
+  category: EUR Cautious Allocation
+  morningstarId: F00000WK22
+  comment: 'Mixto conservador global. Combina renta fija, renta variable y otros activos mediante asignación flexible buscando rentabilidad moderada y control de volatilidad.'
 - name: Dunas Valor Prudente
   isin: ES0175437005
   category: EUR Flexible Allocation
   morningstarId: F00000ZN9Q
   comment: 'Mixto RV y RF. Retorno absoluto defensivo. Estabilizador de cartera para buscar algo más que un monetario con baja volatilidad.'
-- name: Indexa RV internacional
-  isin: ES0148019005
-  category: Global Large-Cap Blend Equity
-  morningstarId: F00001QFKV
-  comment: 'RV global indexada. Aporta exposición diversificada a bolsas internacionales mediante gestión pasiva.'
-  indexed: true
-- name: Vanguard Glb Stk Idx (Acc)
-  isin: IE00B03HD191
-  category: Global Large-Cap Blend Equity
-  morningstarId: F0GBR052TN
-  comment: 'MSCI World - Acumulación. RV de países desarrollados. Base diversificada de acciones globales.'
-  indexed: true
-  inPortfolio: true
-- name: Vanguard Glb Small Idx (Acc)
-  isin: IE00B42W4L06
-  category: Global Small-Cap Equity
-  morningstarId: F00000PA9N
-  comment: 'MSCI Small Cap - Acumulación. RV de pequeñas empresas de países desarrollados. Complementa las grandes compañías globales.'
-  indexed: true
-  inPortfolio: true
-- name: Vanguard Em Mkts Stk Idx (Acc) 
-  isin: IE0031786696
-  category: Global Emerging Markets Equity
-  morningstarId: F00000T1HU
-  comment: 'MSCI Emerging Markets - Acumulación. RV emergente indexada. Diversifica hacia economías en desarrollo.'
-  indexed: true
-  inPortfolio: true
-- name: Vanguard Global Bd Idx H (Acc)
+
+
+#Renta Fija
+- name: Vanguard Global Bond Index
   isin: IE00B18GC888
   category: Global Bond - EUR Hedged
   morningstarId: F00000T1HT
@@ -288,17 +301,6 @@ funds:
   morningstarId: F00000ZY7L
   comment: 'Retorno absoluto de RF global con posiciones largas, cortas y derivados. Busca rentabilidad en distintos entornos de tipos, sin garantizar capital ni beneficios.'
   inPortfolio: true
-- name: Ninety One Glb Nat. Resources
-  isin: LU2358792120
-  category: Sector Equity Natural Resources
-  morningstarId: F00001B6YM
-  comment: 'RV global de energía, minería y materias primas. Busca aprovechar los ciclos de oferta, demanda y valoración de los recursos naturales.'
-- name: Baker Steel Precious Metals
-  isin: LU1128910137
-  category: Sector Equity Precious Metals
-  morningstarId: F00000VI1X
-  comment: 'RV global de mineras de oro y plata. Busca beneficiarse del aumento del valor de sus reservas y de sus operaciones.'
-#Renta Fija
 - name: Horos Patrimonio 
   isin: ES0146296001
   category: EUR Flexible Bond
