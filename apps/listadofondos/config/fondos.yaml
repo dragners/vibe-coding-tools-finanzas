@@ -88,16 +88,7 @@ funds:
   category: Global Large-Cap Blend Equity
   morningstarId: F0GBR05VVW
   comment: 'RV global de gestión activa y cartera concentrada. Busca compañías con buenas perspectivas de crecimiento y valoración atractiva mediante análisis fundamental.'
-- name: Fundsmith Equity T 
-  isin: LU0690375422
-  category: Global Large-Cap Growth Equity
-  morningstarId: F00000OHVX
-  comment: 'RV global de calidad. Busca crecimiento con negocios rentables y duraderos. Un clásico pero con mal rendimiento en los últimos años.'
-- name: Fidelity Global Dividend
-  isin: LU1261431768
-  category: Global Equity Income
-  morningstarId: F00000W42B
-  comment: 'RV global de dividendos. Busca ingresos y crecimiento del capital a largo plazo. Tambien existe en distribución.'
+
 - name: Fidelity Global Technology Acc
   isin: LU1213836080
   category: Sector Equity Technology
@@ -108,6 +99,11 @@ funds:
   category: Sector Equity Technology
   morningstarId: F000000JQ3
   comment: 'RV tecnológica global. Busca compañías tecnológicas infravaloradas con crecimiento sostenible. Gestor Anders Tandberg-Johansen, responsable de la estrategia desde 2002.'
+- name: Fidelity Global Dividend
+  isin: LU1261431768
+  category: Global Equity Income
+  morningstarId: F00000W42B
+  comment: 'RV global de dividendos. Busca ingresos y crecimiento del capital a largo plazo. Tambien existe en distribución.'
 - name: Invesco Global Equity Income
   isin: LU0607513586
   category: Global Equity Income
@@ -123,6 +119,11 @@ funds:
   category: Global Small-Cap Equity
   morningstarId: F000013W45
   comment: 'RV global de pequeñas y medianas empresas. Busca compañías con potencial de crecimiento superior al mercado mediante análisis fundamental y selección activa.'
+- name: Fundsmith Equity T 
+  isin: LU0690375422
+  category: Global Large-Cap Growth Equity
+  morningstarId: F00000OHVX
+  comment: 'RV global de calidad. Busca crecimiento con negocios rentables y duraderos. Un clásico pero con mal rendimiento en los últimos años.'
 - name: GQG Partners Global Equity A
   isin: IE00BH481053
   category: Global Large-Cap Growth Equity
@@ -133,6 +134,16 @@ funds:
   category: Global Large-Cap Growth Equity
   morningstarId: F000014CAN
   comment: 'RV global temática sobre cambios tecnológicos, demográficos y económicos. Gestores Philippe Vialle, Julia Kung y Alessandro Roggero.'
+- name: Ranmore Global Equity 
+  isin: IE00B6ZCS539
+  category: Global Flex-Cap Equity
+  morningstarId: F00000TISV
+  comment: 'RV global value y contrarian. Busca oportunidades fuera de las grandes compañías dominantes de los índices.'
+- name: Dodge & Cox Global Stock Acc
+  isin: IE00B55JMJ98
+  category: Global Large-Cap Value Equity
+  morningstarId: F00000JNOU
+  comment: 'RV global value. Invierte en compañías infravaloradas con horizonte largo.'
 - name: Incometric Nartex Equity R 
   isin: LU2357235576
   category: Global Large-Cap Growth Equity
@@ -200,21 +211,6 @@ funds:
   category: Sector Equity Ecology
   morningstarId: F000014SSQ
   comment: 'RV temática global ESG. Busca crecimiento en empresas de uso eficiente y reutilización de recursos.'
-- name: Ranmore Global Equity 
-  isin: IE00B6ZCS539
-  category: Global Flex-Cap Equity
-  morningstarId: F00000TISV
-  comment: 'RV global value y contrarian. Busca oportunidades fuera de las grandes compañías dominantes de los índices.'
-- name: Dodge & Cox Global Stock Acc
-  isin: IE00B55JMJ98
-  category: Global Large-Cap Value Equity
-  morningstarId: F00000JNOU
-  comment: 'RV global value. Invierte en compañías infravaloradas con horizonte largo.'
-- name: R-co Valor C 
-  isin: FR0011253624
-  category: EUR Flexible Allocation
-  morningstarId: F00000X3BN
-  comment: 'Fondo mixto global flexible con elevada exposición potencial a RV. Busca aprovechar oportunidades de inversión mediante asignación activa entre mercados.'
 - name: Robeco QI Emrg Conservative Eq
   isin: LU0582533245
   category: Global Emerging Markets Equity
@@ -255,6 +251,8 @@ funds:
   category: Sector Equity Precious Metals
   morningstarId: F00000VI1X
   comment: 'RV global de mineras de oro y plata. Busca beneficiarse del aumento del valor de sus reservas y de sus operaciones.'
+
+#Mixtos
 - name: Avantage Fund A
   isin: ES0112231016
   category: EUR Flexible Allocation
@@ -280,6 +278,11 @@ funds:
   category: EUR Cautious Allocation
   morningstarId: F00000WK22
   comment: 'Mixto conservador global. Combina renta fija, renta variable y otros activos mediante asignación flexible buscando rentabilidad moderada y control de volatilidad.'
+- name: R-co Valor C 
+  isin: FR0011253624
+  category: EUR Flexible Allocation
+  morningstarId: F00000X3BN
+  comment: 'Fondo mixto global flexible con elevada exposición potencial a RV. Busca aprovechar oportunidades de inversión mediante asignación activa entre mercados.'
 - name: Dunas Valor Prudente
   isin: ES0175437005
   category: EUR Flexible Allocation
