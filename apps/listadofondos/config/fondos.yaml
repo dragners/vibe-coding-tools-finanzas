@@ -390,6 +390,11 @@ funds:
   category: EUR Flexible Bond
   morningstarId: F0GBR063X1
   comment: 'RF europea flexible. Busca rentabilidad mediante oportunidades en crédito corporativo y gestión activa de duración, emisores y diferenciales de crédito.'
+- name: BayernInvest Renten Europa
+  isin: DE000A2PSYA4
+  category: EUR Government Bond
+  morningstarId: F000015E2J
+  comment: 'RF gubernamental europea. Invierte en deuda pública europea con gestión activa de la duración. Busca rentabilidad mediante cupones y movimientos de los tipos de interés.'
 - name: Storm Bond RC
   isin: LU0840158819
   category: Other Bond
@@ -415,22 +420,16 @@ funds:
   category: Global High Yield Bond - EUR Hedged
   morningstarId: F00000M1KA
   comment: 'RF global high yield. Busca rentabilidad mediante crédito corporativo de alto rendimiento y gestión activa de la exposición al mercado. Clase cubierta a EUR.'
-- name: BayernInvest Renten Europa
-  isin: DE000A2PSYA4
-  category: EUR Government Bond
-  morningstarId: F000015E2J
-  comment: 'RF gubernamental europea. Invierte en deuda pública europea con gestión activa de la duración. Busca rentabilidad mediante cupones y movimientos de los tipos de interés.'
-- name: Aberdeen Frontier Markets Bond
-  isin: LU1919971074
-  category: Global Emerging Markets Bond - EUR Biased
-  morningstarId: F000011XJP
-  comment: 'RF de mercados frontera. Invierte en deuda soberana y corporativa de economías menos desarrolladas, con riesgos políticos, de crédito y liquidez.'
 - name: Neuberger Berman Short EM Debt
   isin: IE00BDZRWZ54
   category: Global Emerging Markets Bond - EUR Biased
   morningstarId: F00000TPIL
   comment: 'RF emergente de corta duración. Selecciona deuda de países emergentes buscando rentabilidad y limitando la sensibilidad a los tipos de interés.'
-
+- name: Aberdeen Frontier Markets Bond
+  isin: LU1919971074
+  category: Global Emerging Markets Bond - EUR Biased
+  morningstarId: F000011XJP
+  comment: 'RF de mercados frontera. Invierte en deuda soberana y corporativa de economías menos desarrolladas, con riesgos políticos, de crédito y liquidez.'
 - name: Fermat Cat Bond Ord EUR Acc
   isin: IE0004AT1FA0
   category: Other Bond
