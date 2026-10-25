@@ -44,6 +44,7 @@ export const CATEGORY_BADGES = {
   dividend: { es: "Dividendos", en: "Dividends", style: COLORS.green },
   flexCap: { es: "Flex. cap", en: "Flex. cap", style: COLORS.indigo },
   highYield: { es: "High yield", en: "High yield", style: COLORS.orange },
+  catBond: { es: "Cat Bond", en: "Cat Bond", style: COLORS.yellow, searchTerms: ["cat bonds", "bonos catástrofe", "bonos catastrofe", "catastrophe bonds"] },
   shortTerm: { es: "Corto plazo", en: "Short term", style: COLORS.sky },
   government: { es: "Gobierno", en: "Government", style: COLORS.violet },
   corporate: { es: "Corporativo", en: "Corporate", style: COLORS.indigo },
@@ -80,6 +81,7 @@ export function getCategoryFilterLabel(variant: BadgeVariant, lang: "es" | "en")
 // The middle badge uses the most specific useful focus. For instance, emerging
 // markets take precedence over "Global", and short duration over corporate debt.
 const FOCUS_RULES: [RegExp, BadgeVariant][] = [
+  [/\bcat(?:astrophe)?[ -]+(?:bonds?|bd)\b/, "catBond"],
   [/precious metals/, "metals"],
   [/natural resources/, "resources"],
   [/technology/, "tech"],
@@ -108,14 +110,17 @@ const FOCUS_RULES: [RegExp, BadgeVariant][] = [
   [/other bond/, "other"],
 ];
 
-export function getCategoryBadges(category: string, lang: "es" | "en", indexed?: boolean): CategoryBadge[] {
+export function getCategoryBadges(category: string, lang: "es" | "en", indexed?: boolean, name = ""): CategoryBadge[] {
   const normalized = category.trim().toLowerCase();
   const asset: BadgeVariant = /\bmoney[ -]+market\b/.test(normalized) ? "moneyMarket"
     : /allocation|balanced/.test(normalized) ? "mixed"
     : /systematic trend/.test(normalized) ? "alternative"
     : /equity/.test(normalized) ? "equity"
     : /bond/.test(normalized) ? "bond" : "otherAssets";
-  const focus = FOCUS_RULES.find(([pattern]) => pattern.test(normalized))?.[1] ?? "unknown";
+  // Morningstar groups catastrophe bonds under Other Bond. Use the explicit
+  // product name to refine that broad category without changing the source data.
+  const namedCatBond = asset === "bond" && /\bcat(?:astrophe)?[ -]+(?:bonds?|bd)\b/i.test(name);
+  const focus = namedCatBond ? "catBond" : FOCUS_RULES.find(([pattern]) => pattern.test(normalized))?.[1] ?? "unknown";
   const variants: BadgeVariant[] = [asset, focus, indexed ? "indexed" : "active"];
   return variants.map((variant) => {
     const definition = CATEGORY_BADGES[variant];

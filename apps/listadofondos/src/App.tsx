@@ -649,7 +649,7 @@ function getSearchIndex(row: FundRow): string {
   }
 
   for (const lang of ["es", "en"] as const) {
-    tokens.push(...getCategoryBadges(formatValue(row.category, lang), lang, row.indexed).flatMap((badge) => [badge.text, ...(badge.searchTerms ?? [])]));
+    tokens.push(...getCategoryBadges(formatValue(row.category, lang), lang, row.indexed, row.name).flatMap((badge) => [badge.text, ...(badge.searchTerms ?? [])]));
   }
 
   const metricGroups = [row.performance ?? {}, row.sharpe ?? {}, row.sortino ?? {}, row.volatility ?? {}];
@@ -1132,7 +1132,7 @@ function CombinedTable({
   const filterOptions = useMemo(() => {
     const available = [new Map<BadgeVariant, CategoryBadge>(), new Map<BadgeVariant, CategoryBadge>(), new Map<BadgeVariant, CategoryBadge>()];
     for (const row of [...funds, ...plans]) {
-      const badges = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed);
+      const badges = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed, row.name);
       const matches = [
         assetFilters.length === 0 || assetFilters.includes(badges[0].variant),
         focusFilters.length === 0 || focusFilters.includes(badges[1].variant),
@@ -1208,7 +1208,7 @@ function CombinedTable({
     const matchesSearch = /^★{1,5}$/.test(normalizedQuery)
       ? renderStars(row.morningstarRating) === normalizedQuery : rowMatchesQuery(row, normalizedQuery);
     if (!matchesSearch) return false;
-    const [asset, focus, management] = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed);
+    const [asset, focus, management] = getCategoryBadges(formatValue(row.category, lang), lang, row.indexed, row.name);
     return (assetFilters.length === 0 || assetFilters.includes(asset.variant))
       && (focusFilters.length === 0 || focusFilters.includes(focus.variant))
       && (managementFilters.length === 0 || managementFilters.includes(management.variant));
@@ -1628,6 +1628,7 @@ function CombinedTable({
                       categoryValue,
                       lang,
                       row.indexed,
+                      row.name,
                     );
                     const tooltipId = `${section.key}-${rowKey}`;
                     const heartTooltipId = `${tooltipId}-heart`;

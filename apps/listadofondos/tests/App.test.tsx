@@ -28,6 +28,31 @@ const checkbox = (name: string) => screen.getByRole("checkbox", { name: `Selecci
 const compare = (provider: string) => screen.getByText(new RegExp(`^Comparar en ${provider}`));
 const fundNames = () => Array.from(document.querySelectorAll("tbody tr.align-middle td:first-child a")).map((element) => element.textContent);
 
+it("shows and filters Cat Bond independently from other bond funds, including aliases and language changes", async () => {
+  const fermat = "Fermat Cat Bond Ord EUR Acc", gam = "GAM Swiss Re Cat Bond EUR Acc";
+  const user = await load({ funds: [
+    { ...funds[0], name: fermat, category: "Other Bond" },
+    { ...funds[1], name: gam, category: "Other Bond" },
+    { ...funds[2], category: "Other Bond" },
+    funds[3],
+  ], plans: [] });
+  await user.type(screen.getByRole("textbox"), "bonos catastrofe");
+  expect(fundNames()).toEqual([fermat, gam]);
+  await user.click(screen.getByRole("button", { name: `Filtrar por Cat Bond: ${fermat}`, exact: true }));
+  await user.click(screen.getByRole("button", { name: "Borrar búsqueda", exact: true }));
+  expect(fundNames()).toEqual([fermat, gam]);
+  await user.click(screen.getByRole("button", { name: "Enfoque", exact: true }));
+  expect(screen.getByRole("checkbox", { name: "Cat Bond", exact: true }).getAttribute("aria-checked")).toBe("true");
+  await user.click(screen.getByRole("button", { name: "Tipo de activo", exact: true }));
+  expect(screen.getByRole("checkbox", { name: "Bonos", exact: true })).not.toBeNull();
+  expect(screen.queryByRole("checkbox", { name: "Acciones", exact: true })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "EN", exact: true }));
+  await user.click(screen.getByRole("button", { name: "Focus", exact: true }));
+  expect(screen.getByRole("checkbox", { name: "Cat Bond", exact: true }).getAttribute("aria-checked")).toBe("true");
+  await user.click(screen.getByRole("button", { name: "Clear: Focus", exact: true }));
+  expect(fundNames()).toEqual([fermat, gam, "Fondo 3", "Fondo 4"]);
+});
+
 describe("visible comparison feedback and selection", () => {
   it("shows type lock and maximum messages, preserves hidden selections and allows replacement", async () => {
     const user = await load();
