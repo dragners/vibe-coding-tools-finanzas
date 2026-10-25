@@ -40,6 +40,7 @@ describe("Morningstar category classification", () => {
     ["EUR Flexible Bond", "Bonos", "Flexible"],
     ["Global Bond - EUR Hedged", "Bonos", "Global"],
     ["Other Bond", "Bonos", "Otros"],
+    ["Cat Bond", "Bonos", "Cat Bond"],
     ["-", "Otros", "Sin categ."],
   ])("%s has a useful asset and focus", (category, asset, focus) => {
     expect(getCategoryBadges(category, "es").map(badge => badge.text)).toEqual([asset, focus, "Activa"]);
@@ -59,6 +60,18 @@ describe("Morningstar category classification", () => {
     expect(spanish[0].searchTerms).toContain("monetarios");
     expect(getCategoryBadges("EUR Ultra Short-Term Bond", "es")[0].variant).toBe("bond");
   });
+});
+
+it("refines Other Bond only when a bond product explicitly identifies catastrophe bonds", () => {
+  for (const name of ["Fermat Cat Bond Ord EUR Acc", "GAM Swiss Re Cat Bond EUR Acc", "GAM Swiss Re Cat Bd", "Global Catastrophe Bonds"]) {
+    for (const lang of ["es", "en"] as const) {
+      expect(getCategoryBadges("Other Bond", lang, false, name).map(badge => badge.variant)).toEqual(["bond", "catBond", "active"]);
+    }
+  }
+  expect(getCategoryBadges("Other Bond", "es", false, "Otro fondo de bonos")[1].variant).toBe("other");
+  expect(getCategoryBadges("Global Equity", "es", false, "Cat Bond Holdings")[1].variant).toBe("global");
+  expect(getCategoryFilterLabel("catBond", "es")).toBe("Cat Bond");
+  expect(getCategoryBadges("Other Bond", "es", false, "Fermat Cat Bond")[1].searchTerms).toContain("bonos catastrofe");
 });
 
 

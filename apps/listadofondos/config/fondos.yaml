@@ -431,7 +431,17 @@ funds:
   morningstarId: F00000TPIL
   comment: 'RF emergente de corta duración. Selecciona deuda de países emergentes buscando rentabilidad y limitando la sensibilidad a los tipos de interés.'
 
- 
+- name: Fermat Cat Bond Ord EUR Acc
+  isin: IE0004AT1FA0
+  category: Other Bond
+  morningstarId: F00001PGBW
+  comment: 'Bonos que pagan primas por asumir riesgos de catástrofes. Buscan diversificar RV/RF, con posibles pérdidas elevadas. Gestor Fermat, antiguo gestor de GAM.'
+- name: GAM Swiss Re Cat Bond EUR Acc
+  isin: IE00B3Q8M574
+  category: Other Bond
+  morningstarId: F00000NMKO
+  comment: 'Bonos que pagan primas por asumir riesgos de catástrofes. Buscan diversificar RV/RF, con posibles pérdidas elevadas. Gestión de GAM y Swiss Re desde mayo de 2025.'
+
 plans:
 - name: Myinvestor Indexado Global PP
   isin: N5396
